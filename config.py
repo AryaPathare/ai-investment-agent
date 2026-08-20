@@ -109,6 +109,24 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- Observability ------------------------------------------------------
+    # These are read directly from os.environ by the LangSmith library, not by
+    # this class. They are declared here only so the app can REPORT whether
+    # tracing is on; setting them in code would have no effect.
+
+    langsmith_tracing: bool = Field(
+        default=False,
+        description=(
+            "Whether LLM calls are traced to LangSmith. Set LANGSMITH_TRACING="
+            "true in .env to enable."
+        ),
+    )
+
+    langsmith_project: str = Field(
+        default="default",
+        description="LangSmith project name that traces are grouped under.",
+    )
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

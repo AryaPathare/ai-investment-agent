@@ -56,6 +56,20 @@ def main() -> int:
         return 1
 
     print(f"OK    Model replied: {response.content.strip()!r}")
+
+    # --- 4. Is tracing on? -------------------------------------------------
+    # Not a failure either way: tracing is optional. But silently having it
+    # off when you believe it is on wastes a lot of debugging time.
+    if settings.langsmith_tracing:
+        print(f"OK    LangSmith tracing ON  (project: {settings.langsmith_project})")
+        print("        View traces at https://smith.langchain.com")
+    else:
+        print("INFO  LangSmith tracing OFF  (optional)")
+        print("        To enable, add to .env:")
+        print("          LANGSMITH_TRACING=true")
+        print("          LANGSMITH_API_KEY=<from https://smith.langchain.com>")
+        print("          LANGSMITH_PROJECT=ai-investment-agent")
+
     print("\nEnvironment is healthy.")
     return 0
 
