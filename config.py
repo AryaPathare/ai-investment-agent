@@ -210,6 +210,18 @@ class Settings(BaseSettings):
         ),
     )
 
+    max_companies_examined: int = Field(
+        default=25,
+        ge=1,
+        description=(
+            "Hard cap on how many distinct companies Agent 3 looks up "
+            "per run. A cost control: each US company costs four of "
+            "FMP's 250 daily requests, so an article set naming fifty "
+            "companies must not spend the whole budget in one run. "
+            "Companies mentioned in more articles are examined first."
+        ),
+    )
+
     max_company_candidates: int = Field(
         default=8,
         ge=1,

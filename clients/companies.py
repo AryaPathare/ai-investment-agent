@@ -192,6 +192,33 @@ def _looks_like_a_fund(name: str) -> bool:
     return "daily" in words and bool(words & {"bull", "bear"})
 
 
+
+def _symbol_matches_query(ticker: str, query: str) -> bool:
+    """Whether the query is really the company's ticker or a common short name.
+
+    Word matching alone rejects two very common cases, both found on a live run:
+
+        "AMD"    -> "Advanced Micro Devices, Inc."   0.00 word match
+        "Google" -> "Alphabet Inc."                  0.00 word match
+
+    Neither shares a word with its legal name, yet both are correct. What they
+    do share is the SYMBOL: the query is exactly "AMD", and "GOOGLE" starts with
+    "GOOG". That is a strong enough signal to accept on its own.
+
+    The base symbol is used, so a foreign listing like "NVDA.NE" still compares
+    as "NVDA". A three-character minimum keeps one- and two-letter tickers from
+    matching almost anything.
+    """
+    base = ticker.split(".")[0].upper()
+    wanted = re.sub(r"[^A-Z0-9]", "", query.upper())
+
+    if not base or not wanted:
+        return False
+    if base == wanted:
+        return True
+    return len(base) >= 3 and wanted.startswith(base)
+
+
 # --- Resolution --------------------------------------------------------------
 
 
@@ -243,16 +270,34 @@ def resolve_company(name: str, *, use_cache: bool = True) -> ResolvedCompany | N
             continue
 
         match = _name_match_score(name, display)
-        if match < NAME_MATCH_THRESHOLD:
+        symbol_match = _symbol_matches_query(ticker, name)
+
+        # Accept on EITHER signal. A legal name often shares no words with the
+        # name people actually use, and the ticker is the other half of the
+        # company's identity.
+        if match < NAME_MATCH_THRESHOLD and not symbol_match:
             continue
 
         exchange = (hit.get("exchange") or "").upper()
         is_us = exchange in US_EXCHANGES
 
-        # Name match dominates; a US listing breaks ties in its favour because
-        # that is where a US-based user would actually buy, and where FMP's
-        # data applies.
-        score = match + (0.5 if is_us else 0.0)
+        # A US listing breaks ties in its favour: that is where a US-based user
+        # would actually buy, and where the better data source applies.
+        confidence = max(match, 1.0 if symbol_match else 0.0)
+
+        # Exact name equality breaks ties, and ties are common. Searching "SMIC"
+        # returns both 0981.HK, whose name IS "SMIC", and HSMD.SI, "h SMIC HK
+        # SDR 5to1" - a Singapore depositary receipt. Both contain every word of
+        # the query, so both scored 1.0, and the winner was decided by whatever
+        # order the search happened to return that day. Preferring the exact
+        # match picks the primary listing deterministically.
+        exact_name = _tokens(name) == _tokens(display)
+
+        score = (
+            confidence
+            + (0.5 if is_us else 0.0)
+            + (0.3 if exact_name else 0.0)
+        )
         scored.append((
             score,
             ResolvedCompany(
@@ -460,9 +505,23 @@ def fetch_fundamentals(
     Raises:
         CompanyDataError: The provider was unreachable or refused the request.
     """
-    if company.is_us:
+    if not company.is_us:
+        return _fetch_yfinance(company.ticker, use_cache)
+
+    try:
         return _fetch_fmp(company.ticker, use_cache)
-    return _fetch_yfinance(company.ticker, use_cache)
+    except CompanyDataError:
+        # FMP's free tier does not cover every US symbol - not merely every
+        # non-US one. Verified on live calls: AMD, NVDA, MSFT, INTC and PFE
+        # return data, while SNPS and MRVL, both major Nasdaq companies, return
+        # 402. The covered set is arbitrary from our side, so a US ticker
+        # failing at FMP is expected rather than exceptional.
+        #
+        # yfinance covers US listings too, so falling back keeps the company
+        # rather than dropping a real candidate over a provider's pricing tier.
+        # Units differ between the two providers and are normalised in
+        # _fetch_yfinance, so the fallback is safe to rank alongside FMP data.
+        return _fetch_yfinance(company.ticker, use_cache)
 
 
 def resolve_and_fetch(

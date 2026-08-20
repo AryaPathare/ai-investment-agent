@@ -43,14 +43,24 @@ from models.research import (
 #     queries and truncated one mid-string.
 #
 # Budget: query (~600 prompt + 1500) + themes (~2000 prompt + 3000) = 7100.
-QUERY_MAX_TOKENS = 1500
+QUERY_MAX_TOKENS = 2000
 THEME_MAX_TOKENS = 3000
 
 
 @lru_cache(maxsize=1)
 def _query_llm():
     """Model wired to emit SearchQueries. Lazy, for the reasons in config.py."""
-    return get_llm(max_tokens=QUERY_MAX_TOKENS).with_structured_output(SearchQueries)
+    # Retry the empty-generation failure. Groq reports it as 400 "model did
+    # not call a tool" with an empty generation, which happens when the
+    # model produces nothing at all. It is intermittent, and the correct
+    # answer here is never "no queries", so retrying is right. ChatGroq's
+    # own max_retries does not cover it: a 400 is a client error and the SDK
+    # does not retry those.
+    return (
+        get_llm(max_tokens=QUERY_MAX_TOKENS)
+        .with_structured_output(SearchQueries)
+        .with_retry(stop_after_attempt=3)
+    )
 
 
 QUERY_SYSTEM_PROMPT = """
