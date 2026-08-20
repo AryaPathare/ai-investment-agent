@@ -5,6 +5,7 @@ internally coherent. It does not recommend investments and does not rewrite the
 user's answers; see models/profile.py for why that separation matters.
 """
 
+from collections.abc import Sequence
 from functools import lru_cache
 
 from config import get_llm
@@ -86,7 +87,7 @@ EXAMPLES THAT DO NOT NEED CLARIFICATION
 
 APPLYING A CLARIFICATION
 
-If the user has replied to a previous clarification request, use their answer to
+If the user has replied to previous clarification requests, use their answers to
 resolve the conflict and return status = "valid".
 
 To record the resolution, set only the fields that actually changed:
@@ -98,40 +99,51 @@ Leave every revised_* field null when nothing changed. Never use them to tidy
 up wording, reorder items, or make edits the user did not ask for. They exist
 solely to record what a clarification resolved.
 
-If the user's reply does not actually resolve the conflict — for example it is
-off-topic, or says they are unsure — keep status = "needs_clarification" and
+If their replies do not actually resolve the conflict — for example they are
+off-topic, or say they are unsure — keep status = "needs_clarification" and
 write a clarification_reason that asks more specifically.
 """
 
 
 def create_investor_profile(
     user_input: UserInput,
-    clarification: str | None = None,
+    clarifications: Sequence[str] | None = None,
 ) -> InvestorProfile:
     """Validate a user's investor information and return a usable profile.
 
     Args:
         user_input: The investor's own answers, already validated by Pydantic.
-        clarification: The user's free-text reply to a previous clarification
-            request, if there was one.
+        clarifications: Every reply the user has given to previous clarification
+            requests, oldest first. All of them are sent, not just the latest —
+            a later answer may only make sense in light of an earlier one, and
+            sending just the most recent caused the agent to forget context and
+            re-raise conflicts the user had already resolved.
 
     Returns:
         An InvestorProfile assembled from ``user_input``, carrying the model's
         verdict. If it needs clarification, ``profile.needs_clarification`` is
         True and ``clarification_reason`` explains why.
+
+    Raises:
+        Exception: Propagated from the model call if it fails after its
+            configured retries. The workflow catches this; see workflow.py.
     """
     user_message = (
         f"Review this investor information:\n"
         f"{user_input.model_dump_json(indent=2)}"
     )
 
-    if clarification:
+    if clarifications:
+        numbered = "\n".join(
+            f"{i}. {text}" for i, text in enumerate(clarifications, start=1)
+        )
         user_message += (
-            f"\n\nThe user provided this clarification after a conflict was "
-            f"detected:\n{clarification}\n\n"
-            "Use this clarification to resolve the conflict. The clarification "
-            "overrides the conflicting original answer. Record the change using "
-            "the revised_* fields, and do not change unrelated information."
+            f"\n\nThe user has already answered {len(clarifications)} "
+            f"clarification request(s), oldest first:\n{numbered}\n\n"
+            "Use these to resolve the conflict. They override the conflicting "
+            "original answers. Record the resulting changes using the revised_* "
+            "fields, and do not change unrelated information. If they still do "
+            "not resolve the conflict, ask again more specifically."
         )
 
     messages = [
