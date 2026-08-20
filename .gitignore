@@ -1,0 +1,19 @@
+# --- Secrets ----------------------------------------------------------------
+# Never commit real keys. The .env.* pattern catches variants like .env.local
+# so a future file can't slip through; the ! line re-includes the template,
+# which contains no real values and SHOULD be committed.
+.env
+.env.*
+!.env.example
+
+# --- Python -----------------------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# --- Editors / OS -----------------------------------------------------------
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
