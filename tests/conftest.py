@@ -130,3 +130,30 @@ def articles() -> list[Article]:
         make_article("u2", "Solar financing secured in Italy", source="ft.com", day=18),
         make_article("u3", "Hydrogen project stalls in Uruguay", source="bbc.com", day=19),
     ]
+
+
+@pytest.fixture(autouse=True)
+def no_accidental_research(monkeypatch):
+    """Make it impossible for a test to reach the real research agent.
+
+    Wiring Agent 2 into the graph meant any test producing a VALID profile
+    suddenly continued into research — and one existing test did exactly that,
+    firing a live news search and a live model call with a dummy key.
+
+    A test that silently reaches the network is slow, flaky, spends API quota,
+    and passes or fails for reasons unrelated to the code under test. So the
+    default is an immediate, explanatory failure. Tests that legitimately run
+    the research node override this with the `fake_research` fixture.
+
+    This guard will matter more as Agents 3-5 arrive: each one extends the graph
+    and inherits the same hazard.
+    """
+    import workflow
+
+    def guard(*args, **kwargs):
+        raise AssertionError(
+            "This test reached the real research agent, which would call the "
+            "news API and the model. Use the `fake_research` fixture to stub it."
+        )
+
+    monkeypatch.setattr(workflow, "research_themes", guard)

@@ -19,6 +19,7 @@ from operator import add
 from typing import Annotated, TypedDict
 
 from models.profile import InvestorProfile
+from models.research import ResearchFindings
 from models.user_input import UserInput
 
 
@@ -55,6 +56,16 @@ class InvestmentState(TypedDict, total=False):
     Compared against ``max_clarification_attempts`` in config.py to guarantee
     the clarification loop terminates. A snapshot, so it is replaced (each node
     computes the new total) rather than accumulated.
+    """
+
+    # --- Agent 2 -------------------------------------------------------------
+
+    research_findings: ResearchFindings
+    """Themes and supporting articles from the research agent.
+
+    A snapshot, replaced on each run. ``found_nothing`` being True is a valid
+    result, not a failure: it means no theme cleared the evidence bar. Agent 3
+    must check it rather than assuming themes always exist.
     """
 
     # --- Workflow ------------------------------------------------------------

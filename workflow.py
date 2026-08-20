@@ -1,12 +1,17 @@
 """LangGraph workflow for the investment research pipeline.
 
-Currently covers Agent 1 only: validate the investor profile, pausing to ask the
-user whenever two of their answers genuinely conflict.
+Covers Agents 1 and 2: validate the investor profile, pausing to ask the user
+whenever two of their answers genuinely conflict, then research current themes
+grounded in real news articles.
 
-    START -> profile_agent -> (valid) ---------------------> END
+    START -> profile_agent -> (valid) -----------> research -> END
                            -> (clarification) -> ask user -> back to profile_agent
                            -> (exhausted) -> give up ------> END
                            -> (failed) -------------------> END
+
+Agent 2 runs only from the "valid" branch. Researching a profile that still
+contains a contradiction would spend API requests on areas the investor may
+have already ruled out.
 """
 
 from langgraph.checkpoint.memory import InMemorySaver
@@ -15,8 +20,10 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
 from agents.profile_agent import create_investor_profile
+from agents.research_agent import research_themes
 from config import get_settings
 from models.profile import InvestorProfile
+from models.research import Article, Evidence, ResearchFindings, Theme
 from models.state import InvestmentState
 from models.user_input import UserInput
 
@@ -116,11 +123,32 @@ def clarification_exhausted_node(state: InvestmentState) -> dict:
     }
 
 
+def research_node(state: InvestmentState) -> dict:
+    """Run Agent 2 over the validated profile.
+
+    Reached only when the profile is valid, so the contract research_themes()
+    enforces should already hold; it is still allowed to raise, and that is
+    handled the same way a profile failure is.
+    """
+    profile = state["investor_profile"]
+
+    try:
+        findings = research_themes(profile)
+    except Exception as exc:  # noqa: BLE001 - same reasoning as profile_node
+        # Every external call is a failure boundary. The news API may be
+        # unreachable or rate limited, and the model may fail after its retries.
+        # None of that should end in a traceback.
+        return {"error": f"Research failed: {type(exc).__name__}: {exc}"}
+
+    return {"research_findings": findings}
+
+
 builder = StateGraph(InvestmentState)
 
 builder.add_node("profile_agent", profile_node)
 builder.add_node("clarification", clarification_node)
 builder.add_node("clarification_exhausted", clarification_exhausted_node)
+builder.add_node("research", research_node)
 
 builder.add_edge(START, "profile_agent")
 
@@ -128,7 +156,7 @@ builder.add_conditional_edges(
     "profile_agent",
     route_profile,
     {
-        "valid": END,
+        "valid": "research",
         "clarification": "clarification",
         "exhausted": "clarification_exhausted",
         "failed": END,
@@ -138,6 +166,10 @@ builder.add_conditional_edges(
 builder.add_edge("clarification", "profile_agent")
 builder.add_edge("clarification_exhausted", END)
 
+# Research is currently terminal. Agent 3 will consume research_findings from
+# here, and must handle found_nothing being True.
+builder.add_edge("research", END)
+
 
 # The checkpointer saves state at every step so an interrupted graph can resume.
 # InMemorySaver keeps it in RAM: fine for development, but everything is lost
@@ -146,6 +178,12 @@ serializer = JsonPlusSerializer(
     allowed_msgpack_modules=[
         UserInput,
         InvestorProfile,
+        # Agent 2's output, including the nested types, or resuming an
+        # interrupted graph would fail to reconstruct them.
+        ResearchFindings,
+        Theme,
+        Evidence,
+        Article,
     ]
 )
 

@@ -98,7 +98,11 @@ def _run(user, thread_id):
     )
 
 
-def test_clean_profile_completes_without_interruption(always_valid, clean_user):
+def test_clean_profile_completes_without_interruption(
+    always_valid, fake_research, clean_user
+):
+    """A valid profile now flows on into research, so that must be stubbed too."""
+    fake_research()
     result = _run(clean_user, "t-clean")
     assert "__interrupt__" not in result
     assert result["investor_profile"].status == "valid"
@@ -160,3 +164,116 @@ def test_graph_ends_cleanly_when_the_model_is_down(monkeypatch, clean_user):
     assert "__interrupt__" not in result
     assert "investor_profile" not in result
     assert "ConnectionError" in result["error"]
+
+
+# --- Agent 2 in the graph ----------------------------------------------------
+
+
+@pytest.fixture
+def fake_research(monkeypatch):
+    """Replace Agent 2 with a fake that records whether it ran."""
+    from models.research import ResearchFindings
+
+    calls = []
+
+    def _install(findings=None, error=None):
+        def fake(profile, **kwargs):
+            calls.append(profile)
+            if error is not None:
+                raise error
+            return findings if findings is not None else ResearchFindings(
+                articles_retrieved=7, notes="ok"
+            )
+
+        monkeypatch.setattr(workflow, "research_themes", fake)
+        return calls
+
+    return _install
+
+
+def test_a_valid_profile_flows_into_research(always_valid, fake_research, clean_user):
+    calls = fake_research()
+    result = _run(clean_user, "t-research")
+
+    assert len(calls) == 1, "research should have run exactly once"
+    assert "research_findings" in result
+    assert result["research_findings"].articles_retrieved == 7
+
+
+def test_research_does_not_run_while_clarification_is_pending(
+    always_blocked, fake_research, conflicted_user
+):
+    """Researching a contradictory profile would spend requests on ruled-out areas."""
+    calls = fake_research()
+    result = investment_graph.invoke(
+        {"user_input": conflicted_user},
+        {"configurable": {"thread_id": "t-no-research-yet"}},
+    )
+
+    assert "__interrupt__" in result
+    assert calls == [], "research must wait for a valid profile"
+
+
+def test_research_never_runs_when_clarification_is_exhausted(
+    always_blocked, fake_research, conflicted_user
+):
+    calls = fake_research()
+    config_ = {"configurable": {"thread_id": "t-exhausted-no-research"}}
+    result = investment_graph.invoke({"user_input": conflicted_user}, config_)
+
+    while "__interrupt__" in result:
+        result = investment_graph.invoke(Command(resume="no idea"), config_)
+
+    assert calls == []
+    assert "research_findings" not in result
+    assert "error" in result
+
+
+def test_research_never_runs_when_the_profile_agent_failed(monkeypatch, fake_research, clean_user):
+    calls = fake_research()
+    monkeypatch.setattr(
+        workflow, "create_investor_profile",
+        lambda *a, **k: (_ for _ in ()).throw(ConnectionError("down")),
+    )
+    result = _run(clean_user, "t-profile-down")
+
+    assert calls == []
+    assert "ConnectionError" in result["error"]
+
+
+def test_a_research_failure_ends_the_graph_cleanly(always_valid, fake_research, clean_user):
+    """The news API being down should not produce a traceback."""
+    fake_research(error=ConnectionError("news API unreachable"))
+    result = _run(clean_user, "t-research-down")
+
+    assert "research_findings" not in result
+    assert "Research failed" in result["error"]
+    assert "ConnectionError" in result["error"]
+
+
+def test_finding_no_themes_is_not_an_error(always_valid, fake_research, clean_user):
+    """Returning nothing is a designed outcome, so `error` must stay unset."""
+    from models.research import ResearchFindings
+
+    fake_research(ResearchFindings(articles_retrieved=4, notes="Nothing cleared the bar."))
+    result = _run(clean_user, "t-nothing-found")
+
+    assert result["research_findings"].found_nothing is True
+    assert "error" not in result
+
+
+def test_research_receives_the_clarified_profile(
+    monkeypatch, fake_research, conflicted_user
+):
+    """Agent 2 must see the profile AFTER clarification, not the original input."""
+    from models.profile import InvestorProfile
+
+    resolved = InvestorProfile(
+        **{**conflicted_user.model_dump(), "restrictions": []}, status="valid"
+    )
+    monkeypatch.setattr(workflow, "create_investor_profile", lambda *a, **k: resolved)
+    calls = fake_research()
+
+    _run(conflicted_user, "t-clarified-profile")
+
+    assert calls[0].restrictions == [], "research got the pre-clarification profile"
