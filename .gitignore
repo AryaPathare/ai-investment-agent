@@ -20,3 +20,6 @@ desktop.ini
 
 # Claude Code local (machine-specific) settings
 .claude/settings.local.json
+
+# Eval run artifacts (re-runnable; not source)
+evals/results/
