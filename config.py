@@ -97,6 +97,18 @@ class Settings(BaseSettings):
         ),
     )
 
+    llm_max_tokens: int = Field(
+        default=8192,
+        gt=0,
+        description=(
+            "Maximum tokens in a single model response. Left unset, the default "
+            "silently truncated Agent 2's structured output mid-JSON, which "
+            "surfaced as an unhelpful 'failed to parse tool call' error rather "
+            "than anything mentioning length. Structured output for a list of "
+            "objects needs real headroom."
+        ),
+    )
+
     # --- Workflow limits ----------------------------------------------------
 
     max_clarification_attempts: int = Field(
@@ -220,5 +232,6 @@ def get_llm(
         ),
         timeout=settings.llm_timeout_seconds,
         max_retries=settings.llm_max_retries,
+        max_tokens=settings.llm_max_tokens,
         api_key=settings.groq_api_key.get_secret_value(),
     )

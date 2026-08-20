@@ -66,14 +66,24 @@ class Article(BaseModel):
 class Evidence(BaseModel):
     """A link from a theme to one retrieved article, and what it shows.
 
+    ``article_id`` holds a SHORT LABEL while the model is proposing themes — the
+    "[A3]" style reference it was shown. Python rewrites it to the article's real
+    uuid during assembly. Short labels exist because a uuid is 36 hex characters
+    and asking a model to transcribe several of those exactly, per response, is
+    an invitation to silent corruption. A two-character label it can copy
+    reliably; the mapping back is deterministic code.
+
     ``stance`` exists to fight confirmation bias. An agent that only ever
     collects supporting evidence will find a case for anything. Recording that
     an article weakens or complicates a theme keeps the contradicting evidence
     visible to Agent 4 (the risk critic) instead of quietly discarding it.
     """
 
-    article_uuid: str = Field(
-        description="uuid of a retrieved article. Must be one that was provided."
+    article_id: str = Field(
+        description=(
+            "Label of a retrieved article exactly as shown, e.g. 'A3'. Only "
+            "labels that appear in the provided list are valid."
+        )
     )
     stance: EvidenceStance = Field(
         description=(
@@ -179,8 +189,9 @@ class ResearchFindings(BaseModel):
         """
         return not self.themes
 
-    def article_by_uuid(self, uuid: str) -> Article | None:
-        return next((a for a in self.articles if a.uuid == uuid), None)
+    def article_by_id(self, article_id: str) -> Article | None:
+        """Find a cited article. By assembly time, ids are real uuids."""
+        return next((a for a in self.articles if a.uuid == article_id), None)
 
 
 class SearchQueries(BaseModel):
