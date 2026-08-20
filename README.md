@@ -18,7 +18,7 @@ recommendation just because recommending is its job.
 |-------|--------------|-------|
 | 1. Profile | Validate investor input, ask the user about genuine contradictions | **Built** |
 | 2. Research | Identify trends and gather supporting evidence | **Built** |
-| 3. Companies | Extract, screen, and analyse fundamentals | Planned |
+| 3. Companies | Extract, screen, and analyse fundamentals | **Built** |
 | 4. Risk Critic | Adversarially attack the investment thesis | Planned |
 | 5. Decide | Score, select, and state exit conditions | Planned |
 
@@ -33,6 +33,12 @@ pip install -r requirements.txt
 
 Copy-Item .env.example .env      # then add your Groq API key
 ```
+
+Two more keys are optional but needed for Agents 2 and 3:
+
+- **TheNewsAPI** (<https://www.thenewsapi.com>) — news search
+- **Financial Modeling Prep** (<https://site.financialmodelingprep.com>) — US
+  company fundamentals. Non-US companies use `yfinance`, which needs no key.
 
 Get a free Groq key at <https://console.groq.com/keys>.
 
@@ -59,7 +65,8 @@ python -m evals.runner                  # Agent 1: accuracy on 18 labelled cases
 python -m evals.runner --tag regression # only the must-never-break cases
 
 python -m evals.research_runner         # Agent 2: process quality on 5 profiles
-python -m evals.research_runner --case semiconductors_high_risk
+python -m evals.company_runner          # Agent 3: process quality, runs 2 -> 3
+python -m evals.company_runner --limit 1
 ```
 
 Agent 2's evals are paced ~60s apart on purpose: one research run costs about
@@ -138,6 +145,29 @@ for the largest call makes every small call expensive. `gpt-oss-20b` is also a
 reasoning model, spending tokens before the visible answer, so budgets must be
 larger than the output length suggests.
 
+**The model never writes a ticker.** Agent 3 extracts company *names* as
+articles write them; tickers come from a market database and are verified.
+`NVDA`, `NVDA.NE` and `NVD.DE` are all real symbols for Nvidia, so a guessed one
+does not look wrong — it silently returns a different company's financials.
+Resolution scores candidates rather than taking the first result, because search
+relevance is not ours: "Pfizer" returns Germany first and Argentina second.
+
+**Ranking is arithmetic, not a model's opinion.** Screening and scoring run in
+pure Python over provider figures. The model supplies exactly one input — whether
+a company is `direct`, `partial` or `incidental` to a theme. A model asked to
+score a company 0-100 returns 72 with nothing behind it: not reproducible, not
+comparable, not explainable.
+
+**Comparable ratios and currency amounts are separate types.** Fundamentals
+arrive in local currency, and GBp is *pence*. Ranking touches `ComparableMetrics`
+(all unitless); `CurrencyAmounts` is display only. Reaching the wrong one means
+crossing a type boundary rather than ignoring a comment.
+
+**Rejections are recorded, never discarded.** `drop_summary` says where every
+examined company went. "3 candidates from 30 mentions" is either good filtering
+or a broken resolver, and those look identical without it — it caught three real
+bugs on its first live run.
+
 ---
 
 ## Optional: tracing
@@ -169,3 +199,11 @@ LANGSMITH_PROJECT=ai-investment-agent
   reaches the five-theme cap on well-covered sectors.
 - **`openai/gpt-oss-20b` is unevaluated against alternatives.** Now that the
   eval set exists, comparing a larger model is a measurable question.
+- **Agent 3's eval baseline is incomplete.** The account hit Groq's 200k
+  tokens-per-day ceiling partway through. One profile completed cleanly with no
+  hard failures; the rest need re-running once quota resets.
+- **Ticker resolution can be flaky between runs.** Provider search results vary
+  over time for short ambiguous names. The system degrades safely — it records a
+  drop reason rather than picking the wrong company.
+- **Ranking saturates.** A company maxing every metric scores a flat 1.0, so
+  exceptional companies are not currently distinguishable from each other.
