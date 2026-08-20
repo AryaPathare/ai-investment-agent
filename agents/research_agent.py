@@ -20,15 +20,30 @@ reached.
 from collections.abc import Sequence
 from functools import lru_cache
 
-from config import get_llm
+from clients.news import search_many
+from config import get_llm, get_settings
 from models.profile import InvestorProfile
-from models.research import Article, SearchQueries, ThemeProposal
+from models.research import (
+    Article,
+    ResearchFindings,
+    SearchQueries,
+    Theme,
+    ThemeProposal,
+)
+
+
+# Response budgets, sized per call rather than globally. Groq counts
+# max_tokens against the tokens-per-minute quota even when unused, so the two
+# calls in this pipeline must fit inside 8000 TPM together. Six short search
+# queries need very little; a list of themes with citations needs real room.
+QUERY_MAX_TOKENS = 512
+THEME_MAX_TOKENS = 3000
 
 
 @lru_cache(maxsize=1)
 def _query_llm():
     """Model wired to emit SearchQueries. Lazy, for the reasons in config.py."""
-    return get_llm().with_structured_output(SearchQueries)
+    return get_llm(max_tokens=QUERY_MAX_TOKENS).with_structured_output(SearchQueries)
 
 
 QUERY_SYSTEM_PROMPT = """
@@ -126,7 +141,7 @@ def generate_search_queries(profile: InvestorProfile) -> SearchQueries:
 @lru_cache(maxsize=1)
 def _theme_llm():
     """Model wired to emit a ThemeProposal. Lazy, as above."""
-    return get_llm().with_structured_output(ThemeProposal)
+    return get_llm(max_tokens=THEME_MAX_TOKENS).with_structured_output(ThemeProposal)
 
 
 THEME_SYSTEM_PROMPT = """
@@ -184,7 +199,9 @@ theme as though it mattered.
 
 KEEP IT SHORT
 
-relevance: ONE short sentence, under 20 words.
+name: at most SIX words. "FDA Approval Shifts", not "FDA Leadership Change
+         Impact on the Drug Approval Landscape".
+relevance: ONE short sentence, under 15 words.
 why_it_matters: at most TWO sentences.
 industries: at most three entries.
 
@@ -275,3 +292,148 @@ def synthesise_themes(
         [("system", THEME_SYSTEM_PROMPT), ("human", user_message)]
     )
     return proposal, mapping
+
+
+# Ordered worst-to-best so max() and sorting behave intuitively.
+_CONFIDENCE_RANK = {"low": 0, "medium": 1, "high": 2}
+
+
+def _resolve_citations(
+    proposal: ThemeProposal,
+    mapping: dict[str, Article],
+) -> tuple[list[Theme], list[str]]:
+    """Discard invented citations and rewrite valid labels to real uuids.
+
+    The schema prevents the model from WRITING article data. It cannot prevent
+    the model from citing [A17] when only [A14] exists — the schema has no idea
+    what was retrieved. That check belongs here, and it is a plain set
+    membership test.
+
+    A theme that loses every citation is dropped entirely. Its evidence was
+    invented, so whatever it was describing did not come from the articles, and
+    an ungrounded theme is exactly what searching first was meant to prevent.
+
+    Returns:
+        (themes with real uuids, human-readable notes about what was dropped)
+    """
+    kept: list[Theme] = []
+    problems: list[str] = []
+
+    for theme in proposal.themes:
+        valid = [e for e in theme.evidence if e.article_id in mapping]
+        invented = len(theme.evidence) - len(valid)
+
+        if invented:
+            problems.append(
+                f"{theme.name!r}: dropped {invented} citation(s) referring to "
+                "articles that were never retrieved"
+            )
+
+        if not valid:
+            problems.append(
+                f"{theme.name!r}: dropped entirely - every citation was invalid, "
+                "so the theme was not grounded in retrieved evidence"
+            )
+            continue
+
+        # Rewrite each surviving label to the article's real uuid, so Agent 3
+        # can match evidence against ResearchFindings.articles.
+        resolved = [
+            e.model_copy(update={"article_id": mapping[e.article_id].uuid})
+            for e in valid
+        ]
+        kept.append(theme.model_copy(update={"evidence": resolved}))
+
+    return kept, problems
+
+
+def research_themes(
+    profile: InvestorProfile,
+    *,
+    use_cache: bool = True,
+) -> ResearchFindings:
+    """Agent 2, end to end: profile in, grounded themes out.
+
+    Args:
+        profile: A validated investor profile.
+        use_cache: Set False to force live news searches.
+
+    Returns:
+        ResearchFindings. ``found_nothing`` is True when nothing cleared the
+        bar, which is a legitimate outcome rather than a failure.
+
+    Raises:
+        ValueError: The profile still needs clarification. Researching against
+            contradictory preferences wastes requests and produces themes the
+            investor may have already ruled out.
+        Exception: Propagated from a model call that failed after its retries.
+            The workflow catches this; see workflow.py.
+    """
+    if profile.needs_clarification:
+        raise ValueError(
+            "Cannot research an unvalidated profile: "
+            f"{profile.clarification_reason}"
+        )
+
+    settings = get_settings()
+    notes: list[str] = []
+
+    # --- 1. profile -> search queries (LLM) ---------------------------------
+    queries = generate_search_queries(profile).queries
+
+    if len(queries) > settings.news_max_queries:
+        notes.append(
+            f"Model proposed {len(queries)} queries; ran the first "
+            f"{settings.news_max_queries} to stay within the request budget."
+        )
+        queries = queries[: settings.news_max_queries]
+
+    # --- 2. queries -> real articles (Python) -------------------------------
+    articles, succeeded = search_many(queries, use_cache=use_cache)
+
+    if len(succeeded) < len(queries):
+        notes.append(
+            f"{len(queries) - len(succeeded)} of {len(queries)} searches failed; "
+            "themes are based on the rest."
+        )
+
+    if not articles:
+        return ResearchFindings(
+            queries_used=succeeded,
+            articles_retrieved=0,
+            notes="No articles were retrieved, so no themes could be grounded. "
+            + " ".join(notes),
+        )
+
+    # --- 3. articles -> themes (LLM) ----------------------------------------
+    proposal, mapping = synthesise_themes(profile, articles)
+
+    # --- 4. verify every citation is real (Python) --------------------------
+    themes, problems = _resolve_citations(proposal, mapping)
+    notes.extend(problems)
+
+    # --- 5. cap the number of themes, loudly --------------------------------
+    # Silent truncation reads as "this is everything" when it is not, so if the
+    # cap bites it goes in the notes.
+    if len(themes) > settings.research_max_themes:
+        themes.sort(key=lambda t: _CONFIDENCE_RANK[t.confidence], reverse=True)
+        notes.append(
+            f"Kept the {settings.research_max_themes} highest-confidence themes "
+            f"out of {len(themes)}."
+        )
+        themes = themes[: settings.research_max_themes]
+
+    # --- 6. attach only the articles actually cited -------------------------
+    cited_uuids = {e.article_id for theme in themes for e in theme.evidence}
+    cited_articles = [a for a in articles if a.uuid in cited_uuids]
+
+    if proposal.notes:
+        notes.append(proposal.notes)
+
+    return ResearchFindings(
+        themes=themes,
+        articles=cited_articles,
+        queries_used=succeeded,
+        articles_retrieved=len(articles),
+        notes=" ".join(notes) or None,
+    )

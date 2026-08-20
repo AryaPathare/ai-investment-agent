@@ -98,26 +98,19 @@ class Settings(BaseSettings):
     )
 
     llm_max_tokens: int = Field(
-        default=8192,
+        default=2048,
         gt=0,
         description=(
-            "Maximum tokens in a single model response. Left unset, the default "
-            "silently truncated Agent 2's structured output mid-JSON, which "
-            "surfaced as an unhelpful 'failed to parse tool call' error rather "
-            "than anything mentioning length. Structured output for a list of "
-            "objects needs real headroom."
-        ),
-    )
-
-    # --- Workflow limits ----------------------------------------------------
-
-    max_clarification_attempts: int = Field(
-        default=3,
-        ge=1,
-        description=(
-            "How many times the profile agent may ask the user to clarify "
-            "before giving up. Guarantees the clarification loop terminates "
-            "even if the model never returns a clean profile."
+            "Maximum tokens in one model response. Both ends of this were "
+            "hit while building Agent 2. Too low and structured output is "
+            "truncated mid-JSON, which Groq reports as 'Failed to parse "
+            "tool call arguments as JSON' - an error that never mentions "
+            "length. Too high and it backfires differently: Groq counts "
+            "max_tokens against the tokens-per-minute quota, so a value of "
+            "8192 made every request, even a tiny one, cost 8192+ tokens "
+            "against the free tier's 8000 TPM ceiling and fail with 413. "
+            "2048 fits five themes with citations (~1000 tokens observed) "
+            "while leaving room for the prompt inside the quota."
         ),
     )
 
@@ -162,6 +155,25 @@ class Settings(BaseSettings):
         ),
     )
 
+
+    news_max_queries: int = Field(
+        default=6,
+        ge=1,
+        description=(
+            "Hard cap on searches per research run. A cost control: each query "
+            "spends one of the free tier's 100 daily requests, so a model that "
+            "returns twenty queries must not be allowed to run all of them."
+        ),
+    )
+
+    research_max_themes: int = Field(
+        default=5,
+        ge=1,
+        description=(
+            "Maximum themes Agent 2 may return. Fewer is fine and zero is a "
+            "legitimate answer; this only caps the top end."
+        ),
+    )
 
     # --- Observability ------------------------------------------------------
     # These are read directly from os.environ by the LangSmith library, not by
@@ -211,6 +223,7 @@ def get_settings() -> Settings:
 def get_llm(
     temperature: float | None = None,
     model: str | None = None,
+    max_tokens: int | None = None,
 ) -> ChatGroq:
     """Return a configured chat model, shared across the application.
 
@@ -219,6 +232,12 @@ def get_llm(
             needs more variation than another.
         model: Override the configured model id, e.g. to run a stronger model
             for a harder agent.
+        max_tokens: Override the response ceiling for this call. Size it to what
+            the call actually needs: Groq charges max_tokens against the
+            tokens-per-minute quota whether or not they are used, so one global
+            value large enough for the biggest call makes every small call
+            expensive. A pipeline of two calls at 4096 each exceeds the free
+            tier's 8000 TPM on its own.
 
     Results are cached per unique argument combination, so agents asking for the
     same settings share one client instead of each opening its own.
@@ -232,6 +251,8 @@ def get_llm(
         ),
         timeout=settings.llm_timeout_seconds,
         max_retries=settings.llm_max_retries,
-        max_tokens=settings.llm_max_tokens,
+        max_tokens=(
+            max_tokens if max_tokens is not None else settings.llm_max_tokens
+        ),
         api_key=settings.groq_api_key.get_secret_value(),
     )
