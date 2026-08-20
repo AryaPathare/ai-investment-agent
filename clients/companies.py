@@ -38,7 +38,7 @@ import json
 import re
 import time
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from pathlib import Path
 
@@ -87,6 +87,12 @@ class ResolvedCompany:
     exchange: str
     currency: str
     is_us: bool
+    # Populated from the same ticker record that verification already fetches,
+    # so these cost nothing extra. They matter for exposure judgement: knowing
+    # that Northern Trust is in "Banks - Regional" is what separates a genuine
+    # link to a banking theme from a passing mention in a semiconductor story.
+    industry: str | None = None
+    sector: str | None = None
 
     @property
     def source(self) -> DataSource:
@@ -271,29 +277,35 @@ def resolve_company(name: str, *, use_cache: bool = True) -> ResolvedCompany | N
     # Candidates are checked best-first, so a rejected top hit falls through to
     # the next rather than losing the company entirely.
     for _, candidate in sorted(scored, key=lambda pair: -pair[0])[:MAX_VERIFY_ATTEMPTS]:
-        if _is_operating_company(candidate.ticker, use_cache):
-            return candidate
+        info = _verified_info(candidate.ticker, use_cache)
+        if info is None:
+            continue
+        return replace(
+            candidate,
+            industry=info.get("industry"),
+            sector=info.get("sector"),
+        )
 
     return None
 
 
-def _is_operating_company(ticker: str, use_cache: bool) -> bool:
-    """Confirm a ticker is a real company, not a fund tracking one."""
+def _verified_info(ticker: str, use_cache: bool) -> dict | None:
+    """Return the ticker's record if it is a real company, else None."""
     try:
         info = _ticker_info(ticker, use_cache)
     except CompanyDataError:
-        return False
+        return None
 
     quote_type = (info.get("quoteType") or "").upper()
     if quote_type and quote_type != "EQUITY":
-        return False
+        return None
     if info.get("legalType"):
         # Populated for funds and trusts; None for operating companies.
-        return False
+        return None
 
     # Independent of the metadata, because the metadata proved unreliable.
     display = info.get("shortName") or info.get("longName") or ""
-    return not _looks_like_a_fund(display)
+    return None if _looks_like_a_fund(display) else info
 
 
 # --- Fundamentals: FMP (US) --------------------------------------------------
@@ -471,11 +483,5 @@ def resolve_and_fetch(
     fundamentals = fetch_fundamentals(company, use_cache=use_cache)
 
     # The currency is only known once the numbers arrive.
-    company = ResolvedCompany(
-        ticker=company.ticker,
-        name=company.name,
-        exchange=company.exchange,
-        currency=fundamentals.amounts.currency,
-        is_us=company.is_us,
-    )
+    company = replace(company, currency=fundamentals.amounts.currency)
     return company, fundamentals
