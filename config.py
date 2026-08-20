@@ -1,0 +1,164 @@
+"""Central configuration for the investment research system.
+
+Everything that depends on the outside world — API keys, model names, timeouts,
+retry counts — is defined here in ONE place, and nowhere else in the codebase.
+
+Why this file exists
+--------------------
+Previously each agent called ``load_dotenv()`` and built its own ``ChatGroq``
+object at import time. That created three problems:
+
+1. Importing an agent required a valid API key, so the code could not be
+   imported by a test that never intended to call the model.
+2. Every agent repeated the same setup, so changing the model or adding a
+   timeout would mean editing eight files and hoping none were missed.
+3. There was no timeout and no explicit retry policy, so a network stall could
+   hang the whole workflow indefinitely.
+
+Settings are loaded LAZILY (on first use, not on import), which is what makes
+the rest of the codebase importable and testable without any credentials.
+"""
+
+from functools import lru_cache
+from pathlib import Path
+
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
+from pydantic import Field, SecretStr, ValidationError
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Absolute path to the project root (the folder containing this file).
+# Used so the .env file is found no matter which directory you run from — a
+# relative "./.env" would break when running from inside tests/ or demos/.
+PROJECT_ROOT = Path(__file__).resolve().parent
+
+
+class Settings(BaseSettings):
+    """All external configuration, validated at startup.
+
+    Each field maps to an environment variable of the same name in upper case:
+    ``groq_api_key`` reads ``GROQ_API_KEY``. Values come from the real
+    environment first, then from the .env file.
+
+    Fields with a default are optional. ``groq_api_key`` has no default, so if
+    it is missing the app fails immediately with a clear message rather than
+    dying later with a confusing error from deep inside a library.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=PROJECT_ROOT / ".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        # Ignore unrecognised variables (LANGSMITH_*, FMP_API_KEY, ...) instead
+        # of raising. They belong to other libraries or to agents not built yet.
+        extra="ignore",
+    )
+
+    # --- Credentials --------------------------------------------------------
+
+    # SecretStr hides the value in logs and tracebacks: printing this object
+    # shows "**********" instead of your key. Call .get_secret_value() to read
+    # the real string — which happens in exactly one place, get_llm() below.
+    groq_api_key: SecretStr = Field(
+        description="Groq API key. Get one free at https://console.groq.com/keys",
+    )
+
+    # --- Model behaviour ----------------------------------------------------
+
+    groq_model: str = Field(
+        default="openai/gpt-oss-20b",
+        description="Groq model id used by all agents unless overridden.",
+    )
+
+    llm_temperature: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=2.0,
+        description=(
+            "0.0 makes output as deterministic as possible. Correct for "
+            "validation and classification work, where there is a right answer."
+        ),
+    )
+
+    # ChatGroq ships with max_retries=2 but NO timeout at all, so a stalled
+    # connection would block forever. Both are set explicitly here.
+    llm_timeout_seconds: float = Field(
+        default=30.0,
+        gt=0,
+        description="Abort a single model call after this many seconds.",
+    )
+
+    llm_max_retries: int = Field(
+        default=3,
+        ge=0,
+        description=(
+            "Automatic retries on transient failures (rate limits, timeouts, "
+            "5xx errors). Uses exponential backoff internally."
+        ),
+    )
+
+    # --- Workflow limits ----------------------------------------------------
+
+    max_clarification_attempts: int = Field(
+        default=3,
+        ge=1,
+        description=(
+            "How many times the profile agent may ask the user to clarify "
+            "before giving up. Guarantees the clarification loop terminates "
+            "even if the model never returns a clean profile."
+        ),
+    )
+
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """Return the settings, loading and validating them on first call.
+
+    ``@lru_cache`` means the work happens once per process and every later call
+    returns the same object — a lazy singleton. Nothing runs at import time, so
+    ``import config`` never needs an API key.
+    """
+    # pydantic-settings reads the .env file directly, but it does NOT copy the
+    # values into os.environ. Some libraries — LangSmith tracing in particular —
+    # read os.environ themselves, so it still gets populated once here.
+    load_dotenv(PROJECT_ROOT / ".env")
+
+    try:
+        return Settings()
+    except ValidationError as exc:
+        raise RuntimeError(
+            "Configuration is invalid or incomplete.\n\n"
+            f"{exc}\n\n"
+            f"Fix: copy .env.example to .env in {PROJECT_ROOT} and fill in the "
+            "required values.\n"
+            "    Copy-Item .env.example .env"
+        ) from exc
+
+
+@lru_cache(maxsize=None)
+def get_llm(
+    temperature: float | None = None,
+    model: str | None = None,
+) -> ChatGroq:
+    """Return a configured chat model, shared across the application.
+
+    Args:
+        temperature: Override the configured default. Useful later if one agent
+            needs more variation than another.
+        model: Override the configured model id, e.g. to run a stronger model
+            for a harder agent.
+
+    Results are cached per unique argument combination, so agents asking for the
+    same settings share one client instead of each opening its own.
+    """
+    settings = get_settings()
+
+    return ChatGroq(
+        model=model if model is not None else settings.groq_model,
+        temperature=(
+            temperature if temperature is not None else settings.llm_temperature
+        ),
+        timeout=settings.llm_timeout_seconds,
+        max_retries=settings.llm_max_retries,
+        api_key=settings.groq_api_key.get_secret_value(),
+    )

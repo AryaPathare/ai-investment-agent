@@ -1,20 +1,25 @@
-from dotenv import load_dotenv
-from langchain_groq import ChatGroq
+from functools import lru_cache
 
+from config import get_llm
 from models.user_input import UserInput
 from models.profile import InvestorProfile
 
 
-load_dotenv()
+@lru_cache(maxsize=1)
+def _structured_llm():
+    """Return the model wired to emit an InvestorProfile.
 
+    This is a function rather than a module-level variable on purpose. Writing
 
-llm = ChatGroq(
-    model="openai/gpt-oss-20b",
-    temperature=0
-)
+        structured_llm = get_llm().with_structured_output(InvestorProfile)
 
-
-structured_llm = llm.with_structured_output(InvestorProfile)
+    at the top of the file would call get_llm() at import time, which would
+    demand an API key just to import this module — exactly the problem config.py
+    was written to remove. Building it inside a cached function keeps the work
+    lazy (nothing happens until the first real call) while still doing it only
+    once per process.
+    """
+    return get_llm().with_structured_output(InvestorProfile)
 
 
 SYSTEM_PROMPT = """
@@ -101,6 +106,6 @@ def create_investor_profile(
         ("human", user_message)
     ]
 
-    profile = structured_llm.invoke(messages)
+    profile = _structured_llm().invoke(messages)
 
     return profile
