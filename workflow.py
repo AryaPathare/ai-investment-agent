@@ -1,10 +1,11 @@
 """LangGraph workflow for the investment research pipeline.
 
-Covers Agents 1 and 2: validate the investor profile, pausing to ask the user
-whenever two of their answers genuinely conflict, then research current themes
-grounded in real news articles.
+Covers Agents 1 to 3: validate the investor profile, pausing to ask the user
+whenever two of their answers genuinely conflict; research current themes
+grounded in real news articles; then find investable companies genuinely
+exposed to those themes.
 
-    START -> profile_agent -> (valid) -----------> research -> END
+    START -> profile_agent -> (valid) -----------> research -> companies -> END
                            -> (clarification) -> ask user -> back to profile_agent
                            -> (exhausted) -> give up ------> END
                            -> (failed) -------------------> END
@@ -20,9 +21,18 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
 from agents.profile_agent import create_investor_profile
+from agents.company_agent import analyse_companies
 from agents.research_agent import research_themes
 from config import get_settings
 from models.profile import InvestorProfile
+from models.companies import (
+    CompanyCandidate,
+    CompanyFindings,
+    ComparableMetrics,
+    CurrencyAmounts,
+    DroppedCompany,
+    Fundamentals,
+)
 from models.research import Article, Evidence, ResearchFindings, Theme
 from models.state import InvestmentState
 from models.user_input import UserInput
@@ -143,12 +153,45 @@ def research_node(state: InvestmentState) -> dict:
     return {"research_findings": findings}
 
 
+def company_node(state: InvestmentState) -> dict:
+    """Run Agent 3 over the research findings.
+
+    Runs even when the research found nothing: analyse_companies handles that
+    case and returns empty findings with an explanation, which keeps the reason
+    visible in state instead of leaving a silently missing key.
+    """
+    research = state["research_findings"]
+
+    try:
+        findings = analyse_companies(research)
+    except Exception as exc:  # noqa: BLE001 - same reasoning as the other nodes
+        # Two providers and a model call sit behind this. Any of them can be
+        # down, rate limited or out of quota, and none of that should reach the
+        # user as a traceback.
+        return {"error": f"Company analysis failed: {type(exc).__name__}: {exc}"}
+
+    return {"company_findings": findings}
+
+
+def route_research(state: InvestmentState) -> str:
+    """Continue to company analysis unless research failed outright.
+
+    ``found_nothing`` is deliberately NOT a failure. It means no theme cleared
+    the evidence bar, which is a legitimate result the pipeline is designed to
+    produce, and the company stage reports it rather than the graph hiding it.
+    """
+    if state.get("error"):
+        return "failed"
+    return "ok"
+
+
 builder = StateGraph(InvestmentState)
 
 builder.add_node("profile_agent", profile_node)
 builder.add_node("clarification", clarification_node)
 builder.add_node("clarification_exhausted", clarification_exhausted_node)
 builder.add_node("research", research_node)
+builder.add_node("companies", company_node)
 
 builder.add_edge(START, "profile_agent")
 
@@ -166,9 +209,16 @@ builder.add_conditional_edges(
 builder.add_edge("clarification", "profile_agent")
 builder.add_edge("clarification_exhausted", END)
 
-# Research is currently terminal. Agent 3 will consume research_findings from
-# here, and must handle found_nothing being True.
-builder.add_edge("research", END)
+# Research feeds company analysis, unless the research node itself failed.
+builder.add_conditional_edges(
+    "research",
+    route_research,
+    {"ok": "companies", "failed": END},
+)
+
+# Company analysis is currently terminal. Agent 4 (the risk critic) will consume
+# company_findings from here, and must handle found_nothing being True.
+builder.add_edge("companies", END)
 
 
 # The checkpointer saves state at every step so an interrupted graph can resume.
@@ -184,6 +234,14 @@ serializer = JsonPlusSerializer(
         Theme,
         Evidence,
         Article,
+        # Agent 3's output and its nested types, or resuming an interrupted
+        # graph could not reconstruct them.
+        CompanyFindings,
+        CompanyCandidate,
+        DroppedCompany,
+        Fundamentals,
+        ComparableMetrics,
+        CurrencyAmounts,
     ]
 )
 

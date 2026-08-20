@@ -145,8 +145,8 @@ def no_accidental_research(monkeypatch):
     default is an immediate, explanatory failure. Tests that legitimately run
     the research node override this with the `fake_research` fixture.
 
-    This guard will matter more as Agents 3-5 arrive: each one extends the graph
-    and inherits the same hazard.
+    Extended for Agent 3, which reaches two data providers as well as the model.
+    Each new agent extends the graph and inherits the same hazard.
     """
     import workflow
 
@@ -156,4 +156,11 @@ def no_accidental_research(monkeypatch):
             "news API and the model. Use the `fake_research` fixture to stub it."
         )
 
+    def company_guard(*args, **kwargs):
+        raise AssertionError(
+            "This test reached the real company agent, which would call FMP, "
+            "yfinance and the model. Use the `fake_companies` fixture to stub it."
+        )
+
     monkeypatch.setattr(workflow, "research_themes", guard)
+    monkeypatch.setattr(workflow, "analyse_companies", company_guard)

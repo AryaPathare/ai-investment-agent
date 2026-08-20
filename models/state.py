@@ -18,6 +18,7 @@ each new entry destroys the previous one.
 from operator import add
 from typing import Annotated, TypedDict
 
+from models.companies import CompanyFindings
 from models.profile import InvestorProfile
 from models.research import ResearchFindings
 from models.user_input import UserInput
@@ -66,6 +67,17 @@ class InvestmentState(TypedDict, total=False):
     A snapshot, replaced on each run. ``found_nothing`` being True is a valid
     result, not a failure: it means no theme cleared the evidence bar. Agent 3
     must check it rather than assuming themes always exist.
+    """
+
+    # --- Agent 3 -------------------------------------------------------------
+
+    company_findings: CompanyFindings
+    """Ranked investable companies from the company agent.
+
+    A snapshot, replaced on each run. ``found_nothing`` being True is a valid
+    result: the themes may be real while no company mentioned alongside them is
+    both investable and genuinely exposed. ``drop_summary`` records where every
+    examined company went.
     """
 
     # --- Workflow ------------------------------------------------------------

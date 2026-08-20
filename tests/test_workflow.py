@@ -99,10 +99,12 @@ def _run(user, thread_id):
 
 
 def test_clean_profile_completes_without_interruption(
-    always_valid, fake_research, clean_user
+    always_valid, fake_research, fake_companies, clean_user
 ):
-    """A valid profile now flows on into research, so that must be stubbed too."""
+    """A valid profile flows on through research AND company analysis, so both
+    must be stubbed. Each agent added to the graph extends this reach."""
     fake_research()
+    fake_companies()
     result = _run(clean_user, "t-clean")
     assert "__interrupt__" not in result
     assert result["investor_profile"].status == "valid"
@@ -251,11 +253,14 @@ def test_a_research_failure_ends_the_graph_cleanly(always_valid, fake_research, 
     assert "ConnectionError" in result["error"]
 
 
-def test_finding_no_themes_is_not_an_error(always_valid, fake_research, clean_user):
+def test_finding_no_themes_is_not_an_error(
+    always_valid, fake_research, fake_companies, clean_user
+):
     """Returning nothing is a designed outcome, so `error` must stay unset."""
     from models.research import ResearchFindings
 
     fake_research(ResearchFindings(articles_retrieved=4, notes="Nothing cleared the bar."))
+    fake_companies()
     result = _run(clean_user, "t-nothing-found")
 
     assert result["research_findings"].found_nothing is True
@@ -277,3 +282,141 @@ def test_research_receives_the_clarified_profile(
     _run(conflicted_user, "t-clarified-profile")
 
     assert calls[0].restrictions == [], "research got the pre-clarification profile"
+
+
+# --- Agent 3 in the graph ----------------------------------------------------
+
+
+@pytest.fixture
+def fake_companies(monkeypatch):
+    """Replace Agent 3 with a fake that records whether it ran."""
+    from models.companies import CompanyFindings
+
+    calls = []
+
+    def _install(findings=None, error=None):
+        def fake(research, **kwargs):
+            calls.append(research)
+            if error is not None:
+                raise error
+            return findings if findings is not None else CompanyFindings(
+                mentions_extracted=5, companies_examined=3
+            )
+
+        monkeypatch.setattr(workflow, "analyse_companies", fake)
+        return calls
+
+    return _install
+
+
+def test_research_flows_into_company_analysis(
+    always_valid, fake_research, fake_companies, clean_user
+):
+    company_calls = fake_companies()
+    fake_research()
+    result = _run(clean_user, "t-companies")
+
+    assert len(company_calls) == 1
+    assert "company_findings" in result
+    assert "error" not in result
+
+
+def test_company_analysis_receives_the_research_findings(
+    always_valid, fake_research, fake_companies, clean_user
+):
+    """Agent 3 must see what Agent 2 produced, not the raw profile."""
+    from models.research import ResearchFindings
+
+    research = ResearchFindings(articles_retrieved=11, notes="from agent 2")
+    fake_research(research)
+    company_calls = fake_companies()
+
+    _run(clean_user, "t-handoff")
+    assert company_calls[0].articles_retrieved == 11
+
+
+def test_company_analysis_does_not_run_when_research_failed(
+    always_valid, fake_research, fake_companies, clean_user
+):
+    """No point looking up companies from research that never happened."""
+    company_calls = fake_companies()
+    fake_research(error=ConnectionError("news API down"))
+
+    result = _run(clean_user, "t-research-failed")
+    assert company_calls == []
+    assert "company_findings" not in result
+    assert "Research failed" in result["error"]
+
+
+def test_company_analysis_does_not_run_without_a_valid_profile(
+    always_blocked, fake_research, fake_companies, conflicted_user
+):
+    company_calls = fake_companies()
+    fake_research()
+    result = investment_graph.invoke(
+        {"user_input": conflicted_user},
+        {"configurable": {"thread_id": "t-blocked-no-companies"}},
+    )
+    assert "__interrupt__" in result
+    assert company_calls == []
+
+
+def test_finding_no_themes_still_runs_company_analysis(
+    always_valid, fake_research, fake_companies, clean_user
+):
+    """Empty research is a real result, and Agent 3 reports why it found nothing
+    rather than the key being silently absent from state."""
+    from models.companies import CompanyFindings
+    from models.research import ResearchFindings
+
+    fake_research(ResearchFindings(notes="nothing cleared the bar"))
+    company_calls = fake_companies(
+        CompanyFindings(notes="No research themes to analyse.")
+    )
+
+    result = _run(clean_user, "t-empty-research")
+    assert len(company_calls) == 1
+    assert result["company_findings"].found_nothing
+    assert "error" not in result
+
+
+def test_a_company_analysis_failure_ends_the_graph_cleanly(
+    always_valid, fake_research, fake_companies, clean_user
+):
+    """Two providers and a model call sit behind this node; any can be down."""
+    fake_research()
+    fake_companies(error=ConnectionError("FMP unreachable"))
+
+    result = _run(clean_user, "t-companies-down")
+    assert "company_findings" not in result
+    assert "Company analysis failed" in result["error"]
+    assert "__interrupt__" not in result
+
+
+def test_finding_no_companies_is_not_an_error(
+    always_valid, fake_research, fake_companies, clean_user
+):
+    """Themes can be real while no company alongside them is investable."""
+    from models.companies import CompanyFindings
+
+    fake_research()
+    fake_companies(CompanyFindings(mentions_extracted=6, companies_examined=4,
+                                   notes="none were investable"))
+
+    result = _run(clean_user, "t-no-companies")
+    assert result["company_findings"].found_nothing
+    assert "error" not in result
+
+
+def test_the_full_chain_runs_in_order(
+    always_valid, fake_research, fake_companies, clean_user
+):
+    """Profile -> research -> companies, all three landing in state."""
+    fake_research()
+    fake_companies()
+    result = _run(clean_user, "t-full-chain")
+
+    assert result["investor_profile"].status == "valid"
+    assert "research_findings" in result
+    assert "company_findings" in result
+    assert "error" not in result
