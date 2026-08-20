@@ -27,7 +27,7 @@ def profile_node(state: InvestmentState):
 def route_profile(state: InvestmentState):
     profile = state["investor_profile"]
 
-    if profile.clarification_needed:
+    if profile.needs_clarification:
         return "clarification"
 
     return "valid"
