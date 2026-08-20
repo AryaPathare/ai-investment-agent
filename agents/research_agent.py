@@ -32,11 +32,18 @@ from models.research import (
 )
 
 
-# Response budgets, sized per call rather than globally. Groq counts
-# max_tokens against the tokens-per-minute quota even when unused, so the two
-# calls in this pipeline must fit inside 8000 TPM together. Six short search
-# queries need very little; a list of themes with citations needs real room.
-QUERY_MAX_TOKENS = 512
+# Response budgets, sized per call rather than globally.
+#
+# Two constraints pull against each other:
+#   * Groq counts max_tokens against the tokens-per-minute quota even when
+#     unused, so both calls in this pipeline must fit inside 8000 TPM together.
+#   * gpt-oss-20b is a REASONING model. It emits internal reasoning tokens
+#     before the answer and those count too, so the budget must be far larger
+#     than the visible output suggests. 512 looked generous for six short search
+#     queries and truncated one mid-string.
+#
+# Budget: query (~600 prompt + 1500) + themes (~2000 prompt + 3000) = 7100.
+QUERY_MAX_TOKENS = 1500
 THEME_MAX_TOKENS = 3000
 
 
@@ -288,9 +295,41 @@ def synthesise_themes(
         f"{rendered}"
     )
 
-    proposal = _theme_llm().invoke(
-        [("system", THEME_SYSTEM_PROMPT), ("human", user_message)]
-    )
+    try:
+        proposal = _theme_llm().invoke(
+            [("system", THEME_SYSTEM_PROMPT), ("human", user_message)]
+        )
+    except Exception as exc:  # noqa: BLE001 - narrowed immediately below
+        # Structured output has a specific failure when the correct answer is
+        # "nothing": rather than calling the tool with an empty list, the model
+        # returns no tool call at all, and the provider reports
+        # "Tool choice is required, but model did not call a tool" with an EMPTY
+        # generation. Observed on a profile where only two thin articles were
+        # retrieved.
+        #
+        # An empty generation means the model produced nothing, which for this
+        # task is the same thing as "no theme cleared the bar" - a legitimate
+        # answer the prompt explicitly permits. It is recorded in notes rather
+        # than swallowed silently.
+        #
+        # A NON-empty generation is a different failure entirely (truncation,
+        # malformed JSON) and must not be disguised as an empty result, so it
+        # is re-raised.
+        message = str(exc)
+        empty_generation = "'failed_generation': ''" in message
+        if "did not call a tool" in message and empty_generation:
+            return (
+                ThemeProposal(
+                    themes=[],
+                    notes=(
+                        "The model returned no themes at all for these articles, "
+                        "which it does when nothing clears the bar."
+                    ),
+                ),
+                mapping,
+            )
+        raise
+
     return proposal, mapping
 
 
