@@ -181,3 +181,48 @@ class ResearchFindings(BaseModel):
 
     def article_by_uuid(self, uuid: str) -> Article | None:
         return next((a for a in self.articles if a.uuid == uuid), None)
+
+
+class SearchQueries(BaseModel):
+    """What the LLM returns in step 1 of Agent 2: search terms only.
+
+    A deliberately small job. The model is not deciding what matters yet — it is
+    only translating an investor's interests into terms worth typing into a news
+    search. If a query is poor the cost is irrelevant articles, not a wrong
+    conclusion, which makes this a low-risk place to use a model.
+    """
+
+    queries: list[str] = Field(
+        description=(
+            "Four to six specific news search queries. Each should target a "
+            "concrete development, policy, technology or event — not a broad "
+            "sector name."
+        )
+    )
+    reasoning: str | None = Field(
+        default=None,
+        description="Optional one-line note on the angles chosen.",
+    )
+
+    @model_validator(mode="after")
+    def clean_queries(self) -> "SearchQueries":
+        """Normalise the list: trim, drop blanks, remove case-insensitive repeats.
+
+        Duplicate queries would spend the free tier's daily request budget to
+        retrieve articles we already have, and every request counts when the cap
+        is 100 a day and each returns only 3 articles.
+        """
+        seen: set[str] = set()
+        cleaned: list[str] = []
+        for query in self.queries:
+            text = " ".join(query.split())
+            if not text or text.lower() in seen:
+                continue
+            seen.add(text.lower())
+            cleaned.append(text)
+
+        if not cleaned:
+            raise ValueError("no usable search queries were produced")
+
+        self.queries = cleaned
+        return self
