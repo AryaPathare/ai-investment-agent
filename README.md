@@ -17,7 +17,7 @@ recommendation just because recommending is its job.
 | Stage | What it does | State |
 |-------|--------------|-------|
 | 1. Profile | Validate investor input, ask the user about genuine contradictions | **Built** |
-| 2. Research | Identify trends and gather supporting evidence | Planned |
+| 2. Research | Identify trends and gather supporting evidence | **Built** |
 | 3. Companies | Extract, screen, and analyse fundamentals | Planned |
 | 4. Risk Critic | Adversarially attack the investment thesis | Planned |
 | 5. Decide | Score, select, and state exit conditions | Planned |
@@ -52,12 +52,18 @@ layer.
 ## Commands
 
 ```powershell
-python -m scripts.check_setup      # environment health check
-python -m pytest                   # unit tests (58, ~0.5s, no network)
-python -m evals.runner             # model accuracy against 18 labelled cases
-python -m evals.runner --tag regression   # only the must-never-break cases
-python -m evals.runner --repeat 3         # consistency check
+python -m scripts.check_setup           # environment health check
+python -m pytest                        # unit tests (146, ~1s, no network)
+
+python -m evals.runner                  # Agent 1: accuracy on 18 labelled cases
+python -m evals.runner --tag regression # only the must-never-break cases
+
+python -m evals.research_runner         # Agent 2: process quality on 5 profiles
+python -m evals.research_runner --case semiconductors_high_risk
 ```
+
+Agent 2's evals are paced ~60s apart on purpose: one research run costs about
+6,100 of Groq's free-tier 8,000 tokens-per-minute, so back-to-back runs fail.
 
 ### Tests vs evals
 
@@ -118,6 +124,20 @@ retries, the graph records a readable `error` in state instead of raising. If
 backoff, so LangGraph's node-level `retry_policy` is deliberately unused —
 stacking them would multiply attempts against an API that is rate-limiting you.
 
+**Search first, then synthesise.** Agent 2 never asks the model what trends
+matter and then hunts for support — that is confirmation bias with a training
+cutoff attached. It retrieves real articles first and asks the model to read
+them. Every theme must cite at least one retrieved article, and `Evidence` has
+no field for a title or URL, so fabricating a source is impossible rather than
+discouraged. Citations use short labels the model can copy reliably; Python maps
+them back to real ids and discards any that do not exist.
+
+**Token budgets are per call, not global.** Groq charges `max_tokens` against
+the tokens-per-minute quota whether or not it is used, so one value big enough
+for the largest call makes every small call expensive. `gpt-oss-20b` is also a
+reasoning model, spending tokens before the visible answer, so budgets must be
+larger than the output length suggests.
+
 ---
 
 ## Optional: tracing
@@ -139,8 +159,13 @@ LANGSMITH_PROJECT=ai-investment-agent
 
 - **State is in memory.** `InMemorySaver` loses everything when the process
   exits. Needs `SqliteSaver` before any real use.
-- **The eval set scores 100%.** Good for catching regressions, but it has no
-  headroom to detect improvement. It needs harder cases, added as failures are
-  found.
+- **Agent 1's eval set scores 100%.** Good for catching regressions, but it has
+  no headroom to detect improvement. It needs harder cases, added as found.
+- **Agent 2 rarely records dissenting evidence.** Across the baseline, 0 of 5
+  profiles produced a single `weakens` or `complicates` stance, despite the
+  prompt asking for honest labelling. That is confirmation bias, and it is the
+  clearest thing to work on next.
+- **Most Agent 2 themes cite one source** (13 of 18 in the baseline), and it
+  reaches the five-theme cap on well-covered sectors.
 - **`openai/gpt-oss-20b` is unevaluated against alternatives.** Now that the
   eval set exists, comparing a larger model is a measurable question.
