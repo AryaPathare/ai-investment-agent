@@ -20,6 +20,7 @@ reached.
 from collections.abc import Sequence
 from functools import lru_cache
 
+from agents.structured import invoke_structured
 from clients.news import search_many
 from config import get_llm, get_settings
 from models.profile import InvestorProfile
@@ -150,8 +151,13 @@ def generate_search_queries(profile: InvestorProfile) -> SearchQueries:
         f"{profile.model_dump_json(indent=2, exclude={'status', 'clarification_reason'})}"
     )
 
-    return _query_llm().invoke(
-        [("system", QUERY_SYSTEM_PROMPT), ("human", user_message)]
+    return invoke_structured(
+        _query_llm(),
+        [("system", QUERY_SYSTEM_PROMPT), ("human", user_message)],
+        SearchQueries,
+        list_field="queries",
+        # No empty_default: "no search queries" is never a correct answer, so a
+        # blank response must surface as a failure rather than a silent no-op.
     )
 
 
@@ -305,40 +311,22 @@ def synthesise_themes(
         f"{rendered}"
     )
 
-    try:
-        proposal = _theme_llm().invoke(
-            [("system", THEME_SYSTEM_PROMPT), ("human", user_message)]
-        )
-    except Exception as exc:  # noqa: BLE001 - narrowed immediately below
-        # Structured output has a specific failure when the correct answer is
-        # "nothing": rather than calling the tool with an empty list, the model
-        # returns no tool call at all, and the provider reports
-        # "Tool choice is required, but model did not call a tool" with an EMPTY
-        # generation. Observed on a profile where only two thin articles were
-        # retrieved.
-        #
-        # An empty generation means the model produced nothing, which for this
-        # task is the same thing as "no theme cleared the bar" - a legitimate
-        # answer the prompt explicitly permits. It is recorded in notes rather
-        # than swallowed silently.
-        #
-        # A NON-empty generation is a different failure entirely (truncation,
-        # malformed JSON) and must not be disguised as an empty result, so it
-        # is re-raised.
-        message = str(exc)
-        empty_generation = "'failed_generation': ''" in message
-        if "did not call a tool" in message and empty_generation:
-            return (
-                ThemeProposal(
-                    themes=[],
-                    notes=(
-                        "The model returned no themes at all for these articles, "
-                        "which it does when nothing clears the bar."
-                    ),
-                ),
-                mapping,
-            )
-        raise
+    proposal = invoke_structured(
+        _theme_llm(),
+        [("system", THEME_SYSTEM_PROMPT), ("human", user_message)],
+        ThemeProposal,
+        list_field="themes",
+        # An empty response IS an answer here: the prompt explicitly permits
+        # returning no themes when nothing clears the evidence bar, and the
+        # model sometimes expresses that by producing nothing at all.
+        empty_default=ThemeProposal(
+            themes=[],
+            notes=(
+                "The model returned no themes for these articles, which it does "
+                "when nothing clears the bar."
+            ),
+        ),
+    )
 
     return proposal, mapping
 

@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from agents.screening import score, screen
+from agents.structured import invoke_structured
 from clients.companies import (
     CompanyDataError,
     ResolvedCompany,
@@ -159,8 +160,13 @@ def extract_mentions(
         f"{rendered}"
     )
 
-    extraction = _mention_llm().invoke(
-        [("system", MENTION_SYSTEM_PROMPT), ("human", user_message)]
+    extraction = invoke_structured(
+        _mention_llm(),
+        [("system", MENTION_SYSTEM_PROMPT), ("human", user_message)],
+        MentionExtraction,
+        list_field="mentions",
+        # "These articles name no companies" is a legitimate answer.
+        empty_default=MentionExtraction(mentions=[]),
     )
     return extraction, mapping
 
@@ -289,8 +295,14 @@ def assess_exposure(rows: Sequence[ExposureRow]) -> ExposureAssessment:
         f"Grade all {len(rows)} rows.\n\n{_format_exposure_rows(rows)}"
     )
 
-    return _exposure_llm().invoke(
-        [("system", EXPOSURE_SYSTEM_PROMPT), ("human", user_message)]
+    return invoke_structured(
+        _exposure_llm(),
+        [("system", EXPOSURE_SYSTEM_PROMPT), ("human", user_message)],
+        ExposureAssessment,
+        list_field="verdicts",
+        # An empty assessment is safe: ungraded pairs default to incidental,
+        # which drops the company rather than promoting it.
+        empty_default=ExposureAssessment(verdicts=[]),
     )
 
 
@@ -427,6 +439,7 @@ def analyse_companies(
     if not resolved:
         return CompanyFindings(
             mentions_extracted=len(mentions),
+            companies_examined=len(ordered),
             dropped=dropped,
             notes="No mentioned company resolved to an investable security. "
             + " ".join(notes),
@@ -567,5 +580,6 @@ def analyse_companies(
         candidates=candidates,
         dropped=dropped,
         mentions_extracted=len(mentions),
+        companies_examined=len(ordered),
         notes=" ".join(notes) or None,
     )

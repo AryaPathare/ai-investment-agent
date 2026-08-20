@@ -8,6 +8,7 @@ user's answers; see models/profile.py for why that separation matters.
 from collections.abc import Sequence
 from functools import lru_cache
 
+from agents.structured import invoke_structured
 from config import get_llm
 from models.profile import InvestorProfile, ProfileAssessment, build_profile
 from models.user_input import UserInput
@@ -151,7 +152,13 @@ def create_investor_profile(
         ("human", user_message),
     ]
 
-    assessment = _structured_llm().invoke(messages)
+    # ProfileAssessment wraps no list, so there is no bare-list case to
+    # recover; salvage still helps when the model returns a valid object that
+    # the provider rejected for envelope reasons. No empty_default: a blank
+    # verdict on a profile is never correct.
+    assessment = invoke_structured(
+        _structured_llm(), messages, ProfileAssessment
+    )
 
     # The model returned a judgment. Python builds the actual profile, copying
     # every field the model was not permitted to touch.

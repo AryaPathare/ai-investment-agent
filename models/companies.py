@@ -252,6 +252,20 @@ class CompanyFindings(BaseModel):
     dropped: list[DroppedCompany] = Field(default_factory=list)
 
     mentions_extracted: int = 0
+    """Mention ROWS the model produced: one per company per article.
+
+    Higher than the number of distinct companies, since one company named in
+    three articles is three mentions. Kept separate from companies_examined
+    because conflating them makes the accounting look broken when it is not.
+    """
+
+    companies_examined: int = 0
+    """Distinct companies actually looked up.
+
+    This is the denominator that must balance: every examined company ends as
+    either a candidate or a recorded drop, and nothing may vanish in between.
+    """
+
     notes: str | None = None
 
     @property
