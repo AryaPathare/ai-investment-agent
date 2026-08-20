@@ -116,7 +116,25 @@ def _normalise_title(title: str) -> str:
     return re.sub(r"\s+", " ", title).strip()
 
 
+def _numbers_in(title: str) -> list[str]:
+    return re.findall(r"\d+", title)
+
+
 def _is_duplicate_title(a: str, b: str) -> bool:
+    """Whether two normalised headlines describe the same story.
+
+    Numbers are checked before similarity, because financial headlines are
+    formulaic and differ in exactly the character that matters:
+
+        "Tesla Q2 earnings beat"  vs  "Tesla Q3 earnings beat"     ~0.97 similar
+        "Solar plant secures $695M" vs "Solar plant secures $234M" ~0.94 similar
+
+    Those are different stories, and merging them would silently destroy
+    evidence. Syndicated copies of one story carry the SAME numbers, so
+    requiring the numbers to match costs nothing in the case dedup exists for.
+    """
+    if _numbers_in(a) != _numbers_in(b):
+        return False
     return SequenceMatcher(None, a, b).ratio() >= TITLE_SIMILARITY_THRESHOLD
 
 

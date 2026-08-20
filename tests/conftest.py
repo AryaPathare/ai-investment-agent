@@ -9,10 +9,14 @@ API key. Anything that needs the real model belongs in the eval suite instead,
 which measures model behaviour rather than code correctness.
 """
 
+from datetime import datetime, timezone
+
 import pytest
 
 import config
+from clients import news
 from models.profile import InvestorProfile, ProfileAssessment
+from models.research import Article
 from models.user_input import UserInput
 
 
@@ -28,6 +32,7 @@ def fake_credentials(monkeypatch):
     inherits another test's configuration.
     """
     monkeypatch.setenv("GROQ_API_KEY", "test-key-never-used")
+    monkeypatch.setenv("NEWS_API_KEY", "test-news-key-never-used")
     config.get_settings.cache_clear()
     config.get_llm.cache_clear()
     yield
@@ -84,3 +89,44 @@ def blocked_profile(conflicted_user) -> InvestorProfile:
 @pytest.fixture
 def assessment_valid() -> ProfileAssessment:
     return ProfileAssessment(status="valid")
+
+
+@pytest.fixture(autouse=True)
+def isolated_cache(tmp_path, monkeypatch):
+    """Point the news cache at a throwaway directory.
+
+    Without this, tests would read and write the developer's real .cache/news,
+    so a cached response could make a test pass that should fail, and a test run
+    could evict entries a real run needed. Each test gets an empty cache.
+    """
+    monkeypatch.setattr(news, "CACHE_DIR", tmp_path / "news-cache")
+
+
+@pytest.fixture
+def research_profile(clean_user) -> InvestorProfile:
+    """A validated profile suitable for Agent 2."""
+    return InvestorProfile(**clean_user.model_dump(), status="valid")
+
+
+def make_article(uuid="a1", title="A headline", url=None, source="example.com",
+                 day=18, description="desc", snippet="snip") -> Article:
+    """Build an Article for tests. Only the fields a test cares about vary."""
+    return Article(
+        uuid=uuid,
+        title=title,
+        description=description,
+        snippet=snippet,
+        url=url or f"https://{source}/{uuid}",
+        source=source,
+        published_at=datetime(2026, 8, day, tzinfo=timezone.utc),
+    )
+
+
+@pytest.fixture
+def articles() -> list[Article]:
+    """Three unrelated articles from different sources."""
+    return [
+        make_article("u1", "Battery order won by Waaree", source="reuters.com", day=17),
+        make_article("u2", "Solar financing secured in Italy", source="ft.com", day=18),
+        make_article("u3", "Hydrogen project stalls in Uruguay", source="bbc.com", day=19),
+    ]
