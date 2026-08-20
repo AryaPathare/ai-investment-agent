@@ -114,6 +114,18 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- Workflow limits ----------------------------------------------------
+
+    max_clarification_attempts: int = Field(
+        default=3,
+        ge=1,
+        description=(
+            "How many times the profile agent may ask the user to clarify "
+            "before giving up. Guarantees the clarification loop terminates "
+            "even if the model never returns a clean profile."
+        ),
+    )
+
     # --- News search (Agent 2) ----------------------------------------------
 
     news_api_key: SecretStr | None = Field(
