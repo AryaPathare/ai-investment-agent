@@ -109,6 +109,48 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- News search (Agent 2) ----------------------------------------------
+
+    news_api_key: SecretStr | None = Field(
+        default=None,
+        description=(
+            "TheNewsAPI token. Get one free at https://www.thenewsapi.com. "
+            "Optional so the app still runs without Agent 2."
+        ),
+    )
+
+    news_days_back: int = Field(
+        default=14,
+        ge=1,
+        description=(
+            "How far back to search. The API defaults to searching ALL history "
+            "sorted by relevance, which returned 2023 articles in testing - "
+            "useless for an agent about current events. Recency is a filter; "
+            "relevance is the sort."
+        ),
+    )
+
+    news_articles_per_query: int = Field(
+        default=3,
+        ge=1,
+        le=100,
+        description=(
+            "Articles per request. The free tier caps this at 3, which is why "
+            "we issue several narrow queries instead of one broad one."
+        ),
+    )
+
+    news_cache_ttl_hours: float = Field(
+        default=24.0,
+        ge=0,
+        description=(
+            "How long a cached search stays fresh. Caching is what makes "
+            "development affordable: the free tier allows 100 requests a day "
+            "and re-running a test should not spend them. Set 0 to disable."
+        ),
+    )
+
+
     # --- Observability ------------------------------------------------------
     # These are read directly from os.environ by the LangSmith library, not by
     # this class. They are declared here only so the app can REPORT whether

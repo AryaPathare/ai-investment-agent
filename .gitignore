@@ -23,3 +23,6 @@ desktop.ini
 
 # Eval run artifacts (re-runnable; not source)
 evals/results/
+
+# Cached API responses (re-fetchable; not source)
+.cache/
