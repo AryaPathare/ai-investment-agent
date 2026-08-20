@@ -26,3 +26,5 @@ evals/results/
 
 # Cached API responses (re-fetchable; not source)
 .cache/
+
+# Cached company data (re-fetchable; not source)

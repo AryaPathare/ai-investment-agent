@@ -1,0 +1,481 @@
+"""Company lookup and fundamentals, wrapped behind our own interface.
+
+The rest of the codebase calls ``resolve_company()`` and ``fetch_fundamentals()``
+and gets back our own types. It never sees FMP's JSON, yfinance's DataFrames, or
+the differences between them.
+
+Two providers, split by what each does well
+-------------------------------------------
+**Resolution uses yfinance**, because its search is measurably better and costs
+nothing against a quota:
+
+    "SMIC"    FMP -> COSMICUSD, a cryptocurrency matched on "co-SMIC"
+              yf  -> 0981.HK, correct, first result
+    "Nvidia"  FMP -> NVDA.NE (CBOE Canada) first, NVDA second
+              yf  -> NVDA first
+
+yfinance also returns ``quoteType``, so rejecting ETFs, funds and tokenised
+crypto is one field rather than an extra profile call.
+
+**Fundamentals are routed by market.** FMP's free tier covers US exchanges only
+and returns 402 for anything else - and misleadingly, its SEARCH happily returns
+foreign symbols, so the failure appears only when you ask for data. US tickers
+therefore go to FMP, everything else to yfinance.
+
+Units are normalised here
+-------------------------
+The providers disagree on the same quantity. For AMD, FMP reports
+``debtToEquityRatioTTM`` as 0.0636 while yfinance reports ``debtToEquity`` as
+6.3610 - exactly 100x apart, because yfinance uses a percentage. Both are
+converted to a ratio at this boundary, so ranking code never has to know where a
+company's numbers came from.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+import time
+import warnings
+from dataclasses import dataclass
+from datetime import date, datetime
+from pathlib import Path
+
+import requests
+
+from config import PROJECT_ROOT, get_settings
+from models.companies import ComparableMetrics, CurrencyAmounts, DataSource, Fundamentals
+
+warnings.filterwarnings("ignore", module="yfinance")
+
+FMP_BASE = "https://financialmodelingprep.com/stable"
+CACHE_DIR = PROJECT_ROOT / ".cache" / "companies"
+
+# yfinance exchange codes for US venues. A company listed both in the US and
+# abroad should be analysed on its US listing, since that is where the user
+# would actually buy it and where FMP's better-quality data applies.
+US_EXCHANGES = {"NMS", "NYQ", "NGM", "NCM", "ASE", "PCX", "BTS", "NAS", "NYS"}
+
+# Anything that is not an operating company. Tokenised "stocks", leveraged ETFs
+# and closed-end funds all surface when searching well-known company names -
+# "SpaceX" returns four ETFs and a cryptocurrency before anything else.
+NON_EQUITY_TYPES = {
+    "ETF", "MUTUALFUND", "CRYPTOCURRENCY", "CURRENCY",
+    "INDEX", "FUTURE", "OPTION",
+}
+
+# Share of the searched name's words that must appear in the result's name.
+# Guards against substring coincidences: "SMIC" sits inside "Cosmic Coin USD",
+# which FMP's search returned as its top hit for SMIC.
+NAME_MATCH_THRESHOLD = 0.6
+
+# How many scored candidates to verify before giving up on a name.
+MAX_VERIFY_ATTEMPTS = 3
+
+
+class CompanyDataError(RuntimeError):
+    """A provider could not be reached or refused the request."""
+
+
+@dataclass(frozen=True)
+class ResolvedCompany:
+    """A company name successfully matched to a real, listed security."""
+
+    ticker: str
+    name: str
+    exchange: str
+    currency: str
+    is_us: bool
+
+    @property
+    def source(self) -> DataSource:
+        """Which provider will supply this company's fundamentals."""
+        return "fmp" if self.is_us else "yfinance"
+
+
+# --- Caching -----------------------------------------------------------------
+# FMP's free tier allows 250 requests a day and one company costs four of them,
+# so roughly sixty companies daily. Without caching, a single afternoon of
+# development would exhaust it.
+
+
+def _cache_path(kind: str, key: str) -> Path:
+    digest = hashlib.sha256(key.encode()).hexdigest()[:16]
+    return CACHE_DIR / f"{kind}-{digest}.json"
+
+
+def _read_cache(path: Path, ttl_hours: float) -> dict | list | None:
+    if ttl_hours <= 0 or not path.exists():
+        return None
+    if (time.time() - path.stat().st_mtime) / 3600 > ttl_hours:
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None  # a corrupt entry must never break a real run
+
+
+def _write_cache(path: Path, payload) -> None:
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, default=str), encoding="utf-8")
+    except OSError:
+        pass  # caching is an optimisation, not a requirement
+
+
+# --- Name matching -----------------------------------------------------------
+
+# Words that carry no identifying information and would inflate a match score.
+_NOISE_WORDS = {
+    "inc", "incorporated", "corp", "corporation", "co", "company", "ltd",
+    "limited", "plc", "sa", "nv", "ag", "group", "holdings", "holding",
+    "the", "and", "technologies", "technology",
+}
+
+
+def _tokens(text: str) -> set[str]:
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    return {w for w in words if w not in _NOISE_WORDS}
+
+
+def _name_match_score(query: str, candidate: str) -> float:
+    """Fraction of the query's meaningful words present in the candidate name.
+
+    Word-level rather than substring, which is the whole point: "smic" is a
+    substring of "cosmic" but not one of its words, so the cryptocurrency that
+    FMP returned for "SMIC" scores zero here instead of matching.
+    """
+    wanted = _tokens(query)
+    if not wanted:
+        return 0.0
+    have = _tokens(candidate)
+    hits = sum(1 for w in wanted if w in have)
+    return hits / len(wanted)
+
+
+
+# Fund and ETF detection by NAME, as a second line of defence.
+#
+# quoteType alone is not trustworthy. Yahoo reported SPCF ("ProShares Ultra
+# SpaceX") as quoteType=ETF with legalType="Exchange Traded Fund" in one run and
+# quoteType=EQUITY with legalType=None an hour later - same ticker, same code.
+# Provider metadata can change under you; marketing names effectively do not.
+#
+# Only high-signal markers are listed. Deliberately absent are generic words
+# like "trust", "fund" and "shares", which appear in the names of real operating
+# companies - Northern Trust being the obvious example - and would cause false
+# rejections.
+_FUND_SPONSORS = {
+    "proshares", "direxion", "ishares", "vanguard", "spdr", "invesco",
+    "tradr", "vegashares", "wisdomtree", "roundhill", "defiance",
+    "graniteshares", "simplify", "yieldmax", "amplify", "leverageshares",
+}
+_FUND_MARKERS = {"etf", "etn", "2x", "3x", "inverse", "leveraged"}
+
+
+def _looks_like_a_fund(name: str) -> bool:
+    """Whether a security's name marks it as a fund rather than a company."""
+    words = _tokens(name) | set(re.findall(r"[a-z0-9]+", name.lower()))
+    if words & _FUND_SPONSORS:
+        return True
+    if words & _FUND_MARKERS:
+        return True
+    # "Daily ... Bull/Bear" is the standard leveraged-ETF naming pattern and
+    # does not occur in operating company names.
+    return "daily" in words and bool(words & {"bull", "bear"})
+
+
+# --- Resolution --------------------------------------------------------------
+
+
+def _search_raw(name: str, use_cache: bool) -> list[dict]:
+    """Raw search hits from yfinance, cached."""
+    path = _cache_path("search", name.lower())
+    settings = get_settings()
+
+    cached = _read_cache(path, settings.company_cache_ttl_hours) if use_cache else None
+    if cached is not None:
+        return cached
+
+    import yfinance as yf
+
+    try:
+        quotes = yf.Search(name, max_results=10).quotes or []
+    except Exception as exc:  # noqa: BLE001 - any provider failure is one failure
+        raise CompanyDataError(f"Company search failed for {name!r}: {exc}") from exc
+
+    _write_cache(path, quotes)
+    return quotes
+
+
+def resolve_company(name: str, *, use_cache: bool = True) -> ResolvedCompany | None:
+    """Match a company name to a real listed security, or return None.
+
+    Returns None rather than raising when the name simply is not a listed
+    company: private firms (SpaceX), subsidiaries (Recurrent Energy, a Canadian
+    Solar subsidiary) and misreadings all land here, and each is an ordinary
+    outcome rather than an error.
+
+    Candidates are SCORED, never taken in order. Search engines rank by their own
+    relevance, which is not ours: searching "Pfizer" returns the German listing
+    first, an Argentine one second, and the NYSE listing fourth.
+    """
+    hits = _search_raw(name, use_cache)
+
+    scored: list[tuple[float, ResolvedCompany]] = []
+    for hit in hits:
+        if (hit.get("quoteType") or "").upper() in NON_EQUITY_TYPES:
+            continue
+
+        ticker = hit.get("symbol")
+        display = hit.get("shortname") or hit.get("longname") or ""
+        if not ticker:
+            continue
+
+        if _looks_like_a_fund(display):
+            continue
+
+        match = _name_match_score(name, display)
+        if match < NAME_MATCH_THRESHOLD:
+            continue
+
+        exchange = (hit.get("exchange") or "").upper()
+        is_us = exchange in US_EXCHANGES
+
+        # Name match dominates; a US listing breaks ties in its favour because
+        # that is where a US-based user would actually buy, and where FMP's
+        # data applies.
+        score = match + (0.5 if is_us else 0.0)
+        scored.append((
+            score,
+            ResolvedCompany(
+                ticker=ticker,
+                name=display,
+                exchange=exchange,
+                currency="",  # filled in when fundamentals are fetched
+                is_us=is_us,
+            ),
+        ))
+
+    if not scored:
+        return None
+
+    # VERIFY the winner rather than trusting the search result's own metadata,
+    # which is wrong often enough to matter. Searching "SpaceX" returns SPCF
+    # labelled quoteType=EQUITY, but the ticker itself reports quoteType=ETF and
+    # legalType="Exchange Traded Fund" - it is ProShares Ultra SpaceX, a
+    # leveraged fund, not a company. Analysing an ETF's "fundamentals" would
+    # produce numbers that look real and mean nothing.
+    #
+    # Candidates are checked best-first, so a rejected top hit falls through to
+    # the next rather than losing the company entirely.
+    for _, candidate in sorted(scored, key=lambda pair: -pair[0])[:MAX_VERIFY_ATTEMPTS]:
+        if _is_operating_company(candidate.ticker, use_cache):
+            return candidate
+
+    return None
+
+
+def _is_operating_company(ticker: str, use_cache: bool) -> bool:
+    """Confirm a ticker is a real company, not a fund tracking one."""
+    try:
+        info = _ticker_info(ticker, use_cache)
+    except CompanyDataError:
+        return False
+
+    quote_type = (info.get("quoteType") or "").upper()
+    if quote_type and quote_type != "EQUITY":
+        return False
+    if info.get("legalType"):
+        # Populated for funds and trusts; None for operating companies.
+        return False
+
+    # Independent of the metadata, because the metadata proved unreliable.
+    display = info.get("shortName") or info.get("longName") or ""
+    return not _looks_like_a_fund(display)
+
+
+# --- Fundamentals: FMP (US) --------------------------------------------------
+
+
+def _fmp_get(path: str, use_cache: bool, **params) -> list[dict]:
+    settings = get_settings()
+    if settings.fmp_api_key is None:
+        raise CompanyDataError("FMP_API_KEY is not set. Add it to .env.")
+
+    cache_key = f"{path}:{json.dumps(params, sort_keys=True)}"
+    cache_path = _cache_path("fmp", cache_key)
+
+    cached = _read_cache(cache_path, settings.company_cache_ttl_hours) if use_cache else None
+    if cached is not None:
+        return cached
+
+    try:
+        response = requests.get(
+            f"{FMP_BASE}/{path}",
+            params={**params, "apikey": settings.fmp_api_key.get_secret_value()},
+            timeout=settings.llm_timeout_seconds,
+        )
+    except requests.RequestException as exc:
+        raise CompanyDataError(f"Could not reach FMP: {exc}") from exc
+
+    if response.status_code == 401:
+        raise CompanyDataError("FMP rejected the key. Check FMP_API_KEY.")
+    if response.status_code == 402:
+        # The free tier is US-only, and this is how it says so. It should never
+        # be reached, since non-US symbols are routed to yfinance.
+        raise CompanyDataError(
+            f"FMP free tier does not cover this symbol ({params.get('symbol')}). "
+            "Non-US companies should be routed to yfinance."
+        )
+    if response.status_code == 429:
+        raise CompanyDataError("FMP rate limit reached (free tier is 250/day).")
+    if response.status_code != 200:
+        raise CompanyDataError(f"FMP returned HTTP {response.status_code}.")
+
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise CompanyDataError("FMP returned a non-JSON response.") from exc
+
+    rows = payload if isinstance(payload, list) else []
+    _write_cache(cache_path, rows)
+    return rows
+
+
+def _first(rows: list[dict]) -> dict:
+    return rows[0] if rows else {}
+
+
+def _parse_date(value) -> date | None:
+    try:
+        return datetime.fromisoformat(str(value)).date()
+    except (TypeError, ValueError):
+        return None
+
+
+def _fetch_fmp(ticker: str, use_cache: bool) -> Fundamentals:
+    """Four calls: ratios, growth, cash flow, income."""
+    ratios = _first(_fmp_get("ratios-ttm", use_cache, symbol=ticker))
+    growth = _first(_fmp_get("financial-growth", use_cache, symbol=ticker, limit=1))
+    cash = _first(_fmp_get("cash-flow-statement", use_cache, symbol=ticker, limit=1))
+    income = _first(_fmp_get("income-statement", use_cache, symbol=ticker, limit=1))
+
+    return Fundamentals(
+        comparable=ComparableMetrics(
+            revenue_growth=growth.get("revenueGrowth"),
+            gross_margin=ratios.get("grossProfitMarginTTM"),
+            operating_margin=ratios.get("operatingProfitMarginTTM"),
+            # FMP already reports this as a ratio, unlike yfinance.
+            debt_to_equity=ratios.get("debtToEquityRatioTTM"),
+        ),
+        amounts=CurrencyAmounts(
+            currency=cash.get("reportedCurrency") or income.get("reportedCurrency") or "USD",
+            net_income=income.get("netIncome"),
+            free_cash_flow=cash.get("freeCashFlow"),
+        ),
+        source="fmp",
+        as_of=_parse_date(cash.get("date") or income.get("date")),
+    )
+
+
+# --- Fundamentals: yfinance (everything else) --------------------------------
+
+
+def _ticker_info(ticker: str, use_cache: bool) -> dict:
+    """yfinance's record for one ticker, cached.
+
+    Shared by resolution (to verify a candidate is an operating company) and by
+    the non-US fundamentals path, so a verified company costs no extra call.
+    """
+    path = _cache_path("yfinfo", ticker)
+    settings = get_settings()
+
+    info = _read_cache(path, settings.company_cache_ttl_hours) if use_cache else None
+    if info is not None:
+        return info
+
+    import yfinance as yf
+
+    try:
+        info = yf.Ticker(ticker).info or {}
+    except Exception as exc:  # noqa: BLE001
+        raise CompanyDataError(f"yfinance failed for {ticker}: {exc}") from exc
+
+    _write_cache(path, info)
+    return info
+
+
+def _fetch_yfinance(ticker: str, use_cache: bool) -> Fundamentals:
+    """One call. ``info`` carries every metric we need."""
+    info = _ticker_info(ticker, use_cache)
+
+    # THE UNIT FIX. yfinance reports debtToEquity as a percentage; FMP reports
+    # it as a ratio. Verified against AMD's balance sheet: yfinance says 6.36
+    # where debt/equity is genuinely 0.0611. Left unconverted, every non-US
+    # company would screen as catastrophically leveraged next to a US one.
+    raw_de = info.get("debtToEquity")
+    debt_to_equity = raw_de / 100 if raw_de is not None else None
+
+    return Fundamentals(
+        comparable=ComparableMetrics(
+            revenue_growth=info.get("revenueGrowth"),
+            gross_margin=info.get("grossMargins"),
+            operating_margin=info.get("operatingMargins"),
+            debt_to_equity=debt_to_equity,
+        ),
+        amounts=CurrencyAmounts(
+            currency=info.get("currency") or "UNKNOWN",
+            net_income=info.get("netIncomeToCommon"),
+            free_cash_flow=info.get("freeCashflow"),
+        ),
+        source="yfinance",
+        as_of=None,
+    )
+
+
+# --- Public interface --------------------------------------------------------
+
+
+def fetch_fundamentals(
+    company: ResolvedCompany,
+    *,
+    use_cache: bool = True,
+) -> Fundamentals:
+    """Fetch fundamentals from whichever provider covers this company.
+
+    Raises:
+        CompanyDataError: The provider was unreachable or refused the request.
+    """
+    if company.is_us:
+        return _fetch_fmp(company.ticker, use_cache)
+    return _fetch_yfinance(company.ticker, use_cache)
+
+
+def resolve_and_fetch(
+    name: str,
+    *,
+    use_cache: bool = True,
+) -> tuple[ResolvedCompany, Fundamentals] | None:
+    """Resolve a name and fetch its fundamentals in one step.
+
+    Returns None when the name is not a listed company. Raises only when a
+    provider genuinely misbehaves, so callers can distinguish "this company is
+    not investable" from "the data source is down".
+    """
+    company = resolve_company(name, use_cache=use_cache)
+    if company is None:
+        return None
+
+    fundamentals = fetch_fundamentals(company, use_cache=use_cache)
+
+    # The currency is only known once the numbers arrive.
+    company = ResolvedCompany(
+        ticker=company.ticker,
+        name=company.name,
+        exchange=company.exchange,
+        currency=fundamentals.amounts.currency,
+        is_us=company.is_us,
+    )
+    return company, fundamentals

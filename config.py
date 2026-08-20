@@ -187,6 +187,38 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- Company data (Agent 3) ----------------------------------------------
+
+    fmp_api_key: SecretStr | None = Field(
+        default=None,
+        description=(
+            "Financial Modeling Prep token, for US company fundamentals. Free "
+            "at https://site.financialmodelingprep.com - 250 requests/day and "
+            "US exchanges ONLY. Non-US companies are served by yfinance, which "
+            "needs no key. Optional so the app runs without Agent 3."
+        ),
+    )
+
+    company_cache_ttl_hours: float = Field(
+        default=24.0,
+        ge=0,
+        description=(
+            "How long cached company data stays fresh. One company costs four "
+            "FMP calls against a 250/day cap, so roughly sixty companies daily; "
+            "without caching a single afternoon of development exhausts it. "
+            "Fundamentals change quarterly, so a day is comfortably fresh."
+        ),
+    )
+
+    max_company_candidates: int = Field(
+        default=8,
+        ge=1,
+        description=(
+            "Maximum companies Agent 3 passes to the risk critic. Fewer is fine "
+            "and zero is a legitimate answer; this only caps the top end."
+        ),
+    )
+
     # --- Observability ------------------------------------------------------
     # These are read directly from os.environ by the LangSmith library, not by
     # this class. They are declared here only so the app can REPORT whether
