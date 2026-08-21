@@ -89,6 +89,15 @@ Two things to settle before building it:
 
 ---
 
+## At the END of every session
+
+Ask for `docs/PROJECT_LOG.md` to be updated with what happened. It is the
+running record the final write-up will be built from — decisions, what went
+wrong, how it was found. Recording it while it is fresh beats reconstructing it
+from a 4 MB transcript later.
+
+---
+
 ## Commands
 
 ```powershell
