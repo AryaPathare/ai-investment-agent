@@ -20,7 +20,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 
-from agents.screening import score, screen
+from agents.screening import MIN_SCORE, score, screen
 from agents.structured import invoke_structured
 from clients.companies import (
     CompanyDataError,
@@ -548,6 +548,23 @@ def analyse_companies(
             continue
 
         breakdown = score(fundamentals.comparable, verdict["exposure"])
+
+        # A zero score is the ranking's own verdict that nothing about this
+        # company supports recommending it. Keeping it and ranking it last would
+        # still be recommending it, so it is dropped instead.
+        if breakdown.total <= MIN_SCORE:
+            dropped.append(
+                DroppedCompany(
+                    name=company.name,
+                    reason="failed_screen",
+                    detail=(
+                        f"scored {breakdown.total:.3f} on "
+                        f"{fundamentals.comparable.completeness:.0%} of metrics"
+                    ),
+                )
+            )
+            continue
+
         article_uuids = sorted(
             {article_map[m.article_id].uuid for m in record["mentions"]}
         )

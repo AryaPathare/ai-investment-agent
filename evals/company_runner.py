@@ -21,6 +21,7 @@ HARD FAILURES (a bug, not an opinion)
                      this is the 100x provider discrepancy coming back
     accounting       every mentioned company is a candidate or a recorded drop
     not a fund       no candidate is an ETF or trust wearing a company's name
+    restrictions     no candidate breaches a limit the investor actually stated
 
 SOFT SIGNALS (report and compare across changes)
     conversion       how many mentions survive to candidates
@@ -30,6 +31,9 @@ SOFT SIGNALS (report and compare across changes)
     saturation       how many candidates score a flat 1.0, which would mean the
                      ranking cannot separate the best from the merely good
     provider mix     how often the FMP path falls back to yfinance
+    growth sanity    growth figures so large they are more likely a provider
+                     artifact than a business - the ranking clips them into
+                     invisibility, so they have to be caught here
 
 BUDGET
 Each profile costs four model calls and up to four FMP requests per US company,
@@ -57,6 +61,17 @@ RESULTS_DIR = PROJECT_ROOT / "evals" / "results"
 # distressed balance sheets, whereas yfinance routinely reports 37.0 for a
 # company whose true ratio is 0.37.
 UNIT_SANITY_CEILING = 20.0
+
+# Revenue growth above this is almost certainly a provider artifact rather than
+# a real business. Reported as a SOFT signal, not a hard failure: extraordinary
+# growth genuinely happens in a memory upcycle or after an acquisition, so a
+# breach means "look at this", not "this is a bug".
+#
+# It exists because the ranking CANNOT surface it. Every ramp clips at its cap,
+# so an implausible 256% and a healthy 55% both render as 1.0 and become
+# indistinguishable. Without a check upstream of the clipping, bad provider data
+# is invisible precisely when it is most influential.
+GROWTH_SANITY_CEILING = 1.50
 
 # Words that would mean a fund slipped through resolution into the candidates.
 FUND_WORDS = {"etf", "etn", "proshares", "direxion", "ishares", "tradr",
@@ -106,6 +121,23 @@ def score_run(
         if any(word in c.name.lower() for word in FUND_WORDS)
     ]
 
+    # A restriction the investor stated must survive all the way to the
+    # candidate list. Agent 2 is already checked for this on its themes; a theme
+    # can comply while the company chosen from it does not.
+    restriction_violations = [
+        (c.ticker, term)
+        for c in candidates
+        for term in case.forbidden_terms
+        if term in f"{c.name} {c.exposure_rationale} {' '.join(c.themes)}".lower()
+    ]
+
+    # Soft: growth figures the ranking would clip into invisibility.
+    growth_outliers = [
+        (c.ticker, c.fundamentals.comparable.revenue_growth)
+        for c in candidates
+        if (c.fundamentals.comparable.revenue_growth or 0) > GROWTH_SANITY_CEILING
+    ]
+
     # Every EXAMINED COMPANY must end as a candidate or a recorded rejection.
     # Balanced against companies_examined, not mentions_extracted: a mention is
     # one company in one article, so a company named in three articles produces
@@ -128,7 +160,9 @@ def score_run(
         "unit_failures": unit_failures,
         "funds_in_candidates": funds,
         "unaccounted_mentions": unaccounted,
+        "restriction_violations": restriction_violations,
         # soft
+        "growth_outliers": growth_outliers,
         "drop_summary": companies.drop_summary,
         "exposures": dict(Counter(c.exposure for c in candidates)),
         "sources": dict(Counter(c.fundamentals.source for c in candidates)),
@@ -166,6 +200,8 @@ def hard_failures(row: dict) -> list[str]:
         problems.append(f"debt/equity outside ratio range: {row['unit_failures']}")
     if row["funds_in_candidates"]:
         problems.append(f"funds reached the candidate list: {row['funds_in_candidates']}")
+    if row.get("restriction_violations"):
+        problems.append(f"candidates violate a stated restriction: {row['restriction_violations']}")
     if row["unaccounted_mentions"] > 0:
         problems.append(f"{row['unaccounted_mentions']} examined company/companies vanished without a drop reason")
     return problems
@@ -193,6 +229,8 @@ def print_case(row: dict) -> None:
               f"currency {row['currencies']}")
         print(f"      avg metric completeness: {row['avg_completeness']:.0%}"
               f"   saturated at 1.0: {row['saturated']}")
+    if row.get("growth_outliers"):
+        print(f"      growth above the sanity ceiling: {row['growth_outliers']}")
     if row["notes"]:
         print(f"      notes: {row['notes'][:100]}")
 
@@ -221,6 +259,7 @@ def summarise(rows: list[dict]) -> dict:
         "exposure_profile": dict(exposures),
         "saturated_candidates": sum(r["saturated"] for r in scored),
         "cases_finding_nothing": sum(1 for r in scored if r["candidates"] == 0),
+        "growth_outliers": [o for r in scored for o in r.get("growth_outliers", [])],
         "sources": dict(
             Counter(k for r in scored for k, v in r["sources"].items() for _ in range(v))
         ),
@@ -242,6 +281,7 @@ def print_summary(s: dict) -> None:
     print(f"    exposure of candidates {s['exposure_profile']}")
     print(f"    data source used       {s['sources']}")
     print(f"    scores saturated at 1  {s['saturated_candidates']}/{s['total_candidates']}")
+    print(f"    growth sanity breaches {s['growth_outliers'] or 'none'}")
     print("=" * 72)
 
 
@@ -287,6 +327,7 @@ def main() -> int:
                 "untraceable_candidates": [], "incidental_candidates": [],
                 "misranked": False, "over_cap": False, "unit_failures": [],
                 "funds_in_candidates": [], "unaccounted_mentions": 0,
+                "restriction_violations": [], "growth_outliers": [],
                 "drop_summary": {}, "exposures": {}, "sources": {},
                 "currencies": {}, "saturated": 0, "scores": [], "tickers": [],
                 "avg_completeness": 0.0, "notes": None,

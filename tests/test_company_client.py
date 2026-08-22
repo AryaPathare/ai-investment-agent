@@ -221,9 +221,51 @@ def test_yfinance_percentages_are_normalised_to_ratios(fake_info):
     assert got.comparable.debt_to_equity == pytest.approx(0.37)
 
 
+def test_a_zero_margin_is_treated_as_unreported_not_as_terrible(fake_info):
+    """REGRESSION: both providers return a literal 0.0 where a margin does not
+    apply - banks have no cost of goods, pre-revenue biotechs have no revenue.
+    Taken at face value it scores at the bottom of the ramp, so the ranking said
+    "terrible" where the truth was "not applicable". Observed in IDBI Bank,
+    CervoMed and ProMIS Neurosciences."""
+    fake_info({"0981.HK": {"grossMargins": 0.0, "operatingMargins": 0.0,
+                           "revenueGrowth": 0.1, "currency": "HKD"}})
+    got = fetch_fundamentals(foreign_company()).comparable
+    assert got.gross_margin is None
+    assert got.operating_margin is None
+    assert got.revenue_growth == pytest.approx(0.1)
+
+
+def test_a_real_margin_of_zero_point_something_survives(fake_info):
+    """Only an EXACT 0.0 is a placeholder. Real margins must pass through."""
+    fake_info({"0981.HK": {"grossMargins": 0.01, "operatingMargins": -0.5,
+                           "currency": "HKD"}})
+    got = fetch_fundamentals(foreign_company()).comparable
+    assert got.gross_margin == pytest.approx(0.01)
+    assert got.operating_margin == pytest.approx(-0.5)
+
+
 def test_a_missing_leverage_figure_stays_none(fake_info):
     fake_info({"0981.HK": {"currency": "HKD"}})
     assert fetch_fundamentals(foreign_company()).comparable.debt_to_equity is None
+
+
+def test_amounts_are_labelled_with_the_reporting_currency(fake_info):
+    """REGRESSION: yfinance carries two currencies. "currency" is what the share
+    trades in; "financialCurrency" is what the statements are reported in.
+    net_income and free_cash_flow are statement figures, so labelling them with
+    the quote currency called SK hynix's 162 trillion won 162 trillion dollars.
+    FMP's path already reports the statement currency - both must agree."""
+    fake_info({"000660.KS": {"currency": "USD", "financialCurrency": "KRW",
+                             "netIncomeToCommon": 161_965_397_770_240}})
+    got = fetch_fundamentals(foreign_company("000660.KS"))
+    assert got.amounts.currency == "KRW"
+
+
+def test_the_quote_currency_is_used_when_no_reporting_currency_is_given(fake_info):
+    """Most records carry both. When only the quote currency is present it is
+    better than UNKNOWN, so it stays the fallback rather than being discarded."""
+    fake_info({"0981.HK": {"currency": "HKD"}})
+    assert fetch_fundamentals(foreign_company()).amounts.currency == "HKD"
 
 
 def test_us_companies_fall_back_to_yfinance_when_fmp_cannot_serve_them(

@@ -83,6 +83,25 @@ def test_no_metrics_at_all_fails():
 # --- Component scoring -------------------------------------------------------
 
 
+def test_losing_more_than_all_revenue_is_disqualifying_on_its_own():
+    """REGRESSION: the "shrinking AND unprofitable" rule is a conjunction, and a
+    conjunction cannot fire when one side is missing. CervoMed reported an
+    operating margin of -94.07 - losing 94x its revenue - and passed screening
+    purely because its revenue growth was unreported."""
+    passed, reason = screen(ComparableMetrics(operating_margin=-94.07,
+                                              gross_margin=0.4))
+    assert not passed
+    assert reason == "failed_screen"
+
+
+def test_an_ordinary_loss_is_still_only_a_penalty():
+    """Rejection stays reserved for the genuinely disqualifying. A company
+    investing ahead of profit must survive to be ranked, not be screened out."""
+    passed, _ = screen(ComparableMetrics(operating_margin=-0.20,
+                                         gross_margin=0.4, revenue_growth=0.3))
+    assert passed
+
+
 def test_missing_metrics_are_omitted_not_zeroed():
     """A missing metric is unknown, not bad. Conflating them ranks a company
     with unreported margins below one with genuinely terrible margins."""
@@ -95,13 +114,15 @@ def test_missing_metrics_are_omitted_not_zeroed():
     [
         ("revenue_growth", -0.50, 0.0),   # shrinking
         ("revenue_growth", 0.0, 0.0),     # flat
-        ("revenue_growth", 0.15, 0.5),    # halfway
-        ("revenue_growth", 0.30, 1.0),    # target
+        ("revenue_growth", 0.25, 0.5),    # halfway
+        ("revenue_growth", 0.50, 1.0),    # target
         ("revenue_growth", 2.00, 1.0),    # clamped, not extrapolated
         ("operating_margin", -0.20, 0.0),
-        ("operating_margin", 0.25, 1.0),
+        ("operating_margin", 0.20, 0.5),  # halfway
+        ("operating_margin", 0.40, 1.0),
         ("gross_margin", 0.20, 0.0),
-        ("gross_margin", 0.60, 1.0),
+        ("gross_margin", 0.475, 0.5),     # halfway
+        ("gross_margin", 0.75, 1.0),
     ],
 )
 def test_ramps_map_onto_zero_to_one(field, value, expected):
@@ -141,9 +162,9 @@ def test_exposure_scales_the_whole_score():
 
 def test_incomplete_data_ranks_below_equally_good_complete_data():
     """Less evidence must mean less confidence, and rank is where that shows."""
-    complete = metrics(revenue_growth=0.30, operating_margin=0.25,
-                       gross_margin=0.60, debt_to_equity=0.0)
-    partial_data = ComparableMetrics(revenue_growth=0.30, operating_margin=0.25)
+    complete = metrics(revenue_growth=0.50, operating_margin=0.40,
+                       gross_margin=0.75, debt_to_equity=0.0)
+    partial_data = ComparableMetrics(revenue_growth=0.50, operating_margin=0.40)
 
     assert score(partial_data, "direct").base == pytest.approx(
         score(complete, "direct").base

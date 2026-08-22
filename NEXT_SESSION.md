@@ -1,100 +1,133 @@
 # Start here
 
-Last worked: **2026-08-20**. Agents 1, 2 and 3 are built. Agent 3 is **not yet
-verified** — that is the first job.
+Last worked: **2026-08-22**. **Agents 1, 2 and 3 are built and verified.**
+Agent 3 was finished this session: its eval baseline ran, found four defects, all
+four were fixed, and every post-fix run reported **0 hard failures**.
+
+`docs/PROJECT_LOG.md` is up to date through Session 2.
+
+Nothing is committed. `git status` shows the changeset.
 
 ---
 
-## 1. Check the environment still works
+## 1. Check the environment
 
 ```powershell
 python -m scripts.check_setup
-```
-
-Confirms `.env`, settings, and a live call to Groq. If anything is broken, this
-tells you whether it is your config, the provider, or your code — before you
-start debugging the wrong layer.
-
-```powershell
 python -m pytest
 ```
 
-Should be **267 passed** in about 5 seconds. If not, something changed
-underneath; fix that before anything else.
+Expect **276 passed** in about 2 seconds.
 
 ---
 
-## 2. Run the Agent 3 eval baseline — THE ACTUAL TASK
+## 2. THE TASK — Agent 4, the Risk Critic
 
-```powershell
-python -m evals.company_runner
-```
+Consumes Agent 3's `CompanyFindings` and attacks the thesis: assume the earlier
+agents are wrong and find the reasons each company could fail.
 
-This never completed. Groq's 200,000 tokens-per-day ceiling was hit after one
-profile, so we have one data point and not a baseline. It takes a few minutes
-(profiles are paced apart on purpose) and costs roughly 20-25k tokens.
+**Needs no new API key**, but it DOES need news-API budget. See the scope note.
 
-**Unit tests prove the code is right. Only the evals show whether the behaviour
-is.** That is why this comes before Agent 4.
+Do the **planning and groundwork first**, the way Agents 2 and 3 were built. No
+code until the shape is agreed.
 
-### What to look for
+### The decision already made — do not re-litigate
 
-`HARD FAILURES` must be **0**. Anything there is a bug, not an opinion:
-traceability, incidental survivors, ranking order, the candidate cap,
-debt/equity landing in ratio range, drop accounting, funds among candidates.
+Agent 2 has recorded a dissenting stance (`weakens` / `complicates`) exactly
+**once, ever**. The obvious move is to go and fix Agent 2. **That was
+investigated on 2026-08-22 and rejected**, because the cause is not the prompt,
+which is already explicit and well argued. It is structural:
 
-Then look at the soft signals. Four specific suspicions, none confirmed:
+| Profile (2026-08-20 run) | Themes | Single-source | Avg citations/theme | Dissent |
+|---|---|---|---|---|
+| renewables | 4 | 3 | 1.25 | 0 |
+| healthcare | 2 | 2 | 1.00 | 0 |
+| sports | 2 | 1 | 2.00 | 0 |
+| semiconductors | 5 | 2 | 1.60 | 0 |
+| banking | 5 | 5 | 1.00 | 0 |
 
-| Watch for | Why it matters |
-|---|---|
-| Scores saturated at 1.0 | If several candidates tie at the top, the ranking cannot order them |
-| Exposure mostly `direct` | Grade inflation would make the field decorative |
-| `sources` mostly `yfinance` | Then FMP is barely earning its integration |
-| Drop profile dominated by one reason | Mostly `no_ticker_found` means the resolver is broken; mostly `incidental_mention` means extraction is too eager |
+1. **A theme with one citation cannot record dissent** — there is no second
+   article to disagree. Most themes have exactly one, so the dissent rate is not
+   low, it is arithmetically unavailable. The single time dissent ever appeared
+   was in the profile with the highest average citations (1.75).
+2. **Themes are derived from their own evidence.** Agent 2 reads articles and
+   names the pattern it sees; a contradicting article becomes a DIFFERENT theme
+   rather than dissent within this one.
 
-Compare against the one profile that did complete:
+Underneath both: TheNewsAPI's free tier returns **3 articles per request**, so the
+corpus is only 2-5 articles per profile.
 
-```
-semiconductors_high_risk
-  3 themes / 4 articles -> 4 mentions -> 3 companies -> 2 candidates
-    0.600  NVDA   direct
-    0.290  INTC   partial
-  dropped: {'incidental_mention': 1}
-  HARD FAILURES: 0
-```
+**So: Agent 4 retrieves its own counter-evidence.** For each candidate, query
+specifically for the bear case (`"<theme> delay"`, `"<theme> falls"`,
+`"<company> regulatory"`, `"<company> lawsuit"`), then reason over what comes
+back. A risk critic that depends on the researcher having already been
+self-critical is not much of a critic — finding counter-evidence IS the job.
+
+This reuses the news client, caching and citation-grounding that already exist
+and are tested.
+
+### Scope note
+
+This makes Agent 4 **retrieve, then reason** — closer in size to Agent 2 than to
+a pure reasoning step. Budget news-API requests accordingly (100/day, 3 articles
+per request).
+
+### Worth settling before writing code
+
+- What does Agent 4 OUTPUT? A risk per candidate, a revised score, or a veto?
+  Agent 5 (Decide) consumes it, so the contract matters.
+- Does a candidate that survives criticism get promoted, or only demoted? A critic
+  that can only subtract will drive every score toward zero over time.
+- How is a risk that is real but already priced in handled? "This stock could
+  fall" is not a finding.
+- Same grounding rule as Agent 2: every risk must cite a retrieved article, or it
+  is the model inventing a bear case from training data.
 
 ---
 
-## 3. Then decide what, if anything, to fix
+## 3. Then Agent 5 — Decide
 
-Act on what the numbers show, not on guesses. If nothing needs fixing, Agent 3
-is genuinely done and Agent 4 can start.
-
----
-
-## After that: Agent 4 — Risk Critic
-
-Consumes Agent 3's `CompanyFindings` and attacks the thesis: assume the previous
-agents are wrong and find reasons each company could fail. **Needs no new API
-key** — it reasons over data we already have.
-
-Two things to settle before building it:
-
-1. **Agent 2 almost never records dissenting evidence** — 0 of 5 profiles
-   produced a single `weakens` or `complicates` stance. The risk critic depends
-   on exactly that evidence, so feeding it a one-sided base undercuts the point
-   of having it. Worth fixing first.
-2. **Ranking saturates** at 1.0, so exceptional companies are not currently
-   distinguishable from each other.
+Score, select up to three, state exit conditions, or recommend **nothing**.
+Recommending nothing must remain a first-class outcome.
 
 ---
 
-## At the END of every session
+## What was done in Session 2 (2026-08-21 → 22)
 
-Ask for `docs/PROJECT_LOG.md` to be updated with what happened. It is the
-running record the final write-up will be built from — decisions, what went
-wrong, how it was found. Recording it while it is fresh beats reconstructing it
-from a 4 MB transcript later.
+Full detail is in `docs/PROJECT_LOG.md` sections 8-15. Summary:
+
+Agent 3's eval baseline reported **0 hard failures** and four real defects were
+found anyway — all of them in the soft signals, none caught by the 267 unit tests
+that were passing throughout. **The unit tests prove the code does what it says;
+only the evals show whether what it says is right.**
+
+1. **`currency` meant two different things** — FMP set it from the statements,
+   yfinance from the share price. SK hynix's 162 trillion won of net income was
+   labelled USD. Corrupted nothing (all screening metrics are ratios, which are
+   currency-invariant) but Agent 4 consumes the field.
+2. **The ranking could not separate its top two** — TSMC and SK hynix both maxed
+   every component and tied at 1.000 despite an eight-fold growth difference.
+   Caps raised to 50% / 40% / 75%; the tie broke, order preserved exactly.
+3. **A provider `0.0` was read as "terrible"** — banks have no cost of goods,
+   pre-revenue biotechs no revenue. A healthcare run recommended two biotechs
+   scoring **0.000** to a 66-year-old with low risk tolerance.
+4. **The disqualifying screen was defeated by missing data** — it rejected on
+   *shrinking AND unprofitable*, and a conjunction cannot fire when one side is
+   missing. CervoMed passed while losing 94x its revenue.
+
+Two eval checks were added: exclusion compliance (hard) and a growth sanity
+ceiling (soft). **267 tests became 276.**
+
+### Two known limits — SETTLED as documented, do not reopen
+
+Written up in the module docstring of `agents/screening.py`. Both distort
+absolute scores; neither distorts an ordering anyone consumes.
+
+- **SK hynix still scores exactly 1.000.** Saturation mattered because it caused a
+  TIE; raising the caps fixed that. One company at 1.000 is ranked first, correctly.
+- **Financial companies cap at 0.50.** At most 2 of 4 metrics exist for a bank and
+  score multiplies by completeness. Verified across ten major banks: all sit at
+  exactly 0.50 and are KEPT, so this is a ceiling, not a rejection.
 
 ---
 
@@ -102,23 +135,35 @@ from a 4 MB transcript later.
 
 ```powershell
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 267 tests, ~5s, no network
+python -m pytest                        # 276 tests, ~2s, no network
 
 python -m evals.runner                  # Agent 1: 18 labelled cases
 python -m evals.research_runner         # Agent 2: process quality, 5 profiles
 python -m evals.company_runner          # Agent 3: process quality, runs 2 -> 3
+python -m evals.company_runner --case <name>   # one profile, to conserve quota
 ```
 
 ---
 
 ## Known limits that will bite
 
-- **Groq free tier**: 8,000 tokens/minute and **200,000 tokens/day**. One full
-  profile through Agents 1-3 costs about 6,000 tokens, so roughly 30 runs a day.
-  The daily ceiling is a rolling 24-hour window, not a midnight reset.
-- **FMP free tier**: 250 requests/day, and it covers only a *subset* of US
-  symbols. Non-US companies and refused US symbols fall back to `yfinance`.
-- **TheNewsAPI free tier**: 100 requests/day, 3 articles per request.
+- **Groq's daily ceiling is the binding constraint, and a profile costs far more
+  than it looks.** A full profile through Agents 2-3 costs roughly **25-30k
+  tokens**, NOT the ~6k previously documented. Trusting that wrong figure caused a
+  bad estimate: the budget was thought 30% spent when it was 99% spent, and a
+  five-profile run died after one case. **Budget ~6-7 profiles per day, total**,
+  and expect Agent 4 to raise the per-profile cost. Measure, do not extrapolate.
+  The ceiling is a rolling 24-hour window, not a midnight reset.
+- **FMP free tier**: 250 requests/day, covers only a *subset* of US symbols. Of 5
+  US-listed candidates measured, FMP served 2 and refused 3 — the yfinance
+  fallback is doing real work, so a low `fmp` count is not a bug.
+- **TheNewsAPI free tier**: 100 requests/day, 3 articles per request. This is the
+  constraint that shapes Agent 4.
+- **Run-to-run variance is large.** Agent 2 retrieves different articles each run,
+  so candidate SETS differ and aggregate counts are not comparable between runs.
+  Compare companies appearing in both. One banking run resolved only 3 of 7
+  mentions and returned zero candidates — legitimate, but it means a single run
+  proves less than it appears to.
 
 Caching is on by default everywhere, which is what makes development affordable.
 
@@ -131,4 +176,8 @@ Caching is on by default everywhere, which is what makes development affordable.
 - **`InMemorySaver`** loses all state on restart, including a user mid
   clarification. Needs `SqliteSaver` before any real use.
 - **Agent 1's eval set scores 100%**, so it catches regressions but cannot show
-  improvement. Add harder cases as failures are found.
+  improvement.
+- **The exclusion check matches naive substrings**, so a rationale reading "no
+  crypto exposure" would register as a violation. Consistent with how Agent 2
+  already checks themes. Not yet observed; narrow it in one place for both agents
+  if it fires falsely.

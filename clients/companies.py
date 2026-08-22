@@ -422,8 +422,8 @@ def _fetch_fmp(ticker: str, use_cache: bool) -> Fundamentals:
     return Fundamentals(
         comparable=ComparableMetrics(
             revenue_growth=growth.get("revenueGrowth"),
-            gross_margin=ratios.get("grossProfitMarginTTM"),
-            operating_margin=ratios.get("operatingProfitMarginTTM"),
+            gross_margin=_unreported_if_zero(ratios.get("grossProfitMarginTTM")),
+            operating_margin=_unreported_if_zero(ratios.get("operatingProfitMarginTTM")),
             # FMP already reports this as a ratio, unlike yfinance.
             debt_to_equity=ratios.get("debtToEquityRatioTTM"),
         ),
@@ -464,6 +464,27 @@ def _ticker_info(ticker: str, use_cache: bool) -> dict:
     return info
 
 
+def _unreported_if_zero(value: float | None) -> float | None:
+    """Treat an exact 0.0 margin as NOT REPORTED rather than as a real figure.
+
+    Both providers return a literal 0.0 where a margin simply does not exist for
+    the business. Banks have no cost of goods, so gross margin is meaningless for
+    them; pre-revenue biotechs have no revenue to take a margin on. Accepted at
+    face value, that placeholder scores at the very bottom of the ramp, so the
+    ranking reports "terrible" where the truth is "not applicable".
+
+    That inverts the rule the scoring code is built on - a missing metric is
+    unknown, not bad - so the correction belongs here, at the provider boundary,
+    rather than leaving every consumer to guess.
+
+    Observed in IDBI Bank, CervoMed and ProMIS Neurosciences: three companies
+    across two unrelated sectors, so this is a provider convention, not a quirk
+    of one sector. A margin of EXACTLY 0.0 to full float precision is a
+    placeholder; a real business landing precisely on break-even does not occur.
+    """
+    return None if value == 0.0 else value
+
+
 def _fetch_yfinance(ticker: str, use_cache: bool) -> Fundamentals:
     """One call. ``info`` carries every metric we need."""
     info = _ticker_info(ticker, use_cache)
@@ -478,12 +499,23 @@ def _fetch_yfinance(ticker: str, use_cache: bool) -> Fundamentals:
     return Fundamentals(
         comparable=ComparableMetrics(
             revenue_growth=info.get("revenueGrowth"),
-            gross_margin=info.get("grossMargins"),
-            operating_margin=info.get("operatingMargins"),
+            gross_margin=_unreported_if_zero(info.get("grossMargins")),
+            operating_margin=_unreported_if_zero(info.get("operatingMargins")),
             debt_to_equity=debt_to_equity,
         ),
         amounts=CurrencyAmounts(
-            currency=info.get("currency") or "UNKNOWN",
+            # THE CURRENCY FIX. yfinance carries two currencies: "currency" is
+            # what the SHARE trades in, "financialCurrency" is what the
+            # STATEMENTS are reported in. The amounts below are statement
+            # figures, so they must be labelled with the latter. SK hynix's ADR
+            # trades in USD while it reports in KRW, so the quote currency
+            # labelled 162 trillion won as dollars. FMP's path already uses
+            # reportedCurrency, so this makes the field mean one thing.
+            currency=(
+                info.get("financialCurrency")
+                or info.get("currency")
+                or "UNKNOWN"
+            ),
             net_income=info.get("netIncomeToCommon"),
             free_cash_flow=info.get("freeCashflow"),
         ),

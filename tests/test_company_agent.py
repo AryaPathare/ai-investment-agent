@@ -267,6 +267,27 @@ def test_candidates_are_ranked_by_score(pipeline, research):
     assert findings.candidates[0].ticker == "STRG"
 
 
+def test_a_zero_scoring_company_is_dropped_rather_than_recommended(pipeline, research):
+    """REGRESSION: a live run returned two pre-revenue biotechs scoring 0.000 to
+    a 66-year-old with low risk tolerance. Ranking them last still recommends
+    them; a zero is the ranking's own verdict that nothing supports the pick."""
+    pipeline["mentions"] = [mention("Zero Co"), mention("Good Co")]
+    pipeline["resolve"] = {"Zero Co": resolved("ZERO"), "Good Co": resolved("GOOD")}
+    pipeline["fundamentals"] = {
+        # Passes screening, but every available component scores zero.
+        "ZERO": healthy(revenue_growth=0.0, operating_margin=None,
+                        gross_margin=0.20, debt_to_equity=3.0),
+        "GOOD": healthy(),
+    }
+    pipeline["verdicts"] = grade_all()
+
+    findings = analyse_companies(research)
+
+    assert [c.ticker for c in findings.candidates] == ["GOOD"]
+    assert [d.reason for d in findings.dropped] == ["failed_screen"]
+    assert "scored 0.000" in findings.dropped[0].detail
+
+
 def test_the_candidate_cap_is_applied_and_recorded(pipeline, research):
     """Silent truncation reads as "this is everything" when it is not."""
     names = [f"Co {i}" for i in range(12)]

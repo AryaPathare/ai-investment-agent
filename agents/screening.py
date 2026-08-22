@@ -18,15 +18,50 @@ which is what models are for. The arithmetic is not.
 
 ABOUT THE THRESHOLDS
 --------------------
-The numbers below are deliberate judgement calls, not empirical findings. A 30%
+The numbers below are deliberate judgement calls, not empirical findings. A 50%
 revenue growth rate scoring full marks is a choice, and a defensible different
 choice exists.
+
+They were RAISED once already, on evidence. The first calibration (30% growth,
+25% operating margin, 60% gross margin) put full marks within reach of any
+strong company, so TSMC and SK hynix both maxed every component and tied at
+exactly 1.000 - despite SK hynix growing revenue eight times faster. A ranking
+that cannot separate its own top two is not ranking. The caps now sit where
+genuinely exceptional performance lives, not where merely good performance does.
+
+Note what this does NOT fix: a company far beyond every cap still scores 1.000,
+because a ramp clips by construction. Clipping also HIDES BAD DATA - an
+implausible 256% growth figure is indistinguishable from a healthy 55% once
+both render as 1.0, which is why the eval carries a separate sanity bound.
 
 The difference from a model-generated score is not that these are objectively
 right - it is that they are VISIBLE, CONSISTENT and CHANGEABLE. They sit in one
 file, apply identically to every company, and can be adjusted deliberately with
 the effect measured. A model's internal 0-100 scale has none of those
 properties.
+
+KNOWN LIMITS, ACCEPTED DELIBERATELY
+-----------------------------------
+Both were measured, not guessed, and both were left in place on purpose. They
+distort ABSOLUTE scores; neither distorts an ordering anyone actually consumes.
+
+1. A company far beyond every cap still scores exactly 1.000. SK hynix does,
+   on 256% revenue growth. This was worth fixing when it produced a TIE - two
+   companies indistinguishable at the top is a ranking that cannot rank - and
+   raising the caps fixed that. A single company at 1.000 is ranked first, which
+   is correct. Eliminating the number entirely needs a soft-saturating curve
+   instead of a ramp, which re-calibrates every company to change one number
+   that changes no ordering.
+
+2. Financial companies are capped at 0.50. Banks have no cost of goods and often
+   no reported leverage figure, so at most two of four metrics are available,
+   `completeness` is 0.50, and `total` multiplies by it. A flawless bank
+   therefore cannot outrank a mediocre technology company. The alternative -
+   scoring them on a gross margin they cannot have - was worse, and was the bug
+   this replaced. The real fix is completeness measured against what is
+   OBTAINABLE for that sector, which is a design change, not a threshold change.
+   In practice profiles are sector-themed, so every bank in a banking profile
+   carries the same handicap and their relative order is unaffected.
 """
 
 from __future__ import annotations
@@ -39,6 +74,19 @@ from models.companies import ComparableMetrics, ExposureLevel
 # a company on one number and presenting it beside one scored on four would be
 # false confidence dressed as a comparison.
 MIN_COMPLETENESS = 0.5
+
+# An operating margin below this means the company loses more than its entire
+# revenue. That is disqualifying ON ITS OWN, without needing a second signal to
+# agree, which is the point: the "shrinking AND unprofitable" rule below is a
+# conjunction, and a conjunction cannot fire when one side is missing. CervoMed
+# reported an operating margin of -94.07 - losing 94x revenue - and passed
+# screening purely because its revenue growth was unreported.
+CATASTROPHIC_MARGIN = -1.0
+
+# A candidate scoring at or below this is not presented at all. Ranking it last
+# would still mean recommending it, and a score of zero is the ranking's own
+# verdict that nothing about the company supports the recommendation.
+MIN_SCORE = 0.0
 
 # How much a theme connection counts. Incidental is zero: a company that merely
 # appeared in the same article as a theme has no business being recommended
@@ -102,12 +150,12 @@ def _inverse_ramp(value: float | None, good: float, bad: float) -> float | None:
 def component_scores(metrics: ComparableMetrics) -> dict[str, float]:
     """Score each available metric on 0-1. Missing metrics are omitted."""
     raw = {
-        # Flat revenue scores zero; 30% growth or better scores full marks.
-        "revenue_growth": _ramp(metrics.revenue_growth, 0.0, 0.30),
-        # Break-even scores zero; a 25% operating margin scores full marks.
-        "operating_margin": _ramp(metrics.operating_margin, 0.0, 0.25),
-        # Below 20% gross margin scores zero; 60% or better scores full marks.
-        "gross_margin": _ramp(metrics.gross_margin, 0.20, 0.60),
+        # Flat revenue scores zero; 50% growth or better scores full marks.
+        "revenue_growth": _ramp(metrics.revenue_growth, 0.0, 0.50),
+        # Break-even scores zero; a 40% operating margin scores full marks.
+        "operating_margin": _ramp(metrics.operating_margin, 0.0, 0.40),
+        # Below 20% gross margin scores zero; 75% or better scores full marks.
+        "gross_margin": _ramp(metrics.gross_margin, 0.20, 0.75),
         # Debt/equity of 0.5 or less is unpenalised; 3.0 or more scores zero.
         # Note this is a RATIO - the client normalises yfinance's percentage.
         "debt_to_equity": _inverse_ramp(metrics.debt_to_equity, 0.5, 3.0),
@@ -134,6 +182,15 @@ def screen(metrics: ComparableMetrics) -> tuple[bool, str | None]:
     """
     if metrics.completeness < MIN_COMPLETENESS:
         return False, "no_fundamentals"
+
+    # Checked BEFORE the conjunction below, because it must not depend on a
+    # second metric being present. Losing more than all of your revenue is
+    # disqualifying whether or not the growth figure was reported.
+    if (
+        metrics.operating_margin is not None
+        and metrics.operating_margin < CATASTROPHIC_MARGIN
+    ):
+        return False, "failed_screen"
 
     shrinking = metrics.revenue_growth is not None and metrics.revenue_growth < 0
     unprofitable = metrics.operating_margin is not None and metrics.operating_margin < 0

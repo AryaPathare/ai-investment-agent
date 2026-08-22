@@ -32,7 +32,7 @@ START → Profile → (valid) → Research → Companies → [Risk Critic] → [
 |---|---|---|
 | 1. Profile | Validate investor input; ask about genuine contradictions | Built |
 | 2. Research | Identify themes, grounded in retrieved news | Built |
-| 3. Companies | Extract, resolve, screen and rank companies | Built, eval pending |
+| 3. Companies | Extract, resolve, screen and rank companies | Built and verified |
 | 4. Risk Critic | Adversarially attack each candidate | Planned |
 | 5. Decide | Score, select, state exit conditions | Planned |
 
@@ -281,6 +281,177 @@ meaningful.
 
 ---
 
+## Session 2 — 2026-08-21 → 2026-08-22
+
+### Starting point
+
+Agent 3 was built and wired in, but unverified: its eval baseline had never
+completed, because the account hit Groq's daily token ceiling after one profile.
+Unit tests all passed. That distinction turned out to be the theme of the whole
+session — **the unit tests prove the code does what it says; only the evals show
+whether what it says is right.**
+
+### What was done
+
+The baseline ran across all five profiles. It reported **0 hard failures** — and
+then four real defects were found anyway, every one of them in the soft signals
+or in behaviour no hard check was looking at. All four are fixed, each with a
+regression test that names the company that exposed it. **267 tests became 276.**
+
+Two new eval checks were added, and both immediately earned their place.
+
+### 8. One field, two meanings, depending on who answered
+
+The baseline showed TSMC labelled `TWD`. That looked wrong — TSM is a New York
+ADR that trades in dollars — and it was, but not in the way it first appeared.
+
+`CurrencyAmounts.currency` was being set from `reportedCurrency` on the FMP path
+and from `currency` on the yfinance path. Those are different things: the first
+is what the STATEMENTS are reported in, the second is what the SHARE trades in.
+So the field meant one thing for a US company and another for a foreign one.
+
+The visible damage: SK hynix's net income of **162 trillion won** was labelled
+USD. Read as dollars, that is more than global GDP.
+
+It had corrupted **nothing**, because all four screening metrics are ratios and
+ratios are currency-invariant. It was found by inspection, not by failure — and
+fixed before Agent 4, which consumes this field, could ever act on it. PowerBank
+turned out to be mislabelled the same way and had not been noticed at all.
+
+This is the same failure as the `debtToEquity` percentage-vs-ratio bug from
+session 1: two providers, one field name, two conventions. Worth stating as a
+rule — **when two providers populate one field, the field needs one definition
+written down, not two implementations that happen to agree on the common case.**
+
+### 9. A ranking that could not rank
+
+Two candidates came back at exactly **1.000**: TSMC and SK hynix. Every one of
+the four metric ramps had clipped at its cap for both of them.
+
+They are not equivalent companies. SK hynix was growing revenue at 256% and TSMC
+at 33% — an eight-fold difference, rendered as an identical score. A ranking
+whose top two cannot be ordered is not ranking.
+
+The thresholds were the problem: full marks sat at 30% growth, a 25% operating
+margin and a 60% gross margin, which is where a *strong* company lives, not an
+exceptional one. They were raised to 50% / 40% / 75%.
+
+The tie broke — TSMC fell to 0.877 — and **rank order was preserved exactly**,
+with no inversions anywhere, which was the stated success criterion decided
+before the change rather than after.
+
+**What this deliberately does not fix:** SK hynix still scores 1.000, because a
+ramp clips by construction. That was accepted rather than fixed. Saturation
+mattered because it produced a TIE; one company at 1.000 is ranked first, which
+is correct. Removing the number entirely needs a soft-saturating curve, which
+would re-calibrate every company in the system to change one number that changes
+no ordering.
+
+### 10. Clipping hides bad data, so the check has to sit upstream of it
+
+SK hynix's 256% revenue growth is almost certainly a provider artifact — its real
+figure is closer to 100%. Nothing caught it, and nothing could have, because
+every value above the cap renders as 1.0: an implausible 256% and a healthy 55%
+are indistinguishable by the time scoring has finished.
+
+A `GROWTH_SANITY_CEILING` was added to the eval as a SOFT signal, deliberately
+not a hard failure — extraordinary growth genuinely happens in a memory upcycle
+or after an acquisition, so a breach means "look at this", not "this is a bug".
+
+The general lesson is worth more than the check: **a metric that clips cannot
+also serve as a data-quality alarm.** The alarm has to sit before the clipping.
+
+### 11. A meaningless zero, read as a terrible one
+
+A banking run produced one candidate scoring 0.309, and its gross margin was
+`0.0`. Banks have no cost of goods, so gross margin is meaningless for them —
+but yfinance returns a literal `0.0` rather than nothing, the code accepted it as
+a real observation, and it scored at the very bottom of the ramp.
+
+That inverts the rule the scoring is explicitly built on: *a missing metric is
+unknown, not bad.* Here a NOT-APPLICABLE metric was being scored as bad.
+
+Then a healthcare run made it much worse. It returned two pre-revenue biotechs,
+CervoMed and ProMIS, **both scoring exactly 0.000** — to a 66-year-old investor
+with low risk tolerance. Same placeholder `0.0`, different sector.
+
+Three companies across two unrelated sectors made it clear this is a provider
+convention, not a quirk. Handled at the provider boundary in
+`clients/companies.py`, for BOTH providers, so the field means one thing whoever
+served it — the rule learned in bug 8, applied straight away.
+
+### 12. A conjunction cannot fire when one side is missing
+
+CervoMed reported an operating margin of **-94.07**. It loses ninety-four times
+its revenue. It passed screening.
+
+`screen()` rejected on *shrinking AND unprofitable* — deliberately, so that a
+profitable company having a flat year, or a fast-growing one investing ahead of
+profit, would not be discarded. But CervoMed's revenue growth was unreported, so
+`shrinking` was False, so the conjunction could never fire. A perfectly sound
+rule was defeated by a missing input.
+
+Losing more than all of your revenue is now disqualifying on its own, checked
+BEFORE the conjunction so it cannot depend on a second metric being present. And
+a candidate scoring zero is dropped rather than ranked last, because ranking it
+last still means recommending it.
+
+### 13. The estimate that was wrong by a factor of four
+
+Midway through, the token budget was reported as roughly 30% spent. It was
+actually **99%** spent, and the final five-profile verification run died after
+one profile.
+
+The cause was trusting a documented figure instead of measuring: the handoff note
+said a profile costs ~6,000 tokens. The real cost is **25-30k** — the reasoning
+model spends far more before the visible answer than that number assumed. Seven
+profiles consumed essentially the entire daily ceiling.
+
+Recorded here because it cost a full verification run, and because the wrong
+number had been sitting in the handoff note being believed for two sessions. It
+is now corrected in both the handoff and the memory.
+
+### 14. What "verified" honestly means here
+
+The re-runs could not confirm everything, and it is worth being precise about
+what was actually established rather than implying more.
+
+Agent 2 retrieves different articles on every run, so candidate SETS differ
+between runs. CervoMed and ProMIS never reappeared, and one banking run resolved
+only 3 of 7 mentions and returned zero candidates — so the exclusion check had no
+candidates to iterate over and was not exercised there.
+
+Each fix was therefore verified at the layer where the evidence is strongest:
+
+| Fix | Confirmed how |
+|---|---|
+| Currency | Live — PowerBank read `CAD` |
+| Recalibration | Live — scores matched offline predictions to three decimals |
+| Growth sanity | Live — fired on SK hynix at 2.568 |
+| Exclusion check | Live on renewables, no false positives |
+| Placeholder zero | Directly, across ten major banks plus both biotechs |
+| Score floor, catastrophic margin | Unit test through the real `analyse_companies` |
+
+**0 hard failures on every post-fix run.** The remaining gap is not a code path —
+it is which companies a given article draw happens to surface.
+
+### 15. Deciding what NOT to fix
+
+Two known limits were found, measured, and deliberately left in place: SK hynix
+still scoring 1.000, and financial companies capped at 0.50.
+
+Both distort absolute scores. Neither distorts an ordering anyone consumes — the
+tie is gone, and profiles are sector-themed so every bank carries the same
+handicap. Both are documented in the module docstring of `agents/screening.py`
+with the reasoning, so they are not rediscovered and re-litigated later.
+
+The alternative for each was a real design change — a soft-saturating curve, or
+completeness measured against what is obtainable per sector — spent on making a
+number look better without changing a decision. Recording *why* something was
+left alone is worth as much as recording what was fixed.
+
+---
+
 ## Provider facts learned by probing, not from documentation
 
 | Provider | Fact | Why it matters |
@@ -294,6 +465,8 @@ meaningful.
 | FMP | `/api/v3/*` endpoints are **dead** (403, legacy-only since Aug 2025) | Nearly every tutorial online shows v3; `/stable/*` works |
 | FMP | Free tier is 250 req/day and covers only a **subset of US symbols** | Search returns foreign symbols happily, then data requests 402 |
 | yfinance | Reports `debtToEquity` as a **percentage**; FMP as a **ratio** | Exactly 100× apart — unnormalised, every yfinance company screens as distressed |
+| yfinance | Carries **two** currencies: `currency` is the SHARE price, `financialCurrency` the STATEMENTS | Amounts are statement figures; the quote currency labelled SK hynix's 162tn won as dollars |
+| Both | Return a literal **`0.0`** where a margin does not apply | Banks have no cost of goods, pre-revenue biotechs no revenue; taken at face value it scores as "terrible" rather than "not applicable" |
 | yfinance | Its **search is better than FMP's** | FMP returned a cryptocurrency for "SMIC" and Canada for "Nvidia" |
 | Both | Fundamentals arrive in local currency — USD, HKD, INR, **GBp** (pence) | Only the four unitless ratios are cross-comparable |
 | Windows | Console is cp1252 and cannot encode model output | Killed a completed eval run mid-report |
@@ -302,24 +475,41 @@ meaningful.
 
 ## Where things stand
 
-**Built and verified:** Agents 1 and 2.
-**Built, not yet verified:** Agent 3 — its eval baseline never completed because
-the account hit Groq's daily token ceiling after one profile.
+**Built and verified:** Agents 1, 2 and 3.
 
-**267 unit tests**, ~5 seconds, no network and no API key required.
+**276 unit tests**, ~2 seconds, no network and no API key required.
+
+Agent 3's baseline finally ran on 2026-08-21 across all five profiles. It found
+four defects, all of which are now fixed and covered by regression tests, and
+every post-fix run has reported **0 hard failures**.
 
 ### Measured weaknesses, deliberately not guessed at
 
-- **Agent 2 records almost no dissenting evidence** — 0 of 5 profiles produced a
-  single `weakens` or `complicates` stance, despite the prompt asking and the
-  schema supporting it. This matters because Agent 4 is the risk critic and
-  contradicting evidence is exactly what it consumes.
-- **Ranking saturates.** A company maxing every metric scores a flat 1.0, so
-  exceptional companies are not currently distinguishable from each other.
+- **Agent 2 records almost no dissenting evidence** — one `weakens` stance across
+  every run ever made. Diagnosed on 2026-08-22 and it is **not the prompt**: most
+  themes cite exactly ONE article, and a theme with one citation cannot record
+  dissent because there is no second article to disagree. Themes are also derived
+  from their own evidence, so a contradicting article becomes a different theme
+  rather than dissent within this one. Underneath both: TheNewsAPI's free tier
+  returns 3 articles per request. **Decision: fix it in Agent 4, not Agent 2** —
+  the risk critic retrieves its own counter-evidence rather than depending on the
+  researcher to have been self-critical.
+- **Ranking still saturates at the very top.** Raising the caps fixed the part
+  that mattered — TSMC and SK hynix tied at 1.000 and could not be ordered — but a
+  company far beyond every cap still scores exactly 1.000, because a ramp clips by
+  construction. Accepted: one company at 1.000 is ranked first, which is correct.
+- **Financial companies are capped at 0.50.** At most two of four metrics exist
+  for a bank, and score multiplies by completeness. Verified across ten major
+  banks: all sit at exactly 0.50 and are kept. Accepted, because profiles are
+  sector-themed, so every bank carries the same handicap and relative order is
+  unaffected.
 - **13 of 18 Agent 2 themes cite a single source**, and it reaches the theme cap
-  on well-covered sectors.
+  on well-covered sectors. This is the same root cause as the dissent gap.
 - **Agent 1's eval set scores 100%**, so it catches regressions but has no
   headroom to show improvement.
+- **Ticker resolution rate varies a lot between runs.** One banking run failed to
+  resolve 4 of 7 mentions and returned zero candidates. Degrades safely — it
+  records a drop reason rather than guessing — but worth watching.
 
 ### Deferred, not blocking
 
@@ -327,12 +517,45 @@ the account hit Groq's daily token ceiling after one profile.
   snippets. Also the thing that would make the project demonstrable.
 - **`InMemorySaver`** loses all state on restart, including a user mid
   clarification. Needs `SqliteSaver` before any real use.
-- **Ticker resolution can be flaky between runs**, because provider search
-  results vary for short ambiguous names. Degrades safely: it records a drop
-  reason rather than picking the wrong company.
+- **The exclusion check matches naive substrings**, so a rationale reading "no
+  crypto exposure" would register as a violation. Consistent with how Agent 2
+  already checks themes. Not yet observed.
 
 ### Next
 
-1. Run `python -m evals.company_runner` — the Agent 3 baseline.
-2. Act on what it shows.
-3. Then Agent 4 (Risk Critic), which needs no new API key.
+Sequencing decided 2026-08-22: **finish the pipeline first, then harden once.**
+
+1. **Agent 4 (Risk Critic).** Needs no new API key, but DOES need news-API
+   budget: the decision above makes it retrieve its own bear-case evidence, then
+   reason — so it is closer in size to Agent 2 than to a pure reasoning step.
+2. **Agent 5 (Decide).**
+3. **One hardening pass** — CLI, `SqliteSaver`, harder Agent 1 eval cases, plus
+   whatever Agents 4 and 5 expose in the earlier agents.
+
+The alternative was to clean up the known gaps in Agents 1-3 first. Rejected for
+three reasons, recorded so the choice is not silently reversed:
+
+- **Most of the gaps are already decided.** Agent 3's two limits were
+  deliberately accepted; Agent 2's dissent gap is already routed into Agent 4.
+  What genuinely remains is Agent 1 eval headroom, which is small and not urgent.
+- **Agents 4 and 5 will show what actually needs fixing.** `CompanyFindings` has
+  no real consumer yet. Whether the currency field, exposure grades and score
+  semantics are right FOR A CONSUMER is unknowable until one exists. Fixing now
+  optimises against an imagined caller.
+- **The question this project exists to answer is unanswerable at 3 of 5
+  agents** — does the system produce a defensible recommendation, or correctly
+  refuse to? Every session spent polishing links postpones the only test that
+  counts.
+
+The CLI belongs in the hardening pass specifically because its shape depends on
+the finished pipeline; building it now means building it against three agents and
+revising it twice.
+
+**Known risk in this plan:** "harden later" is where cleanup goes to die. The
+mitigation is that the list is written down here and in the handoff, so it is a
+tracked commitment rather than an intention.
+
+**Watch from Agent 4's first eval:** it adds retrieval, so per-profile cost rises
+above the current 25-30k. If one end-to-end profile costs 50k+, a full run stops
+fitting inside a day's quota, and caching or a cheaper model for some calls stops
+being optional. Deal with it then, not at Agent 5.
