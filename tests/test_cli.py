@@ -354,6 +354,17 @@ def test_a_run_with_neither_a_decision_nor_an_error_is_not_silently_a_success(ca
 # --- Driving the graph -------------------------------------------------------
 
 
+def _start(user, thread_id, graph=None):
+    """Start a new run. These tests exercise run()'s loop, not persistence, so
+    they use the in-memory graph; durability is tested in test_checkpoints.py."""
+    return cli.run(
+        graph or workflow.investment_graph,
+        thread_id,
+        {"user_input": user},
+        cli.STAGE_LABELS["profile_agent"],
+    )
+
+
 @pytest.fixture
 def stub_pipeline(monkeypatch):
     """Replace Agents 2 to 5 so the graph runs end to end with no network."""
@@ -397,7 +408,7 @@ def test_a_clean_run_never_asks_a_question(
     stub_pipeline()
     answers()  # any input() at all is an assertion failure
 
-    state = cli.run(clean_user, "cli-clean")
+    state = _start(clean_user, "cli-clean")
 
     assert "decision" in state
     assert "error" not in state
@@ -427,7 +438,7 @@ def test_a_clarification_answer_is_carried_in_and_the_graph_resumes(
     stub_pipeline()
     answers("drop the restriction")
 
-    state = cli.run(conflicted_user, "cli-clarify")
+    state = _start(conflicted_user, "cli-clarify")
 
     assert seen == [[], ["drop the restriction"]], "the answer must reach Agent 1"
     assert state["clarification_responses"] == ["drop the restriction"]
@@ -457,7 +468,7 @@ def test_a_blank_clarification_is_refused_rather_than_wasting_an_attempt(
     stub_pipeline()
     answers("", "   ", "keep technology")
 
-    state = cli.run(conflicted_user, "cli-blank")
+    state = _start(conflicted_user, "cli-blank")
 
     assert state["clarification_responses"] == ["keep technology"]
     assert "rather keep" in capsys.readouterr().out
@@ -482,7 +493,7 @@ def test_the_cli_stops_when_the_graph_gives_up(
     limit = get_settings().max_clarification_attempts
     remaining = answers(*["no idea"] * limit)
 
-    state = cli.run(conflicted_user, "cli-exhausted")
+    state = _start(conflicted_user, "cli-exhausted")
 
     assert remaining == [], f"expected exactly {limit} questions"
     assert "Could not resolve the profile" in state["error"]
@@ -498,7 +509,7 @@ def test_a_node_failure_is_reported_as_it_happens(
     )
     answers()
 
-    state = cli.run(clean_user, "cli-node-failure")
+    state = _start(clean_user, "cli-node-failure")
     out = capsys.readouterr().out
 
     assert "FAILED" in out
@@ -543,3 +554,161 @@ def test_main_treats_ctrl_c_as_a_stop(monkeypatch, capsys):
     )
     assert cli.main([]) == 1
     assert "Stopped." in capsys.readouterr().out
+
+
+# --- Saved runs: --list and --resume -----------------------------------------
+
+
+@pytest.fixture
+def db(tmp_path):
+    return tmp_path / "runs.sqlite"
+
+
+@pytest.fixture
+def blocks_once(monkeypatch):
+    """Agent 1 asks a question the first time and accepts the answer after."""
+    from models.profile import InvestorProfile
+
+    def _profile(user_input, clarifications=None):
+        if clarifications:
+            return InvestorProfile(**user_input.model_dump(), status="valid")
+        return InvestorProfile(
+            **user_input.model_dump(),
+            status="needs_clarification",
+            clarification_reason="you want crypto but ruled crypto out",
+        )
+
+    monkeypatch.setattr(workflow, "create_investor_profile", _profile)
+
+
+def _paused_run(db, thread_id="saved-1"):
+    """Leave a run paused at a clarification, as a killed process would."""
+    import checkpoints
+
+    with checkpoints.open_store(db) as store:
+        store.graph.invoke(
+            {"user_input": cli.load_profile("examples/conflicted_crypto.json")},
+            store.config(thread_id),
+        )
+
+
+def test_listing_an_empty_database_says_so_rather_than_printing_nothing(
+    db, answers, capsys
+):
+    answers()
+    assert cli.main(["--db", str(db), "--list"]) == 0
+    assert "Nothing saved yet" in capsys.readouterr().out
+
+
+def test_listing_shows_a_paused_run_with_what_it_was_researching(
+    blocks_once, stub_pipeline, db, answers, capsys
+):
+    """A bare thread id is unusable. The sectors are what make a row
+    recognisable as the run you were in the middle of."""
+    stub_pipeline()
+    _paused_run(db, "saved-1")
+    answers()
+
+    assert cli.main(["--db", str(db), "--list"]) == 0
+    out = capsys.readouterr().out
+
+    assert "saved-1" in out
+    assert "paused" in out
+    assert "cryptocurrency" in out
+    assert "--resume saved-1" in out
+
+
+def test_resuming_an_unknown_run_fails_loudly(db, answers, capsys):
+    """A typo must not quietly start a new run under the wrong name - which is
+    the whole reason resuming is its own flag rather than --thread-id guessing."""
+    answers()
+    assert cli.main(["--db", str(db), "--resume", "typo-here"]) == 1
+    out = capsys.readouterr().out
+    assert "No saved run called 'typo-here'" in out
+    assert "--list" in out
+
+
+def test_resuming_re_asks_the_original_question_and_finishes(
+    blocks_once, stub_pipeline, db, answers, capsys
+):
+    """THE test for this feature. A fresh process picks the run up, shows the
+    user what conflicted, and carries their answer through to a decision."""
+    stub_pipeline(Decision(recommendations=[_recommendation()]))
+    _paused_run(db, "saved-1")
+    answers("drop the crypto")  # the profile is NOT asked again
+
+    assert cli.main(["--db", str(db), "--resume", "saved-1"]) == 0
+    out = capsys.readouterr().out
+
+    assert "Resuming 'saved-1'" in out
+    # The original question, not just a bare prompt.
+    assert "you want crypto but ruled crypto out" in out
+    assert "WAAREE" in out
+
+
+def test_resuming_does_not_ask_for_the_profile_again(
+    blocks_once, stub_pipeline, db, answers
+):
+    """user_input is already saved. Asking eight questions again would defeat
+    the point of having saved anything."""
+    stub_pipeline()
+    _paused_run(db, "saved-1")
+    remaining = answers("drop the crypto")
+
+    cli.main(["--db", str(db), "--resume", "saved-1"])
+    assert remaining == [], "exactly one question - the clarification"
+
+
+def test_resuming_a_finished_run_reprints_it_rather_than_refusing(
+    always_valid, stub_pipeline, db, answers, capsys
+):
+    """"It already finished" is not a useful reply to somebody who wants to see
+    the result again."""
+    import checkpoints
+
+    stub_pipeline(Decision(recommendations=[_recommendation()]))
+    with checkpoints.open_store(db) as store:
+        store.graph.invoke(
+            {"user_input": cli.load_profile("examples/beginner_renewables.json")},
+            store.config("done-1"),
+        )
+    answers()
+
+    assert cli.main(["--db", str(db), "--resume", "done-1"]) == 0
+    out = capsys.readouterr().out
+    assert "already finished" in out
+    assert "WAAREE" in out
+
+
+def test_resume_and_profile_are_refused_together(db):
+    """--resume continues a saved profile; supplying another one is a mistake
+    worth stopping rather than silently ignoring."""
+    with pytest.raises(SystemExit):
+        cli.main(["--db", str(db), "--resume", "x", "--profile", "y.json"])
+
+
+def test_a_run_prints_the_id_needed_to_resume_it(
+    always_valid, stub_pipeline, db, answers, capsys
+):
+    """A durable checkpoint nobody can name is not recoverable."""
+    stub_pipeline()
+    answers()
+
+    cli.main([
+        "--db", str(db),
+        "--thread-id", "nilesh-1",
+        "--profile", "examples/beginner_renewables.json",
+    ])
+    out = capsys.readouterr().out
+    assert "Run id: nilesh-1" in out
+    assert "--resume nilesh-1" in out
+
+
+def test_stopping_says_the_run_was_saved(monkeypatch, db, capsys):
+    """The message has to change now that it is true - before checkpointing,
+    stopping really did throw the run away."""
+    monkeypatch.setattr(
+        "builtins.input", lambda prompt="": (_ for _ in ()).throw(KeyboardInterrupt)
+    )
+    assert cli.main(["--db", str(db)]) == 1
+    assert "The run is saved" in capsys.readouterr().out

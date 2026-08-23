@@ -1036,3 +1036,134 @@ fields are the same set.
 2. **Agent 3's exposure grade** — still the one weakness putting a
    wrong-looking company in front of a person.
 3. Harder Agent 1 eval cases.
+
+---
+
+## Session 6 — 2026-08-23
+
+### Starting point
+
+The CLI shipped and `--thread-id` existed as an inert flag. `InMemorySaver` lost
+everything on process exit, including a user stopped mid-clarification — which
+is the one moment this pipeline is most likely to be stopped, because it is the
+only moment it asks a person for something.
+
+### 30. What the checkpointer's allow-list actually does
+
+The session began by mutation-testing the fix from Session 5: remove
+`serde=serializer` from the store and confirm the tests fail. **They passed.**
+
+That was worth chasing rather than shrugging at, because it meant either the
+guard was worthless or the Session 5 diagnosis was wrong. Testing the serializer
+directly settled it:
+
+| serializer | unregistered type comes back as |
+|---|---|
+| `JsonPlusSerializer()` — no allow-list | the real type, **plus a deprecation warning** |
+| `JsonPlusSerializer(allowed_msgpack_modules=[...])` | **a plain dict**, blocked |
+
+So passing `allowed_msgpack_modules` **opts into a strict allow-list**. That is
+what made Session 5's bug real, and re-running that exact scenario reproduced it
+exactly: with Agents 4 and 5 absent from the list, `decision` and `risk_findings`
+both come back as `dict`. The Session 5 account was right.
+
+But *omitting the serializer entirely* is a different failure, and a quieter
+one. It falls back to LangGraph's permissive default, which reconstructs
+everything and only warns:
+
+> Deserializing unregistered type ... This will be blocked in a future version.
+
+So dropping `serde=` looks completely fine today, silently discards the
+guarantee `CHECKPOINTED_TYPES` exists to provide, and breaks everywhere at once
+when that future version lands. **A round-trip test cannot catch it while the
+default is still permissive.** The test asserts the serializer's IDENTITY
+instead, which does fail on the mutation.
+
+The general lesson: a test that cannot fail is not evidence, and the only way to
+find out is to break the thing on purpose. Two mutation tests in two sessions;
+one confirmed the guard, one exposed that it was pointed at nothing.
+
+### 31. Three ways a run can be unfinished, not one
+
+The obvious model was "paused at a clarification, or done". Probing found a
+third, and it turned out to be the valuable one:
+
+```
+paused     interrupted to ask a question       -> resume with Command(resume=answer)
+stopped    process died partway through a stage -> resume with None
+finished   ran to the end                       -> nothing to resume
+```
+
+`stopped` is what happens on Ctrl-C during the three-minute research call, and
+`invoke(None, config)` picks up at the unfinished node **without repeating the
+ones that completed**. A test proves Agent 1 is not called a second time. On a
+free-tier daily ceiling that is the difference between losing a minute and
+losing the day's budget, and it would have been missed entirely by modelling
+this as a two-state problem.
+
+`get_state` on an unknown thread returns a snapshot with `created_at is None`
+rather than raising, so that is the existence test — and `run()` returns `None`
+for it, so a mistyped id can be reported instead of quietly starting a fresh run
+under the typo. That is also why resuming is `--resume` rather than
+`--thread-id` guessing.
+
+### 32. A durable checkpoint nobody can find is not durable
+
+`--list` exists because the alternative is asking people to write down a uuid.
+It prints the status and **what each run was researching**, because a column of
+thread ids is not something a person can recognise their own work in.
+
+### 33. Two places this refused to be convenient
+
+**The database is not in `.cache/`.** That directory is documented in
+`.gitignore` as "re-fetchable; not source" and is safe to delete to force fresh
+API data. A paused clarification is neither re-fetchable nor safe to delete.
+Sooner or later somebody clears the cache; they should not lose a live session
+by doing it. It lives in `.state/`, with the distinction written into the
+ignore file.
+
+**Importing a module still creates nothing.** `build_graph(checkpointer)` takes
+the checkpointer as an argument rather than the module owning one, so
+`import workflow` and `import checkpoints` touch no filesystem. A module-level
+`SqliteSaver` would create a database because something imported it — including
+every test run. Checked in a subprocess, and skipped when a real run has already
+created the file, since then the question cannot be answered by looking.
+
+### 34. A performance regression that was not one
+
+The suite appeared to go from 3s to 13s. Before optimising anything, the
+committed baseline was measured in a throwaway `git worktree`:
+
+| | cold | warm |
+|---|---|---|
+| `1dd95e0` (before this session) | 11.1s | 7.0–8.1s |
+| this session | 13.4s | 6.3–7.1s |
+
+**There was no regression.** The "3.07s" figure quoted in Session 5's README was
+a single warm outlier, and "13s" was a single cold one. Roughly six seconds of
+work went into chasing a number that was noise — cheap, and cheaper than the
+alternative of "optimising" a suite that was never slow. The README now says "a
+few seconds" rather than a precise figure it cannot honestly promise.
+
+The one real finding along the way: an autouse fixture requesting `tmp_path`
+applies to every test in the suite, so it creates a temp directory per test.
+Changed to one session-scoped directory with a file per test. It saved little
+here, but it is the kind of thing that scales badly and silently.
+
+### Where it stands
+
+- **501 tests**, a few seconds, no network.
+- `python -m cli --list` / `--resume <id>`; `--db` for pointing at another
+  database, which is also what keeps the tests off the real one.
+- An autouse fixture redirects `checkpoints.DB_PATH` for every test, so a test
+  that forgets `--db` cannot write into a user's saved runs.
+- Verified across three separate processes: start, kill at the prompt, list,
+  resume, finish.
+
+### Next
+
+1. **Run the CLI against the live pipeline.** Still never done end to end.
+2. **Agent 3's exposure grade** — the one weakness putting a wrong-looking
+   company in front of a person.
+3. Harder Agent 1 eval cases.
+

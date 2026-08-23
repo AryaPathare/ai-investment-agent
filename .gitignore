@@ -28,3 +28,7 @@ evals/results/
 .cache/
 
 # Cached company data (re-fetchable; not source)
+
+# Saved runs (NOT re-fetchable - a paused session lives here, so unlike
+# .cache/ above, deleting this loses a user's in-progress work)
+.state/

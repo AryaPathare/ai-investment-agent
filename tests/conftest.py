@@ -9,15 +9,25 @@ API key. Anything that needs the real model belongs in the eval suite instead,
 which measures model behaviour rather than code correctness.
 """
 
+import re
 from datetime import datetime, timezone
 
 import pytest
 
+import checkpoints
 import config
 from clients import news
 from models.profile import InvestorProfile, ProfileAssessment
 from models.research import Article
 from models.user_input import UserInput
+
+DEFAULT_DB_PATH = checkpoints.DB_PATH
+"""The real checkpoint path, captured before any test can redirect it.
+
+``isolated_checkpoints`` below points ``checkpoints.DB_PATH`` at a temporary
+file for every test, which is what you want everywhere except in the two tests
+that are ABOUT the real default. Those read this instead.
+"""
 
 
 @pytest.fixture(autouse=True)
@@ -164,3 +174,33 @@ def no_accidental_research(monkeypatch):
 
     monkeypatch.setattr(workflow, "research_themes", guard)
     monkeypatch.setattr(workflow, "analyse_companies", company_guard)
+
+
+@pytest.fixture(scope="session")
+def checkpoint_dir(tmp_path_factory):
+    """One throwaway directory for the whole session. See below for why."""
+    return tmp_path_factory.mktemp("checkpoints")
+
+
+@pytest.fixture(autouse=True)
+def isolated_checkpoints(checkpoint_dir, request, monkeypatch):
+    """Point the checkpoint database at a throwaway file.
+
+    Same reasoning as ``isolated_cache`` above, with more at stake. The real
+    database holds RUNS A PERSON HAS NOT FINISHED - a paused clarification is
+    exactly what it exists to protect - and a test writing into it could
+    resurrect a thread id from a previous test run, or bury a real one.
+
+    ``autouse`` rather than opt-in on purpose: a test that forgets ``--db``
+    should get a temporary file, not the user's saved work.
+
+    Uses a single session-scoped directory with one file per test rather than
+    ``tmp_path``. ``tmp_path`` is per-test and this fixture applies to ALL of
+    them, so requesting it here created a directory for every test in the suite
+    - about six seconds of pure filesystem overhead for a guard that most tests
+    never trigger. The file itself is only created if something opens it.
+    """
+    import checkpoints
+
+    safe = re.sub(r"[^A-Za-z0-9_.-]", "_", request.node.nodeid)
+    monkeypatch.setattr(checkpoints, "DB_PATH", checkpoint_dir / f"{safe}.sqlite")

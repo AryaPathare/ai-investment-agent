@@ -26,6 +26,7 @@ recommendation just because recommending is its job.
 | 4. Risk Critic | Retrieve the bear case and attack the thesis | **Built** |
 | 5. Decide | Select, write the case, and state exit conditions | **Built** |
 | CLI | Ask the questions, run the graph, print the brief | **Built** |
+| Checkpoints | Save every step, so a stopped run can be resumed | **Built** |
 
 ---
 
@@ -70,6 +71,27 @@ the graph resumes from exactly where it paused.
 
 See [examples/](examples/) for the saved profiles.
 
+### Stopping is safe
+
+Every step is checkpointed to SQLite, so closing the terminal at a clarification
+prompt — or Ctrl-C during the three-minute research call — loses nothing:
+
+```powershell
+python -m cli --list
+#   nilesh-1  paused, waiting on your answer  cryptocurrency, banking
+
+python -m cli --resume nilesh-1
+#   Resuming 'nilesh-1' - paused, waiting on your answer.
+#     researching: cryptocurrency, banking
+#   (the original question is shown again, then the run continues)
+```
+
+A run stopped partway through a stage resumes at that stage and **does not
+repeat the ones that finished**, which on a free-tier quota is the difference
+between losing a minute and losing the day's budget. Runs live in `.state/`,
+deliberately not under `.cache/` — a paused session is not re-fetchable, and
+`.cache/` is documented as safe to delete.
+
 ---
 
 ## Setup
@@ -107,8 +129,10 @@ layer.
 
 ```powershell
 python -m cli                           # run the pipeline and print the brief
+python -m cli --list                    # saved runs, and which can be resumed
+python -m cli --resume <id>             # continue a run that stopped
 python -m scripts.check_setup           # environment health check
-python -m pytest                        # unit tests (472, ~3s, no network)
+python -m pytest                        # unit tests (501, a few seconds, no network)
 
 python -m evals.runner                  # Agent 1: accuracy on 18 labelled cases
 python -m evals.runner --tag regression # only the must-never-break cases
@@ -144,6 +168,7 @@ the runner exits non-zero if any of them come back.
 
 ```
 cli.py             The command line front end. The only way a person runs this.
+checkpoints.py     Durable run state, so a stopped run can be resumed.
 config.py          All external configuration. The only place secrets are read.
 workflow.py        The LangGraph graph: nodes, edges, routing.
 models/            Pydantic schemas — the contracts between stages.

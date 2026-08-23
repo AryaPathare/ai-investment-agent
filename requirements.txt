@@ -10,6 +10,7 @@
 # --- Core runtime -----------------------------------------------------------
 
 langgraph==1.2.11          # Agent workflow engine: state, nodes, edges, interrupts
+langgraph-checkpoint-sqlite==3.1.1  # Durable checkpoints, so a stopped run can resume
 langchain-groq==1.1.3      # Groq chat model wrapper (pulls in langchain-core)
 pydantic==2.13.4           # Schemas + validation for UserInput / InvestorProfile
 pydantic-settings==2.15.0  # Typed, validated loading of environment variables

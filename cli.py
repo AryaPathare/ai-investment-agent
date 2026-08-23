@@ -3,13 +3,15 @@
     python -m cli
     python -m cli --profile examples/beginner_renewables.json
     python -m cli --save-profile mine.json
+    python -m cli --list                     # what is saved, and what can resume
+    python -m cli --resume cli-8f3a2b91      # continue a run that stopped
 
 Everything before this was driven from Python snippets and eval runners, which
 meant the system worked but could not be DEMONSTRATED. This closes that gap and
 nothing more: it asks the profile questions, runs the graph, carries a
 clarification answer back in when Agent 1 asks for one, and prints the result.
 
-THREE THINGS THIS HAS TO GET RIGHT
+FOUR THINGS THIS HAS TO GET RIGHT
 
 1. The clarification interrupt. Agent 1 can stop mid-run and ask the user a
    question. ``graph.stream`` yields an ``__interrupt__`` chunk, the CLI asks,
@@ -26,6 +28,13 @@ THREE THINGS THIS HAS TO GET RIGHT
 3. Recommending nothing must not look like failure. An empty result is the
    outcome the whole design exists to make possible. It gets its own banner and
    its reason printed large, not a blank screen and an exit code.
+
+4. Stopping must be survivable. State is checkpointed to SQLite (see
+   checkpoints.py), so closing the terminal at a clarification prompt - or
+   Ctrl-C during the three-minute research call - loses nothing. ``--resume``
+   picks the run up where it stopped and does not repeat the stages that
+   already completed, which on this project's quota is what makes stopping
+   cheap rather than expensive.
 
 WHAT IT DOES NOT DO
 
@@ -45,9 +54,9 @@ from typing import get_args
 from langgraph.types import Command
 from pydantic import ValidationError
 
+import checkpoints
 from models.decision import Decision
 from models.user_input import UserInput
-from workflow import investment_graph
 
 WIDTH = 78
 
@@ -216,7 +225,7 @@ def ask_profile() -> UserInput:
                 answers[field] = askers[field]()
 
 
-def load_profile(path: Path) -> UserInput:
+def load_profile(path: Path | str) -> UserInput:
     """Load a saved profile so a run can be repeated without retyping it.
 
     Worth having because the Groq daily ceiling is the binding constraint on
@@ -224,6 +233,7 @@ def load_profile(path: Path) -> UserInput:
     thing, and eight prompts between each attempt is friction that discourages
     the re-run.
     """
+    path = Path(path)
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
@@ -253,6 +263,20 @@ def describe_profile(user: UserInput) -> str:
 
 
 # --- Running the graph -------------------------------------------------------
+
+# What each graph node is called on screen, and which of the five stages it is.
+# Kept in one table because it is needed in two places that must agree: the
+# progress display announcing the next stage, and the resume path working out
+# where a saved run stopped. Two copies would drift the moment a node is added.
+STAGE_LABELS: dict[str, tuple[int, str]] = {
+    "profile_agent": (1, "Checking your profile makes sense"),
+    "clarification": (1, "Waiting for your clarification"),
+    "clarification_exhausted": (1, "Giving up on the profile"),
+    "research": (2, "Researching current themes in your sectors"),
+    "companies": (3, "Finding companies genuinely exposed to those themes"),
+    "risk_critic": (4, "Stress-testing each candidate against bad news"),
+    "decide": (5, "Writing the brief"),
+}
 
 
 class Progress:
@@ -296,7 +320,7 @@ def _report(progress: Progress, node: str, update: dict) -> None:
             progress.detail("your answers appear to conflict")
         else:
             progress.detail("profile valid")
-            progress.stage(2, "Researching current themes in your sectors")
+            progress.stage(*STAGE_LABELS["research"])
 
     elif node == "clarification":
         progress.detail("answer recorded")
@@ -310,7 +334,7 @@ def _report(progress: Progress, node: str, update: dict) -> None:
         )
         for theme in found.themes:
             progress.detail(f"  - {theme.name} ({theme.confidence} confidence)")
-        progress.stage(3, "Finding companies genuinely exposed to those themes")
+        progress.stage(*STAGE_LABELS["companies"])
 
     elif node == "companies":
         found = update["company_findings"]
@@ -323,7 +347,7 @@ def _report(progress: Progress, node: str, update: dict) -> None:
         if found.drop_summary:
             dropped = ", ".join(f"{n} {why}" for why, n in found.drop_summary.items())
             progress.detail(f"  dropped: {dropped}")
-        progress.stage(4, "Stress-testing each candidate against bad news")
+        progress.stage(*STAGE_LABELS["risk_critic"])
 
     elif node == "risk_critic":
         found = update["risk_findings"]
@@ -338,7 +362,7 @@ def _report(progress: Progress, node: str, update: dict) -> None:
                 progress.detail(
                     f"  {critique.ticker}: not critiqued - {critique.skipped_reason}"
                 )
-        progress.stage(5, "Writing the brief")
+        progress.stage(*STAGE_LABELS["decide"])
 
     elif node == "decide":
         decision = update["decision"]
@@ -369,8 +393,15 @@ def ask_clarification(payload: dict) -> str:
         print("     Please say which of the two you would rather keep.")
 
 
-def run(user: UserInput, thread_id: str) -> dict:
+def run(graph, thread_id: str, start, opening: tuple[int, str]) -> dict:
     """Drive the graph to completion, answering any clarification on the way.
+
+    ``start`` is whatever should be sent first, and it is the only difference
+    between a new run and a resumed one:
+
+    * ``{"user_input": ...}``   a new run
+    * ``Command(resume=...)``   picking up at a question that was asked before
+    * ``None``                  picking up a run killed partway through a stage
 
     Returns the full final state. ``stream`` yields only per-node updates, so
     the accumulated state is read back from the checkpointer at the end - it is
@@ -381,22 +412,27 @@ def run(user: UserInput, thread_id: str) -> dict:
 
     _banner("RUNNING")
     print("\nThis makes real API calls and takes a few minutes.")
-    progress.stage(1, "Checking your profile makes sense")
+    print(f"Run id: {thread_id}")
+    print("If this stops before it finishes, resume it with")
+    print(f"  python -m cli --resume {thread_id}")
+    progress.stage(*opening)
 
-    payload = {"user_input": user}
-    while payload is not None:
+    payload = start
+    while True:
         pending = None
-        for chunk in investment_graph.stream(payload, config, stream_mode="updates"):
+        for chunk in graph.stream(payload, config, stream_mode="updates"):
             if "__interrupt__" in chunk:
                 pending = chunk["__interrupt__"][0].value
                 continue
             for node, update in chunk.items():
                 _report(progress, node, update)
 
-        payload = None if pending is None else Command(resume=ask_clarification(pending))
+        if pending is None:
+            break
+        payload = Command(resume=ask_clarification(pending))
 
     print(f"\nDone in {progress.elapsed}.")
-    return investment_graph.get_state(config).values
+    return graph.get_state(config).values
 
 
 # --- Printing the result -----------------------------------------------------
@@ -579,6 +615,93 @@ def print_outcome(state: dict) -> int:
     return 0
 
 
+# --- Saved runs --------------------------------------------------------------
+
+
+STATUS_TEXT = {
+    "paused": "paused, waiting on your answer",
+    "stopped": "stopped partway through",
+    "finished": "finished",
+}
+
+
+def print_saved_runs(runs: list) -> int:
+    """List what is in the checkpoint database. Returns the exit code."""
+    _banner("SAVED RUNS")
+    print()
+
+    if not runs:
+        print(_wrap(
+            "Nothing saved yet. Runs appear here once you start one, and stay "
+            "until you delete the database.",
+            indent="  ",
+        ))
+        return 0
+
+    width = max(len(run.thread_id) for run in runs)
+    for run in runs:
+        sectors = ", ".join(run.sectors) or "no sectors recorded"
+        print(f"  {run.thread_id:<{width}}  {STATUS_TEXT[run.status]:<30}  {sectors}")
+
+    resumable = [run for run in runs if run.can_resume]
+    if resumable:
+        print()
+        print(_wrap(
+            f"Resume one with: python -m cli --resume {resumable[0].thread_id}",
+            indent="  ",
+        ))
+    return 0
+
+
+def resume(store, thread_id: str) -> int:
+    """Continue a saved run. Returns the exit code.
+
+    The profile is deliberately NOT asked for again: ``user_input`` is already
+    in the saved state, and asking a returning user to retype eight answers
+    would defeat the point of having saved anything.
+    """
+    saved = store.run(thread_id)
+
+    if saved is None:
+        # Loud rather than silent, which is the reason resuming is its own flag
+        # instead of --thread-id guessing. A typo must not quietly start a new
+        # run that spends a day's quota under a name nobody will look for.
+        print(f"\nNo saved run called {thread_id!r}.")
+        print("Run python -m cli --list to see what is saved.")
+        return 1
+
+    if saved.status == "finished":
+        # Not an error: the answer is right there. Reprint it rather than
+        # refusing, because "it already finished" is not a useful reply to
+        # somebody who wants to see the result again.
+        print(f"\nRun {thread_id!r} already finished. Showing what it produced.")
+        return print_outcome(store.graph.get_state(store.config(thread_id)).values)
+
+    print(f"\nResuming {thread_id!r} - {STATUS_TEXT[saved.status]}.")
+    if saved.sectors:
+        print(f"  researching: {', '.join(saved.sectors)}")
+
+    if saved.question is not None:
+        # It stopped at a question, so re-ask that exact question. Somebody
+        # coming back tomorrow needs to see what conflicted, not just a prompt.
+        start = Command(resume=ask_clarification(saved.question))
+        # NOT the profile_agent label: the node that runs first here is the
+        # clarification one, recording the answer. Announcing "checking your
+        # profile" and then printing "answer recorded" under it describes the
+        # wrong thing.
+        opening = (1, "Applying your answer")
+    else:
+        # It died partway through a stage. Sending nothing tells the graph to
+        # pick up the unfinished node - the stages that DID complete are not
+        # repeated, which on this project's quota is the whole point.
+        start = None
+        node = store.graph.get_state(store.config(thread_id)).next[0]
+        opening = STAGE_LABELS.get(node, (1, f"Continuing at {node}"))
+
+    state = run(store.graph, thread_id, start, opening)
+    return print_outcome(state)
+
+
 # --- Entry point -------------------------------------------------------------
 
 
@@ -602,12 +725,31 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--thread-id",
         metavar="ID",
-        help=(
-            "Checkpoint thread to run under. Only useful once the checkpointer "
-            "is durable; InMemorySaver loses the thread when the process exits."
-        ),
+        help="Name this run, so --resume can find it. Generated if not given.",
+    )
+    parser.add_argument(
+        "--resume",
+        metavar="ID",
+        help="Continue a saved run instead of starting a new one.",
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        dest="list_runs",
+        help="Show saved runs and which of them can be resumed.",
+    )
+    parser.add_argument(
+        "--db",
+        type=Path,
+        metavar="FILE",
+        help=f"Checkpoint database to use (default: {checkpoints.DB_PATH}).",
     )
     args = parser.parse_args(argv)
+
+    if args.resume and args.profile:
+        parser.error("--resume continues a saved run; it takes no --profile.")
+    if args.resume and args.list_runs:
+        parser.error("--resume and --list do different things; pick one.")
 
     _force_utf8_output()
 
@@ -616,24 +758,40 @@ def main(argv: list[str] | None = None) -> int:
     print("=" * WIDTH)
 
     try:
-        user = load_profile(args.profile) if args.profile else ask_profile()
+        # The database is opened for every path, including --list, and closed
+        # on the way out however this ends.
+        with checkpoints.open_store(args.db) as store:
+            if args.list_runs:
+                return print_saved_runs(store.saved_runs())
 
-        if args.profile:
-            print(f"\nLoaded {args.profile}:")
-            print(f"  {describe_profile(user)}")
+            if args.resume:
+                return resume(store, args.resume)
 
-        if args.save_profile:
-            args.save_profile.write_text(
-                json.dumps(user.model_dump(), indent=2), encoding="utf-8"
+            user = load_profile(args.profile) if args.profile else ask_profile()
+
+            if args.profile:
+                print(f"\nLoaded {args.profile}:")
+                print(f"  {describe_profile(user)}")
+
+            if args.save_profile:
+                args.save_profile.write_text(
+                    json.dumps(user.model_dump(), indent=2), encoding="utf-8"
+                )
+                print(f"\nProfile saved to {args.save_profile}")
+
+            thread_id = args.thread_id or f"cli-{uuid.uuid4().hex[:8]}"
+            state = run(
+                store.graph,
+                thread_id,
+                {"user_input": user},
+                STAGE_LABELS["profile_agent"],
             )
-            print(f"\nProfile saved to {args.save_profile}")
+            return print_outcome(state)
 
-        state = run(user, args.thread_id or f"cli-{uuid.uuid4()}")
     except Cancelled:
-        print("\n\nStopped.")
+        # The state is already on disk, so this is genuinely recoverable now.
+        print("\n\nStopped. The run is saved; python -m cli --list will show it.")
         return 1
-
-    return print_outcome(state)
 
 
 if __name__ == "__main__":

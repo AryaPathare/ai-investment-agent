@@ -370,6 +370,30 @@ CHECKPOINTED_TYPES = [
 
 serializer = JsonPlusSerializer(allowed_msgpack_modules=CHECKPOINTED_TYPES)
 
-memory = InMemorySaver(serde=serializer)
 
-investment_graph = builder.compile(checkpointer=memory)
+def build_graph(checkpointer):
+    """Compile the graph against a given checkpointer.
+
+    The graph and the place its state is stored are separate decisions, and
+    they have genuinely different answers depending on the caller:
+
+    * The tests want state that vanishes between tests and never touches disk.
+    * A real run wants state that survives the process, because losing a user
+      who is halfway through answering a clarification is the failure this
+      whole mechanism exists to prevent.
+
+    Passing the checkpointer in keeps ``import workflow`` free of side effects.
+    A module-level SqliteSaver would open a file — and create one — merely
+    because something imported this module, including every test run.
+
+    ALWAYS pass ``serde=serializer``. A checkpointer built without it silently
+    returns every Pydantic object as a plain dict; see CHECKPOINTED_TYPES above
+    for what that cost the last time it happened.
+    """
+    return builder.compile(checkpointer=checkpointer)
+
+
+# The default graph: state in RAM, lost when the process exits. This is what
+# the tests use and what a Python snippet gets by default. Real runs go through
+# checkpoints.py, which builds the same graph over a SQLite file.
+investment_graph = build_graph(InMemorySaver(serde=serializer))

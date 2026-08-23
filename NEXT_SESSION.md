@@ -1,10 +1,11 @@
 # Start here
 
-Last worked: **2026-08-23** (session 5). **The pipeline is complete and now
-demonstrable.** All five agents are built and verified against their own evals,
-and `python -m cli` runs the whole thing end to end.
+Last worked: **2026-08-23** (session 6). **The pipeline is complete, demonstrable,
+and durable.** All five agents are built and verified against their own evals,
+`python -m cli` runs the whole thing end to end, and a run that stops can be
+resumed.
 
-`docs/PROJECT_LOG.md` is current through Session 5.
+`docs/PROJECT_LOG.md` is current through Session 6.
 
 ---
 
@@ -15,7 +16,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **472 passed** in about 3 seconds.
+Expect **501 passed** in a few seconds.
 
 Then see it work, without spending quota on a real run:
 
@@ -42,24 +43,32 @@ Two things worth knowing before changing it:
 - `stream` never yields accumulated state, so the final state is read back with
   `get_state(config).values`. **That is what found the serializer bug below.**
 
-### 2b. `SqliteSaver` — NEXT, and start here
+### 2b. `SqliteSaver` — DONE this session
 
-`InMemorySaver` loses all state on restart, including a user stopped mid
-clarification.
+`checkpoints.py`. Every step is written to `.state/checkpoints.sqlite`, so
+closing the terminal at a clarification prompt loses nothing.
 
-Now slightly larger than it looks, and better understood than it was:
+```powershell
+python -m cli --list                 # saved runs and which can be resumed
+python -m cli --resume nilesh-1      # continue one
+python -m cli --db other.sqlite      # point at a different database
+```
 
-- `--thread-id` already exists in the CLI and is **inert** until the
-  checkpointer is durable. It is the seam this work plugs into.
-- The serializer is now a named constant, `workflow.CHECKPOINTED_TYPES`, with a
-  test walking `InvestmentState` to prove nothing reachable is missing from it.
-  `SqliteSaver` takes the same `serde=`, so that guarantee carries over — but
-  **resume across processes will exercise it far harder than anything has so
-  far**, because every read comes back through the serializer rather than only
-  the one interrupt in Agent 1.
-- Worth an actual end-to-end check once it is in: start `python -m cli` with
-  `examples/conflicted_crypto.json`, kill the process at the clarification
-  prompt, and resume the same `--thread-id` in a fresh process.
+Three things worth knowing before changing it:
+
+- **A run has three states, not two.** `paused` (interrupted to ask a question,
+  resume with `Command(resume=...)`), `stopped` (process died mid-stage, resume
+  with `None`), `finished`. The `stopped` case resumes at the unfinished stage
+  and does NOT repeat completed ones — a test proves Agent 1 is not called
+  twice. On this project's quota that is the whole value.
+- **`allowed_msgpack_modules` opts into a STRICT allow-list.** Passing it means
+  unregistered types come back as dicts; passing no serializer at all falls back
+  to a permissive default that reconstructs everything and merely warns it will
+  stop. So dropping `serde=` looks harmless today and fails everywhere later.
+  A round-trip test cannot catch that, so the test asserts the serializer's
+  identity. Do not "simplify" it back to a round trip.
+- **The database is not under `.cache/`** and must not move there. `.cache/` is
+  documented as safe to delete; a paused clarification is not.
 
 ### 2c. Harder Agent 1 eval cases
 
@@ -178,18 +187,26 @@ it broke immediately. There is now a test that walks `InvestmentState` and fails
 if a reachable type is missing from `CHECKPOINTED_TYPES` — **adding a stage
 means adding its types.**
 
+**Session 6 added a fourth: a test that cannot fail is not evidence.** Mutation
+-testing that same guard — removing `serde=` and expecting red — produced green,
+because omitting the serializer falls back to a permissive default rather than
+the strict allow-list. The guard was real but pointed at nothing, and only
+breaking it on purpose revealed that. Two sessions, two mutation tests, one
+confirmed and one exposed. **Break a new guard deliberately before trusting it.**
+
 ---
 
 ## Commands
 
 ```powershell
 python -m cli                           # run the pipeline for a person
+python -m cli --list                    # saved runs; --resume <id> continues one
 python -m cli --profile examples/beginner_renewables.json
 python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 472 tests, ~3s, no network
+python -m pytest                        # 501 tests, a few seconds, no network
 
 python -m evals.runner                  # Agent 1: 18 labelled cases
 python -m evals.research_runner         # Agent 2: process quality, 5 profiles
