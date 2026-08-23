@@ -40,9 +40,21 @@ def fake_credentials(monkeypatch):
     the suite pass identically on your machine and on a CI runner that has no
     .env at all. The cached settings are cleared before and after so no test
     inherits another test's configuration.
+
+    EVERY credential config.py can read must be set here. One that is missing
+    falls through to the developer's real .env and the tests keep passing, right
+    up until they run somewhere that has none - which is exactly what CI is for
+    and exactly how this was found.
     """
     monkeypatch.setenv("GROQ_API_KEY", "test-key-never-used")
     monkeypatch.setenv("NEWS_API_KEY", "test-news-key-never-used")
+    # FMP too. Its absence was invisible on a developer machine, where .env
+    # supplies it: five tests in test_company_client.py stubbed the network,
+    # expected "Could not reach", and got "FMP_API_KEY is not set" instead the
+    # moment they ran anywhere without a .env. The docstring above claimed the
+    # suite passed identically on a CI runner with no .env; it did not, and
+    # nothing revealed that until one actually ran.
+    monkeypatch.setenv("FMP_API_KEY", "test-fmp-key-never-used")
     config.get_settings.cache_clear()
     config.get_llm.cache_clear()
     yield

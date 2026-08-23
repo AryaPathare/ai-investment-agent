@@ -1,5 +1,7 @@
 # AI Investment Research Agent
 
+[![tests](https://github.com/AryaPathare/ai-investment-agent/actions/workflows/tests.yml/badge.svg)](https://github.com/AryaPathare/ai-investment-agent/actions/workflows/tests.yml)
+
 Built for someone who wants to start investing and does not know where to begin.
 They say which **sectors or fields** they are interested in — technology,
 healthcare, energy — along with how much, for how long, how much risk they can
