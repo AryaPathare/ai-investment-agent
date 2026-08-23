@@ -62,7 +62,7 @@ def test_untouchable_fields_are_copied_verbatim(conflicted_user):
     """Even a model trying to revise everything cannot alter these."""
     assessment = ProfileAssessment(
         status="valid",
-        revised_interests=["completely", "different"],
+        revised_sectors_of_interest=["completely", "different"],
         revised_restrictions=["nothing"],
         revised_risk_tolerance="high",
     )
@@ -80,7 +80,7 @@ def test_untouchable_fields_are_copied_verbatim(conflicted_user):
 
 def test_omitted_revisions_leave_fields_unchanged(conflicted_user):
     profile = build_profile(conflicted_user, ProfileAssessment(status="valid"))
-    assert profile.interests == conflicted_user.interests
+    assert profile.sectors_of_interest == conflicted_user.sectors_of_interest
     assert profile.restrictions == conflicted_user.restrictions
     assert profile.risk_tolerance == conflicted_user.risk_tolerance
 
@@ -89,7 +89,7 @@ def test_omitted_revisions_leave_fields_unchanged(conflicted_user):
     "revision,field,expected",
     [
         ({"revised_restrictions": []}, "restrictions", []),
-        ({"revised_interests": ["sports"]}, "interests", ["sports"]),
+        ({"revised_sectors_of_interest": ["sports"]}, "sectors_of_interest", ["sports"]),
         ({"revised_risk_tolerance": "high"}, "risk_tolerance", "high"),
     ],
 )

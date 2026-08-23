@@ -15,8 +15,8 @@ Why they are separate
 ---------------------
 ``InvestorProfile`` used to be the schema handed to ``with_structured_output()``.
 Because it inherits every field from ``UserInput``, that meant the model
-re-emitted the user's age, amount, interests and restrictions on every call —
-and could silently alter any of them. A dropped interest or a rounded investment
+re-emitted the user's age, amount, sectors_of_interest and restrictions on every call —
+and could silently alter any of them. A dropped sector or a rounded investment
 amount would have passed through unnoticed.
 
 Now the model returns only ``ProfileAssessment``. Age, experience, amount,
@@ -60,15 +60,15 @@ class ProfileAssessment(BaseModel):
     # The ONLY fields the model may change, and only when a user clarification
     # has resolved a conflict. Everything else is copied from UserInput.
     #
-    # These are the fields where contradictions actually occur: an interest that
+    # These are the fields where contradictions actually occur: a sector that
     # conflicts with a restriction, or a stated risk tolerance that conflicts
     # with what the user says they want. Numeric and timing fields are already
     # validated by UserInput and have no business being rewritten by an LLM.
 
-    revised_interests: list[str] | None = Field(
+    revised_sectors_of_interest: list[str] | None = Field(
         default=None,
         description=(
-            "Updated interests, ONLY if a user clarification changed them. "
+            "Updated sectors_of_interest, ONLY if a user clarification changed them. "
             "Leave null otherwise."
         ),
     )
@@ -154,8 +154,8 @@ def build_profile(
     """
     data = user_input.model_dump()
 
-    if assessment.revised_interests is not None:
-        data["interests"] = assessment.revised_interests
+    if assessment.revised_sectors_of_interest is not None:
+        data["sectors_of_interest"] = assessment.revised_sectors_of_interest
 
     if assessment.revised_restrictions is not None:
         data["restrictions"] = assessment.revised_restrictions

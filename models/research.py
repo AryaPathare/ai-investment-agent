@@ -104,7 +104,7 @@ class Theme(BaseModel):
     why_it_matters: str = Field(
         description=(
             "Two or three sentences on why this is relevant to THIS investor, "
-            "given their interests, timeframe and risk tolerance."
+            "given their chosen sectors, timeframe and risk tolerance."
         )
     )
     industries: list[str] = Field(
@@ -198,7 +198,7 @@ class SearchQueries(BaseModel):
     """What the LLM returns in step 1 of Agent 2: search terms only.
 
     A deliberately small job. The model is not deciding what matters yet — it is
-    only translating an investor's interests into terms worth typing into a news
+    only translating an investor's chosen sectors into terms worth typing into a news
     search. If a query is poor the cost is irrelevant articles, not a wrong
     conclusion, which makes this a low-risk place to use a model.
     """

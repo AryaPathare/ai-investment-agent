@@ -46,7 +46,7 @@ def _user(**overrides) -> UserInput:
         investment_amount=5000.0,
         investment_window="within 3 months",
         holding_period="3-5 years",
-        interests=["technology"],
+        sectors_of_interest=["technology"],
         restrictions=[],
     )
     return UserInput(**{**base, **overrides})
@@ -73,7 +73,7 @@ CASES: list[EvalCase] = [
             "user explicitly prohibited is exactly what must not happen."
         ),
         user=_user(
-            interests=["sports", "technology"],
+            sectors_of_interest=["sports", "technology"],
             restrictions=["Do not invest in technology companies"],
         ),
         expected_status="needs_clarification",
@@ -100,9 +100,9 @@ CASES: list[EvalCase] = [
     ),
     EvalCase(
         name="restriction_unrelated_to_interests",
-        why="A restriction touching none of the interests is not a conflict.",
+        why="A restriction touching none of the sectors_of_interest is not a conflict.",
         user=_user(
-            interests=["technology"],
+            sectors_of_interest=["technology"],
             restrictions=["No tobacco companies", "No gambling companies"],
         ),
         expected_status="valid",
@@ -110,15 +110,15 @@ CASES: list[EvalCase] = [
     ),
     EvalCase(
         name="high_risk_with_speculative_interest",
-        why="High risk tolerance and speculative interests AGREE with each other.",
-        user=_user(risk_tolerance="high", interests=["cryptocurrency", "biotech"]),
+        why="High risk tolerance and speculative sectors_of_interest AGREE with each other.",
+        user=_user(risk_tolerance="high", sectors_of_interest=["cryptocurrency", "biotech"]),
         expected_status="valid",
         tags=("false-positive",),
     ),
     EvalCase(
         name="low_risk_with_conservative_interests",
-        why="Low risk tolerance and conservative interests also agree.",
-        user=_user(risk_tolerance="low", interests=["utilities", "dividend stocks"]),
+        why="Low risk tolerance and conservative sectors_of_interest also agree.",
+        user=_user(risk_tolerance="low", sectors_of_interest=["utilities", "dividend stocks"]),
         expected_status="valid",
         tags=("false-positive",),
     ),
@@ -145,16 +145,16 @@ CASES: list[EvalCase] = [
     ),
     EvalCase(
         name="no_interests_given",
-        why="An empty interests list is under-specified, not self-contradictory.",
-        user=_user(interests=[]),
+        why="An empty sectors_of_interest list is under-specified, not self-contradictory.",
+        user=_user(sectors_of_interest=[]),
         expected_status="valid",
         tags=("edge", "false-positive"),
     ),
     EvalCase(
         name="broad_interests_narrow_restriction",
-        why="Restricting one of several interests still leaves work to do.",
+        why="Restricting one of several sectors_of_interest still leaves work to do.",
         user=_user(
-            interests=["technology", "healthcare", "energy"],
+            sectors_of_interest=["technology", "healthcare", "energy"],
             restrictions=["No fossil fuel companies"],
         ),
         expected_status="valid",
@@ -168,7 +168,7 @@ CASES: list[EvalCase] = [
         why="Stated low risk tolerance directly contradicts wanting speculation.",
         user=_user(
             risk_tolerance="low",
-            interests=["extremely speculative penny stocks", "high-risk crypto"],
+            sectors_of_interest=["extremely speculative penny stocks", "high-risk crypto"],
         ),
         expected_status="needs_clarification",
         tags=("true-positive",),
@@ -177,7 +177,7 @@ CASES: list[EvalCase] = [
         name="restriction_blocks_every_interest",
         why="If everything they want is forbidden, there is nothing left to research.",
         user=_user(
-            interests=["renewable energy"],
+            sectors_of_interest=["renewable energy"],
             restrictions=["Do not invest in renewable energy or energy companies"],
         ),
         expected_status="needs_clarification",
@@ -187,7 +187,7 @@ CASES: list[EvalCase] = [
         name="restriction_contradicts_one_of_two_interests",
         why="A conflict on one interest still needs resolving before research.",
         user=_user(
-            interests=["healthcare", "pharmaceuticals"],
+            sectors_of_interest=["healthcare", "pharmaceuticals"],
             restrictions=["Never invest in pharmaceutical companies"],
         ),
         expected_status="needs_clarification",
@@ -200,7 +200,7 @@ CASES: list[EvalCase] = [
         name="clarification_resolves_conflict",
         why="A clear answer must resolve the conflict and produce a valid profile.",
         user=_user(
-            interests=["sports", "technology"],
+            sectors_of_interest=["sports", "technology"],
             restrictions=["Do not invest in technology companies"],
         ),
         clarifications=(
@@ -216,7 +216,7 @@ CASES: list[EvalCase] = [
             "let a contradictory profile through to Agent 2."
         ),
         user=_user(
-            interests=["sports", "technology"],
+            sectors_of_interest=["sports", "technology"],
             restrictions=["Do not invest in technology companies"],
         ),
         clarifications=("I do not know", "not sure"),
@@ -227,7 +227,7 @@ CASES: list[EvalCase] = [
         name="clarification_drops_the_interest_instead",
         why="A conflict can be resolved either way; dropping the interest is valid.",
         user=_user(
-            interests=["sports", "technology"],
+            sectors_of_interest=["sports", "technology"],
             restrictions=["Do not invest in technology companies"],
         ),
         clarifications=(

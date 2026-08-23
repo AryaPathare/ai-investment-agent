@@ -49,7 +49,7 @@ def _profile(**overrides) -> InvestorProfile:
         investment_amount=5000.0,
         investment_window="within 3 months",
         holding_period="3-5 years",
-        interests=["technology"],
+        sectors_of_interest=["technology"],
         restrictions=[],
         status="valid",
     )
@@ -64,7 +64,7 @@ CASES: list[ResearchCase] = [
             "adjacent, obvious topic is exactly the one that is forbidden."
         ),
         profile=_profile(
-            interests=["renewable energy"],
+            sectors_of_interest=["renewable energy"],
             restrictions=["No fossil fuel companies", "No coal, oil or gas"],
         ),
         forbidden_terms=("fossil fuel", "coal", "crude oil", "natural gas", "petroleum"),
@@ -79,7 +79,7 @@ CASES: list[ResearchCase] = [
         profile=_profile(
             age=66,
             risk_tolerance="low",
-            interests=["healthcare"],
+            sectors_of_interest=["healthcare"],
             holding_period="1-2 years",
         ),
         expected_terms=("health", "drug", "pharma", "fda", "medical", "biotech", "care"),
@@ -93,7 +93,7 @@ CASES: list[ResearchCase] = [
         profile=_profile(
             age=20,
             investment_experience="beginner",
-            interests=["sports", "technology"],
+            sectors_of_interest=["sports", "technology"],
             holding_period="10+ years",
         ),
         expected_terms=("sport", "tech", "media", "streaming", "device", "ai"),
@@ -106,7 +106,7 @@ CASES: list[ResearchCase] = [
         ),
         profile=_profile(
             risk_tolerance="high",
-            interests=["semiconductors", "artificial intelligence"],
+            sectors_of_interest=["semiconductors", "artificial intelligence"],
             investment_amount=25000.0,
         ),
         expected_terms=("chip", "semiconductor", "ai", "data cent", "foundry", "gpu"),
@@ -115,7 +115,7 @@ CASES: list[ResearchCase] = [
         name="banking_excluding_crypto",
         probes="A second restriction case, in a sector where the ruled-out topic is nearby.",
         profile=_profile(
-            interests=["banking", "financial services"],
+            sectors_of_interest=["banking", "financial services"],
             restrictions=["No cryptocurrency or digital asset companies"],
         ),
         forbidden_terms=("crypto", "bitcoin", "digital asset", "stablecoin", "token"),

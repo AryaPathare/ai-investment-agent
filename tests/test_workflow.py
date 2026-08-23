@@ -9,6 +9,8 @@ import pytest
 from langgraph.types import Command
 
 import workflow
+from models.decision import Decision
+from models.risk import RiskFindings
 from models.profile import InvestorProfile
 from workflow import investment_graph, profile_node, route_profile
 
@@ -419,4 +421,220 @@ def test_the_full_chain_runs_in_order(
     assert result["investor_profile"].status == "valid"
     assert "research_findings" in result
     assert "company_findings" in result
+    assert "error" not in result
+
+
+# --- Agent 4: the risk critic ------------------------------------------------
+
+
+@pytest.fixture
+def fake_critic(monkeypatch):
+    calls = []
+
+    def _install(findings=None, error=None):
+        def fake(company_findings, **kwargs):
+            calls.append(company_findings)
+            if error is not None:
+                raise error
+            return findings if findings is not None else RiskFindings(
+                articles_retrieved=4
+            )
+
+        monkeypatch.setattr(workflow, "critique_companies", fake)
+        return calls
+
+    return _install
+
+
+def test_company_analysis_flows_into_the_risk_critic(
+    always_valid, fake_research, fake_companies, fake_critic, clean_user
+):
+    fake_research()
+    fake_companies()
+    critic_calls = fake_critic()
+
+    result = _run(clean_user, "t-critic")
+
+    assert len(critic_calls) == 1
+    assert "risk_findings" in result
+    assert "error" not in result
+
+
+def test_the_critic_receives_the_company_findings(
+    always_valid, fake_research, fake_companies, fake_critic, clean_user
+):
+    """Agent 4 must see what Agent 3 produced, not the research."""
+    from models.companies import CompanyFindings
+
+    fake_research()
+    fake_companies(CompanyFindings(mentions_extracted=9, companies_examined=7))
+    critic_calls = fake_critic()
+
+    _run(clean_user, "t-critic-handoff")
+    assert critic_calls[0].companies_examined == 7
+
+
+def test_the_critic_does_not_run_when_company_analysis_failed(
+    always_valid, fake_research, fake_companies, fake_critic, clean_user
+):
+    fake_research()
+    fake_companies(error=ConnectionError("FMP unreachable"))
+    critic_calls = fake_critic()
+
+    result = _run(clean_user, "t-critic-skipped")
+
+    assert critic_calls == []
+    assert "risk_findings" not in result
+    assert "Company analysis failed" in result["error"]
+
+
+def test_finding_no_companies_still_runs_the_critic(
+    always_valid, fake_research, fake_companies, fake_critic, clean_user
+):
+    """The critic records that there was nothing to criticise. Skipping the
+    node would leave the key missing, which Agent 5 cannot tell apart from
+    "the critic has not run yet"."""
+    from models.companies import CompanyFindings
+
+    fake_research()
+    fake_companies(CompanyFindings(mentions_extracted=6, companies_examined=4))
+    critic_calls = fake_critic()
+
+    result = _run(clean_user, "t-critic-nothing")
+
+    assert len(critic_calls) == 1
+    assert "risk_findings" in result
+    assert "error" not in result
+
+
+def test_a_critic_failure_ends_the_graph_cleanly(
+    always_valid, fake_research, fake_companies, fake_critic, clean_user
+):
+    """A news provider and one model call per candidate sit behind this node."""
+    fake_research()
+    fake_companies()
+    fake_critic(error=ConnectionError("news provider unreachable"))
+
+    result = _run(clean_user, "t-critic-down")
+
+    assert "risk_findings" not in result
+    assert "Risk critique failed" in result["error"]
+    assert "__interrupt__" not in result
+
+
+def test_finding_no_risks_is_not_an_error(
+    always_valid, fake_research, fake_companies, fake_critic, clean_user
+):
+    """Every candidate withstanding criticism is a legitimate outcome."""
+    fake_research()
+    fake_companies()
+    fake_critic(RiskFindings(critiques=[], notes="nothing to criticise"))
+
+    result = _run(clean_user, "t-no-risks")
+    assert result["risk_findings"].found_nothing
+    assert "error" not in result
+
+
+# --- Agent 5: the decision ---------------------------------------------------
+
+
+@pytest.fixture
+def fake_decider(monkeypatch):
+    calls = []
+
+    def _install(decision=None, error=None):
+        def fake(companies, risks, profile):
+            calls.append((companies, risks, profile))
+            if error is not None:
+                raise error
+            return decision if decision is not None else Decision(
+                no_recommendation_reason="nothing cleared the bar"
+            )
+
+        monkeypatch.setattr(workflow, "decide", fake)
+        return calls
+
+    return _install
+
+
+def test_the_critic_flows_into_the_decision(
+    always_valid, fake_research, fake_companies, fake_critic, fake_decider, clean_user
+):
+    fake_research()
+    fake_companies()
+    fake_critic()
+    decide_calls = fake_decider()
+
+    result = _run(clean_user, "t-decide")
+
+    assert len(decide_calls) == 1
+    assert "decision" in result
+    assert "error" not in result
+
+
+def test_the_decision_receives_candidates_criticism_and_the_profile(
+    always_valid, fake_research, fake_companies, fake_critic, fake_decider, clean_user
+):
+    """The only node needing three pieces of state. The profile matters: the
+    investor's restrictions are re-checked at this last gate."""
+    from models.companies import CompanyFindings
+    from models.risk import RiskFindings
+
+    fake_research()
+    fake_companies(CompanyFindings(companies_examined=7))
+    fake_critic(RiskFindings(articles_retrieved=11))
+    decide_calls = fake_decider()
+
+    _run(clean_user, "t-decide-handoff")
+    companies, risks, profile = decide_calls[0]
+
+    assert companies.companies_examined == 7
+    assert risks.articles_retrieved == 11
+    assert profile.status == "valid"
+
+
+def test_the_decision_does_not_run_when_the_critic_failed(
+    always_valid, fake_research, fake_companies, fake_critic, fake_decider, clean_user
+):
+    fake_research()
+    fake_companies()
+    fake_critic(error=ConnectionError("news provider unreachable"))
+    decide_calls = fake_decider()
+
+    result = _run(clean_user, "t-decide-skipped")
+
+    assert decide_calls == []
+    assert "decision" not in result
+    assert "Risk critique failed" in result["error"]
+
+
+def test_a_decision_failure_ends_the_graph_cleanly(
+    always_valid, fake_research, fake_companies, fake_critic, fake_decider, clean_user
+):
+    """Up to three model calls sit behind this node."""
+    fake_research()
+    fake_companies()
+    fake_critic()
+    fake_decider(error=ConnectionError("model unreachable"))
+
+    result = _run(clean_user, "t-decide-down")
+
+    assert "decision" not in result
+    assert "Decision failed" in result["error"]
+    assert "__interrupt__" not in result
+
+
+def test_recommending_nothing_is_a_result_not_an_error(
+    always_valid, fake_research, fake_companies, fake_critic, fake_decider, clean_user
+):
+    """The outcome the whole design exists to make possible."""
+    fake_research()
+    fake_companies()
+    fake_critic()
+    fake_decider(Decision(no_recommendation_reason="every candidate was disqualified"))
+
+    result = _run(clean_user, "t-nothing")
+
+    assert result["decision"].recommended_nothing
+    assert result["decision"].no_recommendation_reason
     assert "error" not in result

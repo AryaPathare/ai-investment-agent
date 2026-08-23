@@ -50,14 +50,14 @@ def clean_user() -> UserInput:
         investment_amount=5000,
         investment_window="within 3 months",
         holding_period="5+ years",
-        interests=["renewable energy"],
+        sectors_of_interest=["renewable energy"],
         restrictions=[],
     )
 
 
 @pytest.fixture
 def conflicted_user() -> UserInput:
-    """An investor whose interests contradict their restrictions."""
+    """An investor whose sectors_of_interest contradict their restrictions."""
     return UserInput(
         age=20,
         investment_experience="beginner",
@@ -65,7 +65,7 @@ def conflicted_user() -> UserInput:
         investment_amount=1000,
         investment_window="within 1 month",
         holding_period="3-5 years",
-        interests=["sports", "technology"],
+        sectors_of_interest=["sports", "technology"],
         restrictions=["Do not invest in technology companies"],
     )
 

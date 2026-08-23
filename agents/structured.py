@@ -17,6 +17,10 @@ getting the ANSWER wrong. Both of these were hit while building Agents 2 and 3:
    different schemas: function_calling failed on MentionExtraction while
    json_schema failed on ThemeProposal.
 
+   Agent 4 found a third variant of the same mistake: the model returned the
+   entire tool call, {"name": ..., "arguments": {...}}, instead of just the
+   arguments. Again the payload was correct and only the wrapper was wrong.
+
    The extracted data in those failures was CORRECT. Throwing away a correct
    answer because of an envelope mistake wastes a call, and on a rate-limited
    free tier that matters.
@@ -73,6 +77,29 @@ def failed_generation(exc: Exception) -> str | None:
     return None
 
 
+def _tool_call_arguments(parsed: dict) -> list[dict]:
+    """The arguments of a tool-call envelope, if this looks like one.
+
+    Returns a list so the caller can extend unconditionally: empty when there is
+    nothing that looks like a tool call.
+    """
+    arguments = parsed.get("arguments")
+
+    if isinstance(arguments, dict):
+        return [arguments]
+
+    if isinstance(arguments, str):
+        # Some responses double-encode the arguments as a JSON string.
+        try:
+            decoded = json.loads(arguments)
+        except json.JSONDecodeError:
+            return []
+        if isinstance(decoded, dict):
+            return [decoded]
+
+    return []
+
+
 def salvage(exc: Exception, schema: type[T], list_field: str | None) -> T | None:
     """Rebuild a valid response from output the provider rejected.
 
@@ -92,6 +119,18 @@ def salvage(exc: Exception, schema: type[T], list_field: str | None) -> T | None
 
     candidates: list[dict] = []
     if isinstance(parsed, dict):
+        # A THIRD envelope: the model returns the whole tool call rather than
+        # its arguments - {"name": "functions.Schema", "arguments": {...}}.
+        # The payload inside is correct; only the wrapper is wrong, which is the
+        # same mistake as the bare list, one level out.
+        #
+        # Tried FIRST, and the order is not cosmetic. Every schema here has
+        # defaults for its fields, so the OUTER dict validates perfectly well as
+        # an empty result - pydantic ignores the unknown "name" and "arguments"
+        # keys and fills the rest in. Checking the wrapper first would therefore
+        # "succeed", returning zero risks while the real ones sat one level
+        # down. Silent data loss that looks like a clean answer.
+        candidates.extend(_tool_call_arguments(parsed))
         candidates.append(parsed)
     elif isinstance(parsed, list) and list_field:
         # The bare-list case: the model returned the contents without the

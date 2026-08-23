@@ -231,6 +231,33 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- Agent 4: risk critic ------------------------------------------------
+
+    max_critique_candidates: int = Field(
+        default=5,
+        ge=1,
+        description=(
+            "How many of Agent 3's candidates the risk critic examines, best "
+            "ranked first. The binding cost is TheNewsAPI's 100 requests/day: "
+            "critiquing all eight candidates at two queries each is 16 "
+            "requests, so six runs would exhaust the daily budget. Candidates "
+            "beyond this cap are recorded as skipped, never silently omitted."
+        ),
+    )
+
+    bear_queries_per_candidate: int = Field(
+        default=2,
+        ge=1,
+        le=4,
+        description=(
+            "Bear-case searches run against each critiqued candidate. Each "
+            "returns at most 3 articles on the free tier, so two queries is "
+            "about six articles to judge - enough to find a real problem if "
+            "one was reported, without spending the daily request budget on "
+            "one company."
+        ),
+    )
+
     # --- Observability ------------------------------------------------------
     # These are read directly from os.environ by the LangSmith library, not by
     # this class. They are declared here only so the app can REPORT whether

@@ -1,8 +1,12 @@
 # AI Investment Research Agent
 
-A multi-agent system that takes an investor's profile, researches current trends
-and real public companies, weighs the risks, and recommends up to three stocks —
-or explicitly recommends **nothing** when no opportunity is good enough.
+Built for someone who wants to start investing and does not know where to begin.
+They say which **sectors or fields** they are interested in — technology,
+healthcare, energy — along with how much, for how long, how much risk they can
+take, and anything they want to avoid. From there a multi-agent system researches
+what is currently happening in those sectors, finds real public companies exposed
+to it, attacks its own conclusions, and recommends up to three stocks — or
+explicitly recommends **nothing** when no opportunity is good enough.
 
 That last part is deliberate. The system is never forced to produce a
 recommendation just because recommending is its job.
@@ -19,8 +23,8 @@ recommendation just because recommending is its job.
 | 1. Profile | Validate investor input, ask the user about genuine contradictions | **Built** |
 | 2. Research | Identify trends and gather supporting evidence | **Built** |
 | 3. Companies | Extract, screen, and analyse fundamentals | **Built** |
-| 4. Risk Critic | Adversarially attack the investment thesis | Planned |
-| 5. Decide | Score, select, and state exit conditions | Planned |
+| 4. Risk Critic | Retrieve the bear case and attack the thesis | **Built** |
+| 5. Decide | Select, write the case, and state exit conditions | **Built** |
 
 ---
 
@@ -34,7 +38,7 @@ pip install -r requirements.txt
 Copy-Item .env.example .env      # then add your Groq API key
 ```
 
-Two more keys are optional but needed for Agents 2 and 3:
+Two more keys are optional but needed for Agents 2, 3 and 4:
 
 - **TheNewsAPI** (<https://www.thenewsapi.com>) — news search
 - **Financial Modeling Prep** (<https://site.financialmodelingprep.com>) — US
@@ -67,6 +71,9 @@ python -m evals.runner --tag regression # only the must-never-break cases
 python -m evals.research_runner         # Agent 2: process quality on 5 profiles
 python -m evals.company_runner          # Agent 3: process quality, runs 2 -> 3
 python -m evals.company_runner --limit 1
+
+python -m evals.risk_runner            # Agent 4: process quality, runs 2 -> 3 -> 4
+python -m evals.decision_runner        # Agent 5: process quality, runs 2 -> 3 -> 4 -> 5
 ```
 
 Agent 2's evals are paced ~60s apart on purpose: one research run costs about

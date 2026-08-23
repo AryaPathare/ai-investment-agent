@@ -22,6 +22,8 @@ from langgraph.types import interrupt
 
 from agents.profile_agent import create_investor_profile
 from agents.company_agent import analyse_companies
+from agents.decide_agent import decide
+from agents.risk_agent import critique_companies
 from agents.research_agent import research_themes
 from config import get_settings
 from models.profile import InvestorProfile
@@ -173,12 +175,84 @@ def company_node(state: InvestmentState) -> dict:
     return {"company_findings": findings}
 
 
+def risk_node(state: InvestmentState) -> dict:
+    """Run Agent 4 over the ranked candidates.
+
+    Runs even when Agent 3 found nothing: critique_companies handles that case
+    and returns empty findings with the reason recorded, which keeps it visible
+    in state rather than leaving a silently missing key for Agent 5 to
+    misinterpret as "not run yet".
+    """
+    findings = state["company_findings"]
+
+    try:
+        critique = critique_companies(findings)
+    except Exception as exc:  # noqa: BLE001 - same reasoning as the other nodes
+        # A news provider and a model call per candidate sit behind this. Any of
+        # them can be down, rate limited or out of quota, and none of that
+        # should reach the user as a traceback.
+        return {"error": f"Risk critique failed: {type(exc).__name__}: {exc}"}
+
+    return {"risk_findings": critique}
+
+
+def decide_node(state: InvestmentState) -> dict:
+    """Run Agent 5 over the candidates and the criticism of them.
+
+    The only node needing three pieces of state at once: the candidates, the
+    criticism, and the PROFILE. The profile matters because the restrictions the
+    investor stated are re-checked here, at the last gate before a person reads
+    anything, and because a brief is supposed to say plainly when a company is a
+    poor fit for their risk tolerance or their horizon.
+
+    Runs even when nothing survived: the decision records WHY there is no
+    recommendation, which is a more useful output than an absent key.
+    """
+    try:
+        final = decide(
+            state["company_findings"],
+            state["risk_findings"],
+            state["investor_profile"],
+        )
+    except Exception as exc:  # noqa: BLE001 - same reasoning as the other nodes
+        # Up to three model calls sit behind this. None of them failing should
+        # reach the user as a traceback.
+        return {"error": f"Decision failed: {type(exc).__name__}: {exc}"}
+
+    return {"decision": final}
+
+
+def route_risk(state: InvestmentState) -> str:
+    """Continue to the decision unless the critic failed outright.
+
+    ``found_nothing`` is deliberately NOT a failure, for the same reason as
+    everywhere upstream: every candidate withstanding criticism is a legitimate
+    result, and the decision stage is what turns that into an answer.
+    """
+    if state.get("error"):
+        return "failed"
+    return "ok"
+
+
 def route_research(state: InvestmentState) -> str:
     """Continue to company analysis unless research failed outright.
 
     ``found_nothing`` is deliberately NOT a failure. It means no theme cleared
     the evidence bar, which is a legitimate result the pipeline is designed to
     produce, and the company stage reports it rather than the graph hiding it.
+    """
+    if state.get("error"):
+        return "failed"
+    return "ok"
+
+
+def route_companies(state: InvestmentState) -> str:
+    """Continue to the risk critic unless company analysis failed outright.
+
+    ``found_nothing`` is deliberately NOT a failure, for the same reason as in
+    ``route_research``: the themes may be real while no company mentioned
+    alongside them is both investable and genuinely exposed. The critic records
+    that there was nothing to criticise rather than the graph hiding it.
     """
     if state.get("error"):
         return "failed"
@@ -192,6 +266,8 @@ builder.add_node("clarification", clarification_node)
 builder.add_node("clarification_exhausted", clarification_exhausted_node)
 builder.add_node("research", research_node)
 builder.add_node("companies", company_node)
+builder.add_node("risk_critic", risk_node)
+builder.add_node("decide", decide_node)
 
 builder.add_edge(START, "profile_agent")
 
@@ -216,9 +292,25 @@ builder.add_conditional_edges(
     {"ok": "companies", "failed": END},
 )
 
-# Company analysis is currently terminal. Agent 4 (the risk critic) will consume
-# company_findings from here, and must handle found_nothing being True.
-builder.add_edge("companies", END)
+# Company analysis feeds the risk critic, unless the company node itself failed.
+builder.add_conditional_edges(
+    "companies",
+    route_companies,
+    {"ok": "risk_critic", "failed": END},
+)
+
+# The critic feeds the decision, unless the critic node itself failed.
+builder.add_conditional_edges(
+    "risk_critic",
+    route_risk,
+    {"ok": "decide", "failed": END},
+)
+
+# The decision is the end of the pipeline. `decision.recommended_nothing` being
+# True is a real answer and not a failure - it is the outcome the whole design
+# exists to make possible, and `no_recommendation_reason` says which kind of
+# nothing it is.
+builder.add_edge("decide", END)
 
 
 # The checkpointer saves state at every step so an interrupted graph can resume.

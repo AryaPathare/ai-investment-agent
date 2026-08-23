@@ -422,8 +422,8 @@ def _fetch_fmp(ticker: str, use_cache: bool) -> Fundamentals:
     return Fundamentals(
         comparable=ComparableMetrics(
             revenue_growth=growth.get("revenueGrowth"),
-            gross_margin=_unreported_if_zero(ratios.get("grossProfitMarginTTM")),
-            operating_margin=_unreported_if_zero(ratios.get("operatingProfitMarginTTM")),
+            gross_margin=_sane_margin(_unreported_if_zero(ratios.get("grossProfitMarginTTM"))),
+            operating_margin=_sane_margin(_unreported_if_zero(ratios.get("operatingProfitMarginTTM"))),
             # FMP already reports this as a ratio, unlike yfinance.
             debt_to_equity=ratios.get("debtToEquityRatioTTM"),
         ),
@@ -485,6 +485,29 @@ def _unreported_if_zero(value: float | None) -> float | None:
     return None if value == 0.0 else value
 
 
+def _sane_margin(value: float | None) -> float | None:
+    """Reject a margin above 1.0, which is arithmetically impossible.
+
+    A margin is profit divided by revenue, so it cannot exceed 1.0 - that would
+    mean earning more than everything you sold. yfinance reported PowerBank's
+    operating margin as 168.38, i.e. 16,838%.
+
+    It went undetected through two agents because the ranking CLIPS: the ramp
+    maps anything above 0.40 to a perfect 1.0, so a garbage number and an
+    excellent one become the same score. Agent 4's rules only look for NEGATIVE
+    margins, so they were silent too. It surfaced only when Agent 5 wrote
+    "operating_margin falls below 150" into a brief and a human read it.
+
+    Third instance of the same lesson: a metric that clips cannot also serve as
+    its own data-quality alarm. The check has to sit upstream of the clipping.
+
+    Only the upper bound is rejected. A deeply NEGATIVE margin is real - a
+    pre-revenue biotech legitimately reports -94 - and Agent 3's screen already
+    treats that as disqualifying.
+    """
+    return None if value is not None and value > 1.0 else value
+
+
 def _fetch_yfinance(ticker: str, use_cache: bool) -> Fundamentals:
     """One call. ``info`` carries every metric we need."""
     info = _ticker_info(ticker, use_cache)
@@ -499,8 +522,8 @@ def _fetch_yfinance(ticker: str, use_cache: bool) -> Fundamentals:
     return Fundamentals(
         comparable=ComparableMetrics(
             revenue_growth=info.get("revenueGrowth"),
-            gross_margin=_unreported_if_zero(info.get("grossMargins")),
-            operating_margin=_unreported_if_zero(info.get("operatingMargins")),
+            gross_margin=_sane_margin(_unreported_if_zero(info.get("grossMargins"))),
+            operating_margin=_sane_margin(_unreported_if_zero(info.get("operatingMargins"))),
             debt_to_equity=debt_to_equity,
         ),
         amounts=CurrencyAmounts(

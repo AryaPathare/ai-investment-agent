@@ -52,7 +52,7 @@ def test_returns_a_profile_built_from_the_user_input(fake_llm, clean_user):
     assert isinstance(profile, InvestorProfile)
     assert profile.status == "valid"
     assert profile.age == clean_user.age
-    assert profile.interests == clean_user.interests
+    assert profile.sectors_of_interest == clean_user.sectors_of_interest
 
 
 def test_sends_the_user_data_to_the_model(fake_llm, clean_user):

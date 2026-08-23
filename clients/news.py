@@ -23,6 +23,13 @@ What testing the live API actually revealed
 * ``sort=relevance_score`` within a recent window beats ``sort=published_at``.
   Sorting by date returns whatever hit the wire last, which is mostly noise.
 * ``snippet`` is ~163 characters, not the 60 the docs claim.
+* The word ``OR`` is NOT query syntax and matches nothing. ``"Pfizer" lawsuit
+  OR investigation`` returns zero articles; ``"Pfizer" lawsuit`` returns three.
+* ``|`` IS syntax, but it applies across the WHOLE query, so a required phrase
+  stops being required. ``"Pfizer" lawsuit | probe`` returned articles about an
+  Israeli army probe and an Air India incident, with no Pfizer in them. For a
+  search that must stay on one company, plain space-separated AND is the only
+  reliable form.
 """
 
 from __future__ import annotations
@@ -59,6 +66,59 @@ class NewsAPIError(RuntimeError):
 # The free tier allows 100 requests a day. Without caching, every test run and
 # every debugging cycle spends them, and each one waits on the network. With it,
 # a repeated query is instant and free.
+
+
+# Sources whose output is commentary, advocacy or aggregation rather than
+# reporting. Articles from these are withheld from the risk critic.
+#
+# WHY THIS EXISTS, AND WHY IT IS UNCOMFORTABLE
+#
+# Grounding a risk in a retrieved article turns out to be necessary and not
+# sufficient: the citation can be real while the article is worthless. Agent 4
+# graded two MATERIAL risks against Pfizer - potential miscarriage litigation,
+# and eroding vaccine demand - from two joemygod.com pieces, one of which was
+# itself reporting that the underlying claim was a lie, and the other an
+# advocacy group soliciting donations for lawsuits premised on it. Both risks
+# were specific, correctly cited, and passed every check. Together they tipped
+# the verdict from "survives" to "weakened".
+#
+# Judging which publications are credible is a real editorial judgement and this
+# list is one. It is kept HERE, visible and short, rather than buried in a
+# prompt, for the same reason the screening thresholds are: a judgement that
+# changes results should be one a reader can find, argue with and edit.
+#
+# The test is not political slant. It is whether the outlet does original
+# REPORTING that a business decision could rest on. An opinion blog may be
+# entirely right and still not be evidence that a company faces litigation.
+LOW_QUALITY_SOURCES = {
+    "joemygod.com",          # political commentary blog
+    "thegatewaypundit.com",  # partisan commentary
+    "zerohedge.com",         # financial commentary, frequently speculative
+    "steynonline.com",       # personal opinion site
+    "app.buzzsumo.com",      # content-marketing tool, not a publisher
+    "beforeitsnews.com",
+    "naturalnews.com",
+}
+
+
+def drop_low_quality(articles: list[Article]) -> tuple[list[Article], list[str]]:
+    """Split articles into those worth reasoning over and those that are not.
+
+    Returns:
+        (kept, dropped source names). The dropped sources are returned rather
+        than discarded so a caller can report what was withheld - a filter that
+        silently removes evidence is its own kind of unreliable narrator.
+    """
+    kept: list[Article] = []
+    dropped: list[str] = []
+
+    for article in articles:
+        if article.source.lower() in LOW_QUALITY_SOURCES:
+            dropped.append(article.source)
+        else:
+            kept.append(article)
+
+    return kept, dropped
 
 
 def _cache_path(params: dict) -> Path:

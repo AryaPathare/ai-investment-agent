@@ -64,7 +64,7 @@ def run_case(case: EvalCase) -> dict:
         "actual": profile.status,
         "passed": profile.status == case.expected_status,
         "reason": profile.clarification_reason,
-        "interests": profile.interests,
+        "sectors_of_interest": profile.sectors_of_interest,
         "restrictions": profile.restrictions,
         "error": None,
         "seconds": round(time.perf_counter() - started, 2),

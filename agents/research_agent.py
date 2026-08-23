@@ -105,11 +105,11 @@ Write "semiconductor export controls", never "semiconductor export controls 2024
 
 COVER DIFFERENT ANGLES
 
-Produce four to six queries that approach the investor's interests from
+Produce four to six queries that approach the investor's chosen sectors from
 different directions rather than rephrasing one idea. Different phrasings
 surface different stories, and variety is what makes the retrieved pool useful.
 
-For an investor interested in renewable energy, four queries covering grid
+For an investor who chose renewable energy, four queries covering grid
 storage, solar manufacturing, energy policy and transmission infrastructure are
 far more useful than four rewordings of "renewable energy".
 
@@ -243,7 +243,7 @@ sources. Still, two articles is not "several".
 RELEVANCE TO THIS INVESTOR
 
 why_it_matters must be about THIS investor, not about the world in general.
-Connect the theme to their stated interests, their holding period and their risk
+Connect the theme to the sectors they chose, their holding period and their risk
 tolerance.
 
 Never propose a theme in an area the investor's restrictions rule out, however

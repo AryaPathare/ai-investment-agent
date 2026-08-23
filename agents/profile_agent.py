@@ -63,9 +63,9 @@ RULES
 2. Only flag a contradiction when two answers genuinely cannot reasonably be
    true at the same time. Do not invent contradictions from assumptions.
 
-3. Check whether any restriction directly conflicts with a stated interest.
+3. Check whether any restriction directly conflicts with a stated sector.
    For example:
-     interests = ["technology"]
+     sectors_of_interest = ["technology"]
      restrictions = ["Do not invest in technology companies"]
    This needs clarification, because the system must not research an area the
    user has also explicitly prohibited.
@@ -78,7 +78,7 @@ EXAMPLES THAT NEED CLARIFICATION
 
 - risk_tolerance = "low" while another answer explicitly asks for extremely
   speculative or very high-risk investments.
-- interests includes "technology" while restrictions explicitly say not to
+- sectors_of_interest includes "technology" while restrictions explicitly say not to
   invest in technology companies.
 
 EXAMPLES THAT DO NOT NEED CLARIFICATION
@@ -92,7 +92,7 @@ If the user has replied to previous clarification requests, use their answers to
 resolve the conflict and return status = "valid".
 
 To record the resolution, set only the fields that actually changed:
-  - revised_interests
+  - revised_sectors_of_interest
   - revised_restrictions
   - revised_risk_tolerance
 

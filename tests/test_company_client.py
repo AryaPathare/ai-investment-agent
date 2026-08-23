@@ -331,3 +331,33 @@ def test_network_failure_becomes_a_company_data_error(monkeypatch):
     monkeypatch.setattr(C.requests, "get", boom)
     with pytest.raises(CompanyDataError, match="Could not reach"):
         C._fmp_get("ratios-ttm", False, symbol="AMD")
+
+
+def test_a_margin_above_one_is_impossible_and_treated_as_unreported(fake_info):
+    """REGRESSION: yfinance reported PowerBank's operating margin as 168.38 —
+    16,838%. A margin is profit over revenue and cannot exceed 1.0.
+
+    It survived two agents because the ranking CLIPS: the ramp maps anything
+    above 0.40 to a perfect 1.0, so garbage and excellence score identically.
+    It surfaced only when Agent 5 wrote "operating_margin falls below 150" into
+    a brief a human then read."""
+    fake_info({"0981.HK": {"operatingMargins": 168.38, "grossMargins": 0.27,
+                           "currency": "HKD"}})
+    got = fetch_fundamentals(foreign_company()).comparable
+
+    assert got.operating_margin is None
+    assert got.gross_margin == pytest.approx(0.27)
+
+
+def test_a_deeply_negative_margin_is_still_real(fake_info):
+    """Only the upper bound is impossible. A pre-revenue biotech legitimately
+    reports -94, and the screen already treats that as disqualifying."""
+    fake_info({"0981.HK": {"operatingMargins": -94.07, "currency": "HKD"}})
+    assert fetch_fundamentals(foreign_company()).comparable.operating_margin == \
+        pytest.approx(-94.07)
+
+
+def test_a_margin_of_exactly_one_is_kept(fake_info):
+    """100% is the boundary, not beyond it."""
+    fake_info({"0981.HK": {"grossMargins": 1.0, "currency": "HKD"}})
+    assert fetch_fundamentals(foreign_company()).comparable.gross_margin == 1.0

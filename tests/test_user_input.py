@@ -20,7 +20,7 @@ def _fields(**overrides):
         investment_amount=1000.0,
         investment_window="within 1 month",
         holding_period="3-5 years",
-        interests=["technology"],
+        sectors_of_interest=["technology"],
         restrictions=[],
     )
     return {**base, **overrides}
@@ -29,7 +29,7 @@ def _fields(**overrides):
 def test_accepts_valid_input():
     user = UserInput(**_fields())
     assert user.age == 30
-    assert user.interests == ["technology"]
+    assert user.sectors_of_interest == ["technology"]
 
 
 @pytest.mark.parametrize("age", [0, -1, 121, 200])

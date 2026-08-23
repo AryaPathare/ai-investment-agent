@@ -19,6 +19,8 @@ from operator import add
 from typing import Annotated, TypedDict
 
 from models.companies import CompanyFindings
+from models.decision import Decision
+from models.risk import RiskFindings
 from models.profile import InvestorProfile
 from models.research import ResearchFindings
 from models.user_input import UserInput
@@ -78,6 +80,31 @@ class InvestmentState(TypedDict, total=False):
     result: the themes may be real while no company mentioned alongside them is
     both investable and genuinely exposed. ``drop_summary`` records where every
     examined company went.
+    """
+
+    # --- Agent 4 -------------------------------------------------------------
+
+    risk_findings: RiskFindings
+    """Grounded criticism of Agent 3's candidates, from the risk critic.
+
+    A snapshot, replaced on each run. ``found_nothing`` being True means no risk
+    was found against any candidate — a legitimate outcome, but one Agent 5
+    should treat with suspicion rather than relief: it is far more often a sign
+    that retrieval returned nothing than that every candidate is sound. Reading
+    ``was_critiqued`` on each critique is what tells those apart.
+    """
+
+    # --- Agent 5 -------------------------------------------------------------
+
+    decision: Decision
+    """The final recommendation, or the reasoned absence of one.
+
+    A snapshot, replaced on each run. ``recommended_nothing`` being True is a
+    legitimate and important outcome, not a failure - and unlike the other
+    agents' empty results, this one always carries
+    ``no_recommendation_reason``, because "every candidate was disqualified" and
+    "none of them were ever examined" call for completely different responses
+    from whoever is reading.
     """
 
     # --- Workflow ------------------------------------------------------------

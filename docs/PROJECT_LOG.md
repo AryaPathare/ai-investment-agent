@@ -24,7 +24,7 @@ means — the system has to be defensible under questioning, not merely running.
 ### Pipeline
 
 ```
-START → Profile → (valid) → Research → Companies → [Risk Critic] → [Decide] → END
+START → Profile → (valid) → Research → Companies → Risk Critic → Decide → END
               ↳ (conflict) → ask user → back to Profile
 ```
 
@@ -33,8 +33,8 @@ START → Profile → (valid) → Research → Companies → [Risk Critic] → [
 | 1. Profile | Validate investor input; ask about genuine contradictions | Built |
 | 2. Research | Identify themes, grounded in retrieved news | Built |
 | 3. Companies | Extract, resolve, screen and rank companies | Built and verified |
-| 4. Risk Critic | Adversarially attack each candidate | Planned |
-| 5. Decide | Score, select, state exit conditions | Planned |
+| 4. Risk Critic | Retrieve the bear case and attack each candidate | Built and verified |
+| 5. Decide | Select, write the case, state exit conditions | Built and verified |
 
 ---
 
@@ -452,6 +452,362 @@ left alone is worth as much as recording what was fixed.
 
 ---
 
+## Session 3 — 2026-08-22
+
+### Starting point
+
+Agents 1-3 verified. Agent 4 not started. The open question was what to do about
+Agent 2 recording dissenting evidence essentially never, since a risk critic
+built on a one-sided corpus would confirm whatever it was handed.
+
+### 16. Diagnosing the dissent gap instead of fixing the prompt
+
+The obvious move was to rewrite Agent 2's prompt, which already asks explicitly
+for `weakens` and `complicates` stances and explains why they matter. Reading
+the saved research evals first showed the prompt was not the problem:
+
+| Profile | Themes | Single-source | Avg citations/theme | Dissent |
+|---|---|---|---|---|
+| renewables | 4 | 3 | 1.25 | 0 |
+| healthcare | 2 | 2 | 1.00 | 0 |
+| sports | 2 | 1 | 2.00 | 0 |
+| semiconductors | 5 | 2 | 1.60 | 0 |
+| banking | 5 | 5 | 1.00 | 0 |
+
+Two structural causes, neither reachable by wording:
+
+1. **A theme citing one article cannot record dissent** — there is no second
+   article to disagree with the first. Most themes cite exactly one, so the
+   dissent rate is not low, it is arithmetically unavailable. The one time
+   dissent ever appeared was in the profile with the highest average (1.75).
+2. **Themes are derived from their own evidence.** Agent 2 reads articles and
+   names the pattern it sees; an article contradicting the pattern becomes a
+   DIFFERENT theme rather than dissent within this one.
+
+Underneath both: TheNewsAPI's free tier returns 3 articles per request.
+
+**Decision: do not rework Agent 2. Give Agent 4 its own adversarial retrieval.**
+A risk critic that depends on the researcher having already been self-critical
+is not much of a critic - finding counter-evidence IS the job. This also avoided
+a second calibration cycle on an agent already verified.
+
+### 17. The division of labour, applied again
+
+Agent 4 reuses the split that Agents 2 and 3 settled on. Per candidate:
+
+    Python   builds bear-case queries          deterministic
+    Python   retrieves articles                news client, cached
+    LLM      reads articles, returns risks     judgement about prose
+    Python   discards risks citing nothing retrieved
+    Python   adds risks derived from fundamentals
+    Python   computes the verdict from severities
+
+Two consequences worth stating. **Agent 4 produces no score** - Agent 3's
+ranking is Python arithmetic precisely so it is reproducible, and a
+model-invented number competing with it would destroy that. And **fundamental
+risks are computed in Python and never shown to the model**, because a model
+handed a balance sheet and asked what could go wrong writes fluent sentences
+whose relationship to the numbers cannot be checked. Those rules also give the
+agent a FLOOR: a quiet week retrieves no bear-case articles, and without them
+the critic would report nothing, which reads as reassurance.
+
+The schema does the rest of the work. A `Risk` must cite either a retrieved
+article or a named metric, and a validator refuses to construct one that cites
+neither. Not discouraged - refused, because there is no way to check it.
+
+### 18. A green suite and a dead agent
+
+351 unit tests passed. Every one of them stubbed the news client, so all of them
+passed while **the model was never being called at all**.
+
+The eval reported `HARD FAILURES 0` on a run that measured nothing: zero
+bear-case articles retrieved, so the agent returned early every time and only
+the fundamental rules ever fired. The soft signals that were supposed to catch
+manufactured criticism read `generic claims 0`, which was true and worthless.
+
+The cause was one word. TheNewsAPI does not support `OR` as query syntax:
+
+    "Pfizer" lawsuit OR investigation OR probe   ->  0 articles
+
+**The obvious fix was worse than the bug.** The provider does support `|`, but
+it ORs across the WHOLE query, so the company name stops being required:
+
+    "Pfizer" lawsuit | investigation | probe     ->  3 articles, two about an
+                                                    Israeli army probe and an
+                                                    Air India incident
+
+That would have handed the model an off-topic article and asked what risk it
+poses to Pfizer - an invitation to invent one, in the agent built to prevent
+exactly that. It was only caught by printing the headlines instead of trusting
+the count. Plain space-separated AND keeps the company mandatory and is what
+shipped, at the cost of one angle per query.
+
+A third variant of the same mistake: `"Pfizer" Vaccine Demand Shifts` is four
+ANDed terms and returns nothing, so theme queries now contribute a single
+most-distinctive keyword with filler words like "demand" and "growth" removed.
+
+### 19. Three ways to lose an answer that was already correct
+
+With retrieval fixed the model finally ran, and failed twice more - both in the
+envelope rather than the answer, which is the failure `agents/structured.py`
+exists for.
+
+**Truncation.** `RISK_MAX_TOKENS` was 1600, the smallest budget in the project,
+for a call comparable to the theme call's 3000. The generation was cut off
+mid-sentence - `"Pfizer's non-"` - leaving no valid JSON to salvage. This is the
+reasoning-model trap already recorded here: the budget must cover the thinking,
+not just the output.
+
+**A tool named `functions.NewsRiskAssessment`.** The client rejects the whole
+response with "Unknown tool type", and that error carries no `failed_generation`
+to salvage from, so a correct answer is discarded over a naming convention.
+Fixed by asking for `json_schema` output instead, which removes the tool
+envelope and with it the chance to misname it.
+
+**A wrapper that validated as an empty answer.** The model sometimes returns the
+whole tool call, `{"name": ..., "arguments": {...}}`, rather than its arguments.
+Salvage was extended to unwrap it - and the new tests immediately showed the
+first attempt made things worse. Every schema in this project gives its fields
+defaults, so the OUTER dict validates perfectly well as an EMPTY result:
+pydantic ignores the unknown keys and fills the rest in. Checking the wrapper
+first therefore "succeeds", returning **zero risks while the real ones sit one
+level down** - silent data loss that looks like a clean answer, in the one agent
+where "no risks found" must never be a lie. Fixed by trying the arguments first,
+with a test asserting the ORDER rather than the outcome.
+
+`agents/structured.py` had no tests at all despite being load-bearing for four
+agents. It now has 15, each naming the real failure it came from.
+
+### 20. Grounded, specific, and resting on a blog
+
+With everything working the eval reported 0 hard failures, 0 generic claims and
+0 discarded risks. Reading the actual claims told a different story:
+
+| Severity | Claim | Source |
+|---|---|---|
+| material | Trump admin vaccine-splitting could raise production costs | arstechnica.com |
+| minor | $44M Chantix settlement increases costs | fastcompany.com |
+| **material** | Misinformation could erode vaccine demand | **joemygod.com** |
+| **material** | Litigation over vaccine-induced miscarriages could raise costs | **joemygod.com** |
+
+The last two derive from coverage of a **debunked** claim - one article
+explicitly calls it a lie, the other is an advocacy group's fundraising appeal
+premised on it. The model treated a donation solicitation as evidence of
+litigation risk and graded it material. Both risks were specific, correctly
+cited, and passed every check.
+
+**Grounding in a retrieved article is necessary and not sufficient.** The
+citation was real; the article was worthless.
+
+Worse, they compounded. The verdict threshold is two material risks, so a single
+dubious news cycle - counted twice - tipped Pfizer from `survives` to
+`weakened`. The arithmetic is only sound if the risks it counts are independent,
+and nothing enforced that.
+
+Two fixes:
+
+- **A source filter** in `clients/news.py`, applied before the model sees
+  anything. This is an editorial judgement and an uncomfortable one, so it is
+  kept short and visible in code rather than buried in a prompt - the same
+  reasoning as the screening thresholds. The test applied is not political
+  slant but whether the outlet does original REPORTING a business decision could
+  rest on. An opinion blog may be entirely right and still not be evidence that
+  a company faces litigation.
+- **De-duplication** before the verdict: risks sharing an article collapse to
+  one, keeping the most severe. Stated honestly, this would NOT have caught the
+  Pfizer case - those two risks cited two different articles - but it fixes the
+  related problem of one story counted twice crossing the threshold alone.
+
+Verified against the exact failing case: 6 articles retrieved, 2 dropped, both
+fabricated-litigation risks gone, the legitimate Chantix finding kept and
+correctly downgraded to minor, verdict corrected to `survives`.
+
+### 21. The measurement that could not measure
+
+Every soft signal in the risk eval counts something, and none of them could see
+the problem above. `generic_claims: 0` was accurate: the claims WERE specific.
+They were specific and wrong.
+
+The runner now prints every claim with the source behind it -
+`[material] regulatory (joemygod.com)` - so provenance sits next to the finding.
+It is the only check in the file that does not produce a number, and it is the
+one that found the defect that mattered.
+
+### What was NOT verified, and why it matters
+
+Agent 3 retrieves different articles every run, so each eval run tests a
+different slice. Across the last three runs one profile produced zero candidates
+and another produced only fundamental risks, so "0 hard failures three times" is
+weaker evidence than it sounds. The Pfizer check above - run directly against the
+exact failing inputs - is stronger evidence than any of the eval runs.
+
+The source list is seven domains drawn from one afternoon of searches. A
+low-quality outlet not on the list simply passes, and there is no mechanism to
+notice when it should have been added.
+
+---
+
+## Session 4 — 2026-08-22 → 2026-08-23
+
+### Starting point
+
+Agents 1-4 verified. Agent 5 not started. **The pipeline was finished this
+session** - Agent 5 built, verified, and every stage now connected end to end.
+
+### 22. Changing the question the project asks
+
+Before any of Agent 5, the premise was reconsidered. The system asked for the
+investor's *interests*, and the honest objection was that almost nobody picks
+stocks because of their hobbies. The project reads better, and is more useful,
+as a tool for someone who wants to start investing and does not know where to
+begin: they say which SECTORS interest them.
+
+**A fixed list of sectors was considered and rejected.** It is the obvious
+implementation and it would have been worse:
+
+* Standard sector labels classify BUSINESS MODELS while people think in THEMES,
+  and the two do not line up. A solar manufacturer is classified Technology; a
+  solar operator is Utilities. Every renewable-energy answer would be spread
+  across three "wrong" sectors.
+* The idea that made a fixed list attractive - matching the user's sector
+  against the provider's `sector` field as a hard check - collapses for the same
+  reason. It would fire constantly on correct answers.
+* "renewable energy" and "semiconductor equipment" carry far more signal for
+  Agent 2's query generation than "Energy" and "Technology". Constraining the
+  input would have made the RESEARCH worse.
+* Several of Agent 1's 18 labelled cases depend on free-text values to create
+  the conflicts they test, and its eval is that agent's only verification.
+
+So the field was renamed `interests` -> `sectors_of_interest`, its description
+rewritten ("Not hobbies: the question is what part of the market to research"),
+and the prompts reworded. The pipeline's behaviour did not change at all: 422
+tests passed before and after, and no eval case needed rewriting.
+
+Worth noting WHY the rename mattered rather than just the description: the
+profile is serialised into Agent 2's prompt with `model_dump_json()`, so the
+FIELD NAME is something the model reads on every call.
+
+### 23. Agent 5, and what it is not allowed to do
+
+    Python   selects and orders the candidates
+    for each selected company:
+        LLM      writes the thesis and the exit conditions
+        Python   discards any condition citing nothing checkable
+        Python   supplies a fallback if none survived
+    Python   assembles the Decision, carrying scores and verdicts through
+
+Seven decisions were agreed before any code was written. Three are load-bearing:
+
+**Python selects; the LLM writes.** Selection is filtering and ordering over
+facts that already exist. A model asked "which of these five" produces an
+ordering it cannot justify and will not reproduce - and by this stage the
+ordering IS the product.
+
+**Verdict tiers, screen_score orders within a tier.** The two earlier numbers do
+not combine. Multiplying a verdict by a weight would have meant inventing a
+constant, and a company's position would then rest on a number nobody could
+defend. Tiering states the preference plainly: prefer what withstood criticism,
+and among equals prefer the stronger business.
+
+**An uncritiqued candidate is not selectable.** This is the trap built into
+Agent 4's own schema: a candidate skipped by the critique cap reports `survives`
+identically to one that was attacked and held up, because the verdict is
+arithmetic over a risk list and an empty list is an empty list either way.
+Selecting on the verdict alone would promote exactly what the cap left out.
+
+Two more are expressed as ABSENCES, which is the only way they hold:
+
+* **There is nowhere to put a position size.** Dividing `investment_amount`
+  three ways is two lines of code, and it is the point where research becomes
+  advice. A schema with no field for it holds that line better than a prompt
+  asking the model not to.
+* **There is no new score.** `screen_score` and `verdict` are carried through,
+  not recomputed, so Agent 5 structurally cannot disagree with the stages that
+  produced them.
+
+### 24. Four defects, one of them years old in a two-week project
+
+Every one was found by the eval. 422 unit tests were green throughout.
+
+**A correct answer thrown away over a null.** The model wrote
+`{"condition": "debt_to_equity rises above 3.0", "article_ids": null,
+"metric": "debt_to_equity"}` - exactly what the prompt asks for. `article_ids`
+is typed `list[str]`, the model spelled the absence as `null` rather than
+omitting the field, and the entire brief was discarded.
+
+This one could NOT be salvaged by `agents/structured.py`: it arrives as a
+client-side parse error carrying no rejected payload, unlike a provider 400 with
+`failed_generation`. Fourth distinct variant of "right data, wrong envelope",
+and the first with nothing to recover. Fixed in the schema, and in Agent 4's
+`Risk` which has the identical shape and had simply not hit it yet.
+
+**An exit condition that was already true.** PowerBank was recommended with
+"free_cash_flow_is_negative" as the thing to watch for. Its free cash flow was
+already -28,367,000.
+
+The condition was specific, correctly grounded, and completely useless: true the
+moment it was written. It is the mirror image of the unfalsifiable conditions
+the prompt already bans, and INVISIBLE to the check that looks for them, because
+this one IS falsifiable. Now rejected deterministically - a condition may not
+name a metric Agent 4's rules already fired on - and a hard failure in the eval.
+
+**An operating margin of 168.** The most interesting one.
+
+Agent 5 wrote "operating_margin falls below 150" into PowerBank's brief. That
+reads as nonsense - a margin cannot exceed 1.0 - so the model looked wrong. It
+was not. yfinance reported PowerBank's operating margin as **168.38**, and 150
+is a sensible threshold for that number.
+
+The figure had been corrupting results through two VERIFIED agents:
+
+* Agent 3's ramp maps anything above 0.40 to a perfect 1.0, so garbage and
+  excellence produced identical scores. PowerBank scored full marks on a metric
+  that did not exist, and its `screen_score` of 0.373 was built on it. With the
+  figure rejected, that score is **0.060**.
+* Agent 4's fundamental rules only look for NEGATIVE margins, so they were
+  silent.
+* The eval had a `GROWTH_SANITY_CEILING` and nothing equivalent for margins.
+
+Third instance of a lesson this log already records twice: **a metric that clips
+cannot also serve as its own data-quality alarm.** The alarm has to sit upstream
+of the clipping.
+
+And it is the argument for the last stage existing at all. The number looked
+fine in a field and absurd in a sentence, and it was caught by a human reading
+prose - not by any check.
+
+**The model would not read the articles.** With everything else working, all
+nine exit conditions in the first clean run were metric thresholds. Not one
+cited an article, though Agent 4 had retrieved them. The result was boilerplate:
+the same three conditions for all three companies, which would read identically
+for any company in any sector.
+
+Metric thresholds are the cheap answer - "revenue_growth turns negative" can be
+written without reading anything. The prompt now requires at least one
+article-cited condition when articles exist, and the eval tracks the ratio.
+It moved 0/9 to 1/8, which is honest progress and not a solved problem.
+
+### 25. What "finished" means here, precisely
+
+The pipeline is complete and every stage is verified against its own eval. The
+things that are NOT true are worth stating plainly, because a summary that
+omits them would be the kind of confident, unchecked claim this whole project
+is built to avoid:
+
+* **Agent 5's exclusion path has never run.** Every run so far produced three or
+  fewer candidates and no disqualifications, so nothing has ever been excluded
+  for real. It is covered by unit tests only.
+* **One of two profiles keeps returning zero candidates.** Article variance
+  means each run tests a different slice, so "0 hard failures three times" is
+  weaker evidence than it sounds.
+* **1 of 8 exit conditions cites an article.** The prompt change landed, barely.
+* **Google and Amazon are being recommended for a renewable-energy profile**,
+  because they buy batteries for data centres. That is Agent 3's exposure
+  grading, and it is logged rather than fixed - it means re-opening an agent
+  that is currently verified.
+
+---
+
 ## Provider facts learned by probing, not from documentation
 
 | Provider | Fact | Why it matters |
@@ -467,6 +823,11 @@ left alone is worth as much as recording what was fixed.
 | yfinance | Reports `debtToEquity` as a **percentage**; FMP as a **ratio** | Exactly 100× apart — unnormalised, every yfinance company screens as distressed |
 | yfinance | Carries **two** currencies: `currency` is the SHARE price, `financialCurrency` the STATEMENTS | Amounts are statement figures; the quote currency labelled SK hynix's 162tn won as dollars |
 | Both | Return a literal **`0.0`** where a margin does not apply | Banks have no cost of goods, pre-revenue biotechs no revenue; taken at face value it scores as "terrible" rather than "not applicable" |
+| TheNewsAPI | The word **`OR` is not query syntax** and matches nothing | `"Pfizer" lawsuit OR investigation` returns 0 articles; `"Pfizer" lawsuit` returns 3 |
+| TheNewsAPI | **`\|` ORs across the WHOLE query**, so a required phrase stops being required | `"Pfizer" lawsuit \| probe` returned articles about an Israeli army probe and Air India, with no Pfizer in them |
+| TheNewsAPI | Three ANDed terms is usually **zero results** | `"Pfizer" Vaccine Demand Shifts` returns nothing; `"Pfizer" vaccine` returns plenty |
+| Groq | The model may name its tool **`functions.<Schema>`**, which the client rejects outright | "Unknown tool type"; the error carries no `failed_generation`, so a correct answer is unrecoverable. `json_schema` output avoids the tool envelope |
+| yfinance | Can report a **margin above 1.0** — PowerBank's operating margin came back as `168.38` | Arithmetically impossible (profit > revenue). The ranking CLIPS at 0.40, so it scored as perfect; caught only when Agent 5 wrote "falls below 150" into a brief |
 | yfinance | Its **search is better than FMP's** | FMP returned a cryptocurrency for "SMIC" and Canada for "Nvidia" |
 | Both | Fundamentals arrive in local currency — USD, HKD, INR, **GBp** (pence) | Only the four unitless ratios are cross-comparable |
 | Windows | Console is cp1252 and cannot encode model output | Killed a completed eval run mid-report |
@@ -475,87 +836,64 @@ left alone is worth as much as recording what was fixed.
 
 ## Where things stand
 
-**Built and verified:** Agents 1, 2 and 3.
+**The pipeline is complete.** All five agents are built and verified against
+their own evals, and every stage is connected end to end.
 
-**276 unit tests**, ~2 seconds, no network and no API key required.
+**433 unit tests**, ~4 seconds, no network and no API key required.
 
-Agent 3's baseline finally ran on 2026-08-21 across all five profiles. It found
-four defects, all of which are now fixed and covered by regression tests, and
-every post-fix run has reported **0 hard failures**.
+### What is NOT verified, stated plainly
 
-### Measured weaknesses, deliberately not guessed at
+A summary that omitted these would be the kind of confident, unchecked claim the
+whole project is built to avoid.
 
-- **Agent 2 records almost no dissenting evidence** — one `weakens` stance across
-  every run ever made. Diagnosed on 2026-08-22 and it is **not the prompt**: most
-  themes cite exactly ONE article, and a theme with one citation cannot record
-  dissent because there is no second article to disagree. Themes are also derived
-  from their own evidence, so a contradicting article becomes a different theme
-  rather than dissent within this one. Underneath both: TheNewsAPI's free tier
-  returns 3 articles per request. **Decision: fix it in Agent 4, not Agent 2** —
-  the risk critic retrieves its own counter-evidence rather than depending on the
-  researcher to have been self-critical.
-- **Ranking still saturates at the very top.** Raising the caps fixed the part
-  that mattered — TSMC and SK hynix tied at 1.000 and could not be ordered — but a
-  company far beyond every cap still scores exactly 1.000, because a ramp clips by
-  construction. Accepted: one company at 1.000 is ranked first, which is correct.
-- **Financial companies are capped at 0.50.** At most two of four metrics exist
-  for a bank, and score multiplies by completeness. Verified across ten major
-  banks: all sit at exactly 0.50 and are kept. Accepted, because profiles are
-  sector-themed, so every bank carries the same handicap and relative order is
-  unaffected.
-- **13 of 18 Agent 2 themes cite a single source**, and it reaches the theme cap
-  on well-covered sectors. This is the same root cause as the dissent gap.
-- **Agent 1's eval set scores 100%**, so it catches regressions but has no
-  headroom to show improvement.
-- **Ticker resolution rate varies a lot between runs.** One banking run failed to
-  resolve 4 of 7 mentions and returned zero candidates. Degrades safely — it
-  records a drop reason rather than guessing — but worth watching.
+- **Agent 5's exclusion path has never run.** Every run produced three or fewer
+  candidates and no disqualifications, so nothing has been excluded for real.
+  Unit tests only.
+- **One of two eval profiles keeps returning zero candidates.** Article variance
+  means each run tests a different slice, so a run of clean results is weaker
+  evidence than the count suggests. Verifying a fix against its exact failing
+  inputs has repeatedly proved stronger than another eval run.
+- **Nobody can run this pipeline except through Python snippets.** There is
+  still no CLI.
+
+### Known weaknesses, measured and deliberately not fixed
+
+Each needs re-opening an agent that is currently verified, which is why they
+wait rather than being unknown.
+
+- **Agent 3 grades data-centre operators as `direct` exposure to renewables.**
+  The renewables profile is recommended Google and Amazon because they buy
+  battery storage. A real fact and a very loose link: a beginner asking about
+  renewable energy gets two mega-cap advertising and retail businesses. The
+  error surfaces at the last stage, where a human notices; the cause is Agent
+  3's exposure prompt.
+- **Agent 5 barely reads the articles.** 1 of 8 exit conditions cites one; the
+  rest are metric thresholds, which are the cheap answer and read the same for
+  any company in any sector. The prompt change moved it from 0/9, which is
+  progress and not a solution.
+- **Agent 2 records almost no dissenting evidence.** Structural, not a prompt
+  problem - most themes cite one article, and one article cannot disagree with
+  itself. Worked around by giving Agent 4 its own adversarial retrieval.
+- **Agent 4's source filter is seven domains** from one afternoon of searches.
+  An unlisted low-quality outlet passes and nothing notices.
+- **Ranking saturates at the very top**, and **financial companies cap at 0.50**.
+  Both measured, both accepted: they distort absolute scores without changing
+  any ordering that gets consumed.
+- **Agent 1's eval scores 100%**, so it catches regressions but cannot show
+  improvement.
+- **The exclusion check matches naive substrings.** "No crypto exposure" would
+  register as a violation. Not yet observed.
 
 ### Deferred, not blocking
 
-- **No CLI.** There is no way for a person to run the pipeline — only Python
-  snippets. Also the thing that would make the project demonstrable.
+- **No CLI.** The thing that would make the project demonstrable.
 - **`InMemorySaver`** loses all state on restart, including a user mid
   clarification. Needs `SqliteSaver` before any real use.
-- **The exclusion check matches naive substrings**, so a rationale reading "no
-  crypto exposure" would register as a violation. Consistent with how Agent 2
-  already checks themes. Not yet observed.
 
 ### Next
 
-Sequencing decided 2026-08-22: **finish the pipeline first, then harden once.**
-
-1. **Agent 4 (Risk Critic).** Needs no new API key, but DOES need news-API
-   budget: the decision above makes it retrieve its own bear-case evidence, then
-   reason — so it is closer in size to Agent 2 than to a pure reasoning step.
-2. **Agent 5 (Decide).**
-3. **One hardening pass** — CLI, `SqliteSaver`, harder Agent 1 eval cases, plus
-   whatever Agents 4 and 5 expose in the earlier agents.
-
-The alternative was to clean up the known gaps in Agents 1-3 first. Rejected for
-three reasons, recorded so the choice is not silently reversed:
-
-- **Most of the gaps are already decided.** Agent 3's two limits were
-  deliberately accepted; Agent 2's dissent gap is already routed into Agent 4.
-  What genuinely remains is Agent 1 eval headroom, which is small and not urgent.
-- **Agents 4 and 5 will show what actually needs fixing.** `CompanyFindings` has
-  no real consumer yet. Whether the currency field, exposure grades and score
-  semantics are right FOR A CONSUMER is unknowable until one exists. Fixing now
-  optimises against an imagined caller.
-- **The question this project exists to answer is unanswerable at 3 of 5
-  agents** — does the system produce a defensible recommendation, or correctly
-  refuse to? Every session spent polishing links postpones the only test that
-  counts.
-
-The CLI belongs in the hardening pass specifically because its shape depends on
-the finished pipeline; building it now means building it against three agents and
-revising it twice.
-
-**Known risk in this plan:** "harden later" is where cleanup goes to die. The
-mitigation is that the list is written down here and in the handoff, so it is a
-tracked commitment rather than an intention.
-
-**Watch from Agent 4's first eval:** it adds retrieval, so per-profile cost rises
-above the current 25-30k. If one end-to-end profile costs 50k+, a full run stops
-fitting inside a day's quota, and caching or a cheaper model for some calls stops
-being optional. Deal with it then, not at Agent 5.
+1. **The hardening pass** - CLI, `SqliteSaver`, harder Agent 1 eval cases. None
+   of it needs quota.
+2. **Then work through the known weaknesses above**, in the order they would
+   change an answer a reader sees. The Agent 3 exposure grade is first: it is
+   the one currently putting a wrong-looking company in front of a person.
