@@ -1,10 +1,10 @@
 # Start here
 
-Last worked: **2026-08-23**. **The pipeline is complete.** All five agents are
-built and verified against their own evals, and every stage is connected end to
-end.
+Last worked: **2026-08-23** (session 5). **The pipeline is complete and now
+demonstrable.** All five agents are built and verified against their own evals,
+and `python -m cli` runs the whole thing end to end.
 
-`docs/PROJECT_LOG.md` is current through Session 4.
+`docs/PROJECT_LOG.md` is current through Session 5.
 
 ---
 
@@ -15,42 +15,51 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **433 passed** in about 4 seconds.
+Expect **472 passed** in about 3 seconds.
+
+Then see it work, without spending quota on a real run:
+
+```powershell
+python -m cli --help
+```
 
 ---
 
-## 2. THE TASK — the hardening pass
+## 2. THE TASK — finish the hardening pass
 
-Decided 2026-08-22: finish the pipeline first, harden once. This is it. **None
-of it needs Groq quota**, which makes it a good use of a session whatever the
-daily budget looks like.
+### 2a. A CLI — DONE this session
 
-### 2a. A CLI — the most valuable item here
+`cli.py`. Asks the eight profile questions, runs the graph, handles Agent 1's
+clarification interrupt, prints the brief. `--profile FILE` replays a saved
+profile (three in `examples/`, one deliberately contradictory so the interrupt
+can be shown on demand); `--save-profile FILE` writes one out.
 
-There is still no way for a person to run this pipeline. Everything so far has
-been driven from Python snippets and eval runners, which means the project
-cannot be DEMONSTRATED - for a portfolio piece, the difference between a system
-that works and one anybody believes works.
+Two things worth knowing before changing it:
 
-It waited deliberately: its shape depends on the finished pipeline, and building
-it earlier would have meant building it twice.
+- It uses `stream(stream_mode="updates")`, not `invoke`, so each stage reports
+  as it lands. A run is several minutes and a dozen model calls; a silent
+  terminal is indistinguishable from a hang.
+- `stream` never yields accumulated state, so the final state is read back with
+  `get_state(config).values`. **That is what found the serializer bug below.**
 
-What it has to do:
-
-- ask the profile questions: age, experience, risk tolerance, amount, window,
-  holding period, **sectors of interest**, restrictions
-- run the graph and handle the **clarification interrupt** - Agent 1 can come
-  back asking a question, and the CLI must carry the answer in and resume
-- print the `Decision` readably: each thesis, the exit conditions with what
-  grounds each one, and the exclusions with their reasons
-- print `no_recommendation_reason` prominently when nothing is recommended.
-  Recommending nothing is a first-class outcome and must not look like a failure
-  or an empty screen
-
-### 2b. `SqliteSaver`
+### 2b. `SqliteSaver` — NEXT, and start here
 
 `InMemorySaver` loses all state on restart, including a user stopped mid
-clarification. Needed before anyone could really use this.
+clarification.
+
+Now slightly larger than it looks, and better understood than it was:
+
+- `--thread-id` already exists in the CLI and is **inert** until the
+  checkpointer is durable. It is the seam this work plugs into.
+- The serializer is now a named constant, `workflow.CHECKPOINTED_TYPES`, with a
+  test walking `InvestmentState` to prove nothing reachable is missing from it.
+  `SqliteSaver` takes the same `serde=`, so that guarantee carries over — but
+  **resume across processes will exercise it far harder than anything has so
+  far**, because every read comes back through the serializer rather than only
+  the one interrupt in Agent 1.
+- Worth an actual end-to-end check once it is in: start `python -m cli` with
+  `examples/conflicted_crypto.json`, kill the process at the clarification
+  prompt, and resume the same `--thread-id` in a fresh process.
 
 ### 2c. Harder Agent 1 eval cases
 
@@ -71,7 +80,9 @@ True, and a very loose link: a beginner asking about renewable energy gets two
 mega-cap advertising and retail businesses.
 
 This is the one weakness currently putting a wrong-LOOKING company in front of a
-person. The cause is Agent 3's exposure prompt; the cost is re-verifying Agent 3.
+person — and now it is in front of them in a readable brief rather than a Python
+repr, which raises the cost of leaving it. The cause is Agent 3's exposure
+prompt; the cost is re-verifying Agent 3.
 
 ### Agent 5 barely reads the articles
 
@@ -79,6 +90,10 @@ person. The cause is Agent 3's exposure prompt; the cost is re-verifying Agent 3
 cheap answer and read identically for any company in any sector. The prompt now
 demands at least one article-cited condition, which moved it from 0/9 to 1/8 -
 progress, not a solution.
+
+The CLI makes this visible in a way the eval numbers did not: every condition
+prints its grounds, so a brief where four of five say `grounds: metric X` looks
+as thin on screen as it is.
 
 ### Agent 2 records almost no dissenting evidence
 
@@ -116,12 +131,21 @@ Worth knowing before trusting a clean eval run.
   means each run tests a different slice, so a run of clean results is weaker
   evidence than the count suggests. **Verifying a fix against its exact failing
   inputs has repeatedly proved stronger than another eval run.**
-- **Agent 3's own eval has not run since the margin fix** (2026-08-23) - the
-  daily quota ran out first. The effect WAS checked offline across eleven
-  companies spanning tech, semiconductors, pharma, banks and small caps: only
-  PowerBank changed, nothing was pushed below the completeness floor, and no
-  screening decision moved. Worth one `python -m evals.company_runner --limit 1`
-  next session to confirm the drop accounting still balances.
+- **Agent 3's own eval has still not run since the margin fix** (2026-08-23).
+  Attempted again at the end of session 5 and blocked by the daily ceiling:
+  `196,521 of 200,000` tokens already used, one case needs ~25-30k. The effect
+  WAS checked offline across eleven companies spanning tech, semiconductors,
+  pharma, banks and small caps: only PowerBank changed, nothing was pushed below
+  the completeness floor, and no screening decision moved. Still worth one
+  `python -m evals.company_runner --limit 1` to confirm the drop accounting
+  balances. **Check the ceiling before planning a session around evals** — it is
+  a rolling 24-hour window, so a new calendar day does not reset it.
+- **The CLI has never been run against the live pipeline end to end.** Every
+  path is covered by tests with stubbed agents, and the rendering was checked
+  against realistic fixtures, but no real profile has gone through it. One
+  `python -m cli --profile examples/beginner_renewables.json` when quota allows.
+  Do this FIRST next session, before the eval — it exercises all five agents and
+  is the last unverified thing about the CLI.
 
 ---
 
@@ -143,13 +167,29 @@ brief and a human read it. **A metric that clips cannot serve as its own
 data-quality alarm** - and a number that looks fine in a field can look absurd in
 a sentence, which is the argument for the last stage existing at all.
 
+**Session 5 added a third kind, which neither tests nor evals could catch.**
+Agents 4 and 5 were added to the graph without being added to the
+checkpointer's type allow-list. An unregistered Pydantic type is not an error:
+it round-trips as a plain dict with all the right keys and fails later,
+elsewhere, on the first property access. The eval runners hold the objects they
+build and never read one back out of the checkpointer, so 433 tests and five
+eval suites stayed green. The CLI was the first caller to read state back, and
+it broke immediately. There is now a test that walks `InvestmentState` and fails
+if a reachable type is missing from `CHECKPOINTED_TYPES` — **adding a stage
+means adding its types.**
+
 ---
 
 ## Commands
 
 ```powershell
+python -m cli                           # run the pipeline for a person
+python -m cli --profile examples/beginner_renewables.json
+python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
+python -m cli --save-profile mine.json
+
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 433 tests, ~4s, no network
+python -m pytest                        # 472 tests, ~3s, no network
 
 python -m evals.runner                  # Agent 1: 18 labelled cases
 python -m evals.research_runner         # Agent 2: process quality, 5 profiles
@@ -165,9 +205,10 @@ python -m evals.decision_runner --case <name>   # one profile, to conserve quota
 
 - **Groq's daily ceiling is the binding constraint.** A profile through Agents
   2-3 is roughly **25-30k tokens**; the decision eval adds Agents 4 and 5 on top,
-  at about 12 model calls per profile. **Measure, do not extrapolate** - trusting
-  a documented figure once cost a whole verification run. The ceiling is a
-  rolling 24-hour window, not a midnight reset.
+  at about 12 model calls per profile. A full `python -m cli` run costs the same
+  as one decision-eval case. **Measure, do not extrapolate** - trusting a
+  documented figure once cost a whole verification run. The ceiling is a rolling
+  24-hour window, not a midnight reset.
 - **TheNewsAPI**: 100 requests/day, 3 articles per request. Query syntax is
   plain space-separated AND only - **no `OR`, no `|`** - and three ANDed terms
   usually returns nothing.

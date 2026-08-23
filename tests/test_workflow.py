@@ -638,3 +638,77 @@ def test_recommending_nothing_is_a_result_not_an_error(
     assert result["decision"].recommended_nothing
     assert result["decision"].no_recommendation_reason
     assert "error" not in result
+
+
+# --- The checkpointer's type registry ----------------------------------------
+
+
+def _models_reachable_from(annotation, seen: set) -> set:
+    """Every BaseModel class reachable from a type annotation, recursively.
+
+    Walks through list[...], X | None, Annotated[...] and nested model fields,
+    which is how the types actually appear: RiskFindings holds
+    list[CandidateCritique], which holds list[Risk].
+    """
+    from typing import get_args
+
+    from pydantic import BaseModel
+
+    found = set()
+    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+        if annotation in seen:
+            return found
+        seen.add(annotation)
+        found.add(annotation)
+        for field in annotation.model_fields.values():
+            found |= _models_reachable_from(field.annotation, seen)
+        return found
+
+    for arg in get_args(annotation):
+        found |= _models_reachable_from(arg, seen)
+    return found
+
+
+def test_every_type_that_reaches_state_is_registered_with_the_checkpointer():
+    """The bug this exists to prevent, stated once so it cannot come back.
+
+    An unregistered Pydantic type does not raise. It round-trips through the
+    checkpointer as a plain dict and fails later, somewhere else, on the first
+    property access - which is how Agents 4 and 5 shipped unregistered and the
+    whole suite stayed green: nothing read state back out until the CLI did.
+
+    Every future agent adds types to InvestmentState. This is what makes
+    forgetting them a red test instead of an AttributeError in front of a user.
+    """
+    from typing import get_type_hints
+
+    from models.state import InvestmentState
+    from workflow import CHECKPOINTED_TYPES
+
+    seen: set = set()
+    required: set = set()
+    for annotation in get_type_hints(InvestmentState, include_extras=True).values():
+        required |= _models_reachable_from(annotation, seen)
+
+    missing = sorted(cls.__name__ for cls in required - set(CHECKPOINTED_TYPES))
+    assert not missing, (
+        f"these types reach graph state but are not in CHECKPOINTED_TYPES: "
+        f"{missing}. They will come back from the checkpointer as dicts."
+    )
+
+
+def test_the_registry_has_no_types_that_cannot_reach_state():
+    """The other direction: a registered type that nothing uses is dead weight,
+    and usually means a model was renamed and the old name left behind."""
+    from typing import get_type_hints
+
+    from models.state import InvestmentState
+    from workflow import CHECKPOINTED_TYPES
+
+    seen: set = set()
+    reachable: set = set()
+    for annotation in get_type_hints(InvestmentState, include_extras=True).values():
+        reachable |= _models_reachable_from(annotation, seen)
+
+    extra = sorted(cls.__name__ for cls in set(CHECKPOINTED_TYPES) - reachable)
+    assert not extra, f"registered but unreachable from state: {extra}"

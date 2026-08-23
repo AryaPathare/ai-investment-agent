@@ -25,6 +25,50 @@ recommendation just because recommending is its job.
 | 3. Companies | Extract, screen, and analyse fundamentals | **Built** |
 | 4. Risk Critic | Retrieve the bear case and attack the thesis | **Built** |
 | 5. Decide | Select, write the case, and state exit conditions | **Built** |
+| CLI | Ask the questions, run the graph, print the brief | **Built** |
+
+---
+
+## Run it
+
+```powershell
+python -m cli                                          # answer eight questions
+python -m cli --profile examples/beginner_renewables.json    # skip the questions
+python -m cli --save-profile mine.json                 # keep the answers for next time
+```
+
+A run takes a few minutes and roughly a dozen model calls, and prints each
+stage as it lands so you can see it working:
+
+```
+[2/5] Researching current themes in your sectors ...
+        2 theme(s), 3 cited article(s) from 23 retrieved
+          - Grid-scale storage buildout (high confidence)
+[3/5] Finding companies genuinely exposed to those themes ...
+        3 candidate(s) from 11 companies examined
+          dropped: 1 failed_screen, 1 no_ticker_found
+```
+
+Each recommendation prints its thesis, the exit conditions that would break it,
+and **what grounds each condition** — a headline and a link you can open, or a
+named metric:
+
+```
+     WHAT WOULD MEAN THIS HAS STOPPED BEING A GOOD IDEA
+       - The Italian 1.2GW order is cancelled or materially reduced.
+         grounds: "Waaree wins 1.2GW module order from Italian developer"
+                  ft.com, 2026-08-17
+                  https://ft.com/story/a2
+       - debt_to_equity rises above 2.0.
+         grounds: metric debt_to_equity
+```
+
+Recommending nothing is a first-class outcome and gets its own banner with the
+reason, not a blank screen. `examples/conflicted_crypto.json` demonstrates the
+other path: Agent 1 stops mid-run, asks you to resolve the contradiction, and
+the graph resumes from exactly where it paused.
+
+See [examples/](examples/) for the saved profiles.
 
 ---
 
@@ -62,8 +106,9 @@ layer.
 ## Commands
 
 ```powershell
+python -m cli                           # run the pipeline and print the brief
 python -m scripts.check_setup           # environment health check
-python -m pytest                        # unit tests (146, ~1s, no network)
+python -m pytest                        # unit tests (472, ~3s, no network)
 
 python -m evals.runner                  # Agent 1: accuracy on 18 labelled cases
 python -m evals.runner --tag regression # only the must-never-break cases
@@ -98,11 +143,13 @@ the runner exits non-zero if any of them come back.
 ## Layout
 
 ```
+cli.py             The command line front end. The only way a person runs this.
 config.py          All external configuration. The only place secrets are read.
 workflow.py        The LangGraph graph: nodes, edges, routing.
 models/            Pydantic schemas — the contracts between stages.
 agents/            One module per agent. Prompt + orchestration.
 evals/             Labelled cases and the scoring runner.
+examples/          Saved profiles for `--profile`.
 scripts/           Operational helpers (health check).
 tests/             Unit tests.
 ```

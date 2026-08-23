@@ -35,7 +35,14 @@ from models.companies import (
     DroppedCompany,
     Fundamentals,
 )
+from models.decision import (
+    Decision,
+    ExcludedCompany,
+    ExitCondition,
+    Recommendation,
+)
 from models.research import Article, Evidence, ResearchFindings, Theme
+from models.risk import CandidateCritique, Risk, RiskFindings
 from models.state import InvestmentState
 from models.user_input import UserInput
 
@@ -316,26 +323,52 @@ builder.add_edge("decide", END)
 # The checkpointer saves state at every step so an interrupted graph can resume.
 # InMemorySaver keeps it in RAM: fine for development, but everything is lost
 # when the process exits. Swap for SqliteSaver before this is used for real.
-serializer = JsonPlusSerializer(
-    allowed_msgpack_modules=[
-        UserInput,
-        InvestorProfile,
-        # Agent 2's output, including the nested types, or resuming an
-        # interrupted graph would fail to reconstruct them.
-        ResearchFindings,
-        Theme,
-        Evidence,
-        Article,
-        # Agent 3's output and its nested types, or resuming an interrupted
-        # graph could not reconstruct them.
-        CompanyFindings,
-        CompanyCandidate,
-        DroppedCompany,
-        Fundamentals,
-        ComparableMetrics,
-        CurrencyAmounts,
-    ]
-)
+#
+# EVERY Pydantic type that reaches state must be listed below. An unlisted type
+# is not an error: it round-trips through the checkpointer as a plain dict, and
+# the failure surfaces far away as an AttributeError on the first property
+# access. Agents 4 and 5 were added to the graph without being added here, and
+# nothing noticed until the CLI became the first caller to read state back with
+# `get_state()` — the eval runners hold the objects they built and never take
+# them out of the checkpointer, so the whole suite stayed green.
+#
+# ADDING AN AGENT MEANS ADDING ITS TYPES HERE. The list is a named constant
+# rather than an inline literal so that a test can walk InvestmentState and
+# fail when a reachable type is missing from it — see test_workflow.py. That
+# test is the only thing standing between the next agent and the same bug.
+CHECKPOINTED_TYPES = [
+    UserInput,
+    InvestorProfile,
+    # Agent 2's output, including the nested types, or resuming an
+    # interrupted graph would fail to reconstruct them.
+    ResearchFindings,
+    Theme,
+    Evidence,
+    Article,
+    # Agent 3's output and its nested types, or resuming an interrupted
+    # graph could not reconstruct them.
+    CompanyFindings,
+    CompanyCandidate,
+    DroppedCompany,
+    Fundamentals,
+    ComparableMetrics,
+    CurrencyAmounts,
+    # Agent 4's output and its nested types. `verdict` and
+    # `was_critiqued` are properties, so a dict here means Agent 5 and
+    # the CLI both break on the first one they read.
+    RiskFindings,
+    CandidateCritique,
+    Risk,
+    # Agent 5's output and its nested types. `recommended_nothing` and
+    # `exclusion_summary` are properties, and this is the object a
+    # person actually reads.
+    Decision,
+    Recommendation,
+    ExitCondition,
+    ExcludedCompany,
+]
+
+serializer = JsonPlusSerializer(allowed_msgpack_modules=CHECKPOINTED_TYPES)
 
 memory = InMemorySaver(serde=serializer)
 

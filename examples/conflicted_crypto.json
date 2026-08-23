@@ -1,0 +1,15 @@
+{
+  "age": 24,
+  "investment_experience": "beginner",
+  "risk_tolerance": "low",
+  "investment_amount": 2000.0,
+  "investment_window": "within 6 months",
+  "holding_period": "10+ years",
+  "sectors_of_interest": [
+    "cryptocurrency",
+    "banking"
+  ],
+  "restrictions": [
+    "No cryptocurrency or digital asset companies"
+  ]
+}

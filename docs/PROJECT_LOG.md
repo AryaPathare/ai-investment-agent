@@ -897,3 +897,142 @@ wait rather than being unknown.
 2. **Then work through the known weaknesses above**, in the order they would
    change an answer a reader sees. The Agent 3 exposure grade is first: it is
    the one currently putting a wrong-looking company in front of a person.
+
+---
+
+## Session 5 — 2026-08-23
+
+### Starting point
+
+All five agents built and verified, 433 tests, everything committed at
+`c930892`. The pipeline worked and could not be shown to anyone: it ran only
+from Python snippets and eval runners. The hardening pass began here, with the
+CLI as its most valuable item.
+
+### 26. The CLI, and the interrupt that turned out to be the easy part
+
+The handoff called the clarification interrupt "the awkward part". It was not.
+`tests/test_workflow.py` already contained the exact loop the CLI needed —
+invoke, check for `__interrupt__`, resume with `Command(resume=...)` — because
+proving the clarification loop terminates required driving it the same way a
+user would. The test written to bound a loop had incidentally specified the
+front end.
+
+The one real decision was `stream` over `invoke`. `invoke` returns only at the
+end, and the end is several minutes and roughly a dozen model calls away; a
+terminal that prints nothing for that long is indistinguishable from a hang.
+`stream(stream_mode="updates")` yields `{node: update}` per completed node, so
+each stage can report what it produced as it lands:
+
+```
+[3/5] Finding companies genuinely exposed to those themes ...
+        3 candidate(s) from 11 companies examined
+          dropped: 1 failed_screen, 1 no_ticker_found
+```
+
+Those counts are not decoration. They are the same numbers the evals score —
+`companies_examined`, `drop_summary`, `articles_retrieved` — shown to whoever
+is watching. A run that examines eleven companies and produces zero candidates
+looks identical to a broken one until the drop reasons are on screen.
+
+One consequence: `stream` yields updates, never the accumulated state, so the
+final state has to be read back with `get_state(config).values`. That is what
+found the next bug.
+
+### 27. The types nobody registered, and why 433 tests could not see it
+
+`get_state()` returned `decision` as a plain `dict`. The first property access
+died:
+
+```
+AttributeError: 'dict' object has no attribute 'recommended_nothing'
+```
+
+`workflow.py` passes a `JsonPlusSerializer` an explicit allow-list of Pydantic
+types. Agents 1, 2 and 3's types were all listed, with comments explaining that
+an unlisted type could not be reconstructed. **Agents 4 and 5 were added to the
+graph without being added to that list.** They shipped that way in `c930892`.
+
+What makes this worth writing down is why nothing caught it:
+
+- **It is not an error.** An unregistered model round-trips as a dict with all
+  the right keys. It fails later, somewhere else, on the first property access —
+  and `verdict`, `was_critiqued`, `recommended_nothing` and `exclusion_summary`
+  are all properties.
+- **Nothing read state back.** The eval runners construct the objects, hold
+  them, and score the objects they are holding. They never take one out of the
+  checkpointer. The CLI was the first caller to do so, which is the only reason
+  it surfaced at all.
+- **The one path that would have hit it does not exist.** The single interrupt
+  sits in Agent 1, before Agents 4 and 5 ever run, so no resume had ever had to
+  reconstruct their types.
+
+The fix was four lines of imports. The interesting part was the comment in
+`workflow.py` claiming this could not be caught generically — which was wrong,
+and rewriting it produced the actual fix:
+
+```python
+def test_every_type_that_reaches_state_is_registered_with_the_checkpointer():
+```
+
+It walks `InvestmentState`'s annotations, recurses through `list[...]`, `X |
+None` and nested model fields, and asserts every reachable `BaseModel` appears
+in `CHECKPOINTED_TYPES` (extracted from an inline literal so a test can import
+it). A second test checks the other direction, so a renamed model does not leave
+a dead entry behind. Removing `Decision` from the list makes it fail with the
+type named — checked, because a registry test that cannot fail is worse than no
+test, being evidence of something it never verified.
+
+This is the project's lesson arriving from a new direction. The usual form is
+"only the evals show whether what it says is right." This one no eval could have
+caught either: it is not a judgement about model output, it is a serialization
+contract that only breaks when somebody reads state back. **Adding a stage means
+adding its types**, and that is now a red test rather than a footnote.
+
+### 28. Where the output had to be honest rather than pretty
+
+Three choices in the printing, all the same argument:
+
+- **Recommending nothing gets the loudest banner on the page** and prints
+  `no_recommendation_reason` under a `WHY` heading. Everywhere upstream an empty
+  result is a legitimate outcome; this is the one place a person sees it, and a
+  blank screen reads as a crash. It also exits **0** — a non-zero code would tell
+  every wrapping script the run had failed.
+- **Exit conditions print what grounds them**, resolved to a headline, publisher,
+  date and link. The citation was carried through three stages precisely so it
+  could be followed, and a bare uuid is not a source. An id that resolves in
+  neither `RiskFindings.articles` nor `ResearchFindings.articles` prints
+  "source not retained" rather than nothing, because silence there looks
+  identical to a citation that worked.
+- **Every excluded candidate is named with its reason.** A company that vanished
+  between the ranking and the output would be the one failure a reader could
+  never detect.
+
+### 29. Two places the CLI refused to duplicate a rule
+
+The prompts validate shape only — is it a number, is it one of the allowed
+words. Ranges stay in `UserInput`, and `ask_profile()` catches the
+`ValidationError` and re-asks the offending field by name. The alternative was
+restating `gt=0, le=120` in the CLI, giving the bound two homes and one of them
+no test.
+
+Likewise `EXPERIENCE` and `RISK` are read from `UserInput`'s own `Literal` types
+with `get_args`, not retyped. Adding a risk level in the model cannot leave the
+CLI offering the old three, and a test asserts the question list and the model's
+fields are the same set.
+
+### Where it stands
+
+- **472 tests** (was 433), ~3s, no network.
+- `python -m cli`, `--profile`, `--save-profile`; three example profiles, one of
+  them deliberately contradictory so the interrupt can be demonstrated on
+  demand.
+- The serializer defect from `c930892` is fixed and has a regression test.
+
+### Next
+
+1. **`SqliteSaver`** (2b). Now more clearly worth doing: `--thread-id` exists in
+   the CLI and is inert until the checkpointer is durable.
+2. **Agent 3's exposure grade** — still the one weakness putting a
+   wrong-looking company in front of a person.
+3. Harder Agent 1 eval cases.
