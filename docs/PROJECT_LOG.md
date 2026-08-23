@@ -1354,3 +1354,77 @@ mutable.** Prose that cites one is making a promise the repository can break,
 and rewriting history breaks every such promise at once. Citing the commit
 SUBJECT alongside the hash, as the table above does, is what made these two
 recoverable at all.
+
+### 41. Auditing the source filter instead of guessing at it
+
+Agent 4's `LOW_QUALITY_SOURCES` was seven domains "from one afternoon of
+searches", carried as a known weakness for three sessions. The obvious fix was
+to spend another afternoon and add more names.
+
+There was a better option sitting on disk: **224 cached news responses** from
+every run this project has ever made. Real retrieved articles, no API calls.
+
+The first pass counted 433 articles and got the ranking wrong. The cache stores
+one file per query and the same article comes back from many queries, so it was
+counting RETRIEVALS. `globalrenewablenews.com` looked like the third-biggest
+source at 31; deduplicated by uuid it is 7. The corrected corpus is **272
+distinct articles from 130 sources**, and every number below is from that.
+
+**What the audit found:**
+
+- The seven-name list removed **2.6%** of the corpus. Nearly inert.
+- **86 of 130 sources contributed exactly one article.** This is the finding
+  that matters, and it is not "the list is too short". A list of names cannot
+  cover a distribution where two thirds of sources appear once. Extending it
+  helps with recurring offenders and cannot make the filter complete.
+- Three different problems were being conflated under "low quality":
+
+  | | example | right instrument |
+  |---|---|---|
+  | not publishers | `airedale.futurecdn.net` (a CDN hostname), `api.foxsports.com` | a structural rule |
+  | off-topic | `dealigg.com` - *"Best Deal: 6-Pack Lithium Battery"* against a battery-storage query | nothing here; a relevance failure |
+  | editorial tail | `insidermonkey.com`, `financefeeds.com` | naming - what the list is for |
+
+- **6% of the corpus is press releases**, concentrated in `manilatimes.net`:
+  nine of its twenty-three articles, and it is the second-largest source
+  overall. *"CervoMed Reports Second Quarter Financial Results."* A press
+  release is the company's own framing, which makes it close to worthless to a
+  RISK critic specifically - the one agent whose job is the bear case.
+
+**What was changed:** sixteen names, every one of them observed in the corpus
+rather than imagined. 2.6% to 15.1%. The header comment records the honest
+limits alongside the improvement, because 15.1% reads like progress and the
+long tail is still wide open.
+
+**What was deliberately not changed.** The press-release problem needs a filter
+on the SHAPE of the article, not on who carried it: this content arrives
+through ordinary newspapers that also do real reporting, so blocking the
+newspaper is wrong. And no source list fixes relevance.
+
+### 42. Two things the audit turned up on the way
+
+**The filter had no tests at all** - not one - despite deciding which evidence a
+published risk claim is allowed to rest on. It has ten now. The list itself is
+an editorial judgement and cannot be asserted on, but everything around it can:
+that entries are written in a form the matcher can actually match (matching
+lowercases the source, so an entry with a capital letter would never fire and
+nothing would reveal it), that dropping is reported rather than silent, and
+that matching is exact so `news.ycombinator.com` does not take `medcitynews.com`
+with it. Verified by breaking an entry's casing on purpose and watching two
+tests fail.
+
+**The caller discards what the filter withheld.** `drop_low_quality` returns the
+dropped sources, and its docstring argues the case: "a filter that silently
+removes evidence is its own kind of unreliable narrator." `risk_agent.py` then
+assigns them to `_dropped` and throws them away. Nothing in `RiskFindings`
+records that anything was withheld. Left as-is - it needs a field threaded
+through the assembly, which is more than this change - but it is exactly the
+failure the docstring warns about, sitting one line below the warning.
+
+**And the cache cannot answer the question it was used to ask.** Cached
+responses store the provider's reply and not the query that produced it, so
+these articles cannot be attributed to Agent 2's theme search versus Agent 4's
+bear-case search. The claim "press releases are reaching the risk critic" is
+therefore *unproven* - it is in the corpus, and which agent retrieved it is not
+recoverable. Recording the query alongside the response is a few lines and
+would make every future audit of this kind possible for free.

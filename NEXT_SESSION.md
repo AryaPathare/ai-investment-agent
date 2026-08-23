@@ -21,7 +21,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **578 passed** in a few seconds.
+Expect **632 passed** in a few seconds.
 
 Then see it work, without spending quota on a real run:
 
@@ -148,10 +148,34 @@ Structural, not a prompt problem: most themes cite one article and one article
 cannot disagree with itself. Worked around by giving Agent 4 its own adversarial
 retrieval. If that stops working, this comes back.
 
-### Agent 4's source filter is seven domains
+### Agent 4's source filter cannot cover its long tail
 
-From one afternoon of searches. An unlisted low-quality outlet passes and
-nothing notices.
+**Widened 2026-08-23 from evidence, and the remaining problem is structural.**
+Audited against the 224 cached news responses on disk: 272 distinct articles,
+130 sources. Sixteen names added, all of them actually observed. Coverage went
+from 2.6% to 15.1%.
+
+The number that matters is the other one: **86 of 130 sources contributed
+exactly one article.** A list of names cannot cover that, and extending it
+further is not the fix. Two problems found in the same audit are still open and
+need different instruments:
+
+- **Press releases are 6% of the corpus**, nine of `manilatimes.net`'s
+  twenty-three articles. Worthless to a risk critic, since it is the company's
+  own framing - but it arrives via ordinary newspapers that also report, so it
+  must be filtered by the SHAPE of the article, not the publisher.
+- **Off-topic matches.** `dealigg.com` returned retail battery deals for a
+  battery-storage query. A relevance failure; no source list fixes it.
+
+Two smaller things the audit surfaced, both cheap:
+
+- `risk_agent.py:270` **discards what the filter withheld** (`_dropped`), so
+  nothing reports it - the exact failure `drop_low_quality`'s docstring warns
+  against, one line below the warning. Needs a `RiskFindings` field.
+- **The cache does not record the query**, only the response, so articles cannot
+  be attributed to Agent 2 vs Agent 4. That is why "press releases reach the
+  risk critic" is stated above as unproven. A few lines would fix it and make
+  future audits free.
 
 ### Two accepted scoring limits
 
@@ -247,7 +271,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 578 tests, a few seconds, no network
+python -m pytest                        # 632 tests, a few seconds, no network
 
 python -m evals.runner                  # Agent 1: 30 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)

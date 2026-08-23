@@ -90,14 +90,66 @@ class NewsAPIError(RuntimeError):
 # The test is not political slant. It is whether the outlet does original
 # REPORTING that a business decision could rest on. An opinion blog may be
 # entirely right and still not be evidence that a company faces litigation.
+# Extended 2026-08-23 from EVIDENCE rather than from more searching. Every
+# addition below actually appeared in .cache/news - 272 distinct articles across
+# 130 sources - so none of it is a guess about what might turn up. That audit
+# also measured the honest limits of this approach, recorded here because the
+# number looks better than it is:
+#
+#   * the original seven removed 2.6% of the corpus; with these, 15.1%
+#   * 86 of the 130 sources contributed exactly ONE article
+#
+# That tail is the real finding. **A list of names cannot cover a distribution
+# where two thirds of sources appear once**, and no amount of extending it will.
+# What this list is good for is the recurring offenders; what it cannot do is
+# make the filter complete, and it should not be mistaken for having done so.
+#
+# Two problems found in the same audit are deliberately NOT addressed here,
+# because a source denylist is the wrong instrument for either:
+#
+#   * Press releases - 6% of the corpus, "X Announces Second Quarter Results".
+#     A press release is the company's own framing, which makes it close to
+#     worthless to a RISK critic specifically. But it arrives through ordinary
+#     newspapers that also do real reporting, so it has to be filtered by the
+#     shape of the article, not by who carried it.
+#   * Off-topic matches - dealigg.com is listed below as a non-publisher, but
+#     the deeper issue is a battery-storage query returning retail battery
+#     deals. That is a relevance failure, and no source list fixes relevance.
 LOW_QUALITY_SOURCES = {
-    "joemygod.com",          # political commentary blog
-    "thegatewaypundit.com",  # partisan commentary
-    "zerohedge.com",         # financial commentary, frequently speculative
-    "steynonline.com",       # personal opinion site
-    "app.buzzsumo.com",      # content-marketing tool, not a publisher
+    # --- Commentary and advocacy, not reporting -----------------------------
+    "joemygod.com",             # political commentary blog
+    "thegatewaypundit.com",     # partisan commentary
+    "zerohedge.com",            # financial commentary, frequently speculative
+    "steynonline.com",          # personal opinion site
     "beforeitsnews.com",
     "naturalnews.com",
+    "revolver.news",            # partisan commentary
+    "endoftheamericandream.com",
+    "activistpost.com",
+    "unlimitedhangout.com",
+    "wattsupwiththat.com",      # climate commentary blog
+    "armstrongeconomics.com",   # self-published financial speculation
+
+    # --- Not publishers at all ----------------------------------------------
+    # These have no editorial process to judge. Several are not even websites a
+    # person reads: they are tool endpoints and CDN hostnames that the provider
+    # reports as the source, which is how "airedale.futurecdn.net" ends up
+    # sitting in a corpus about renewable energy.
+    "app.buzzsumo.com",         # content-marketing tool
+    "airedale.futurecdn.net",   # CDN hostname
+    "api.foxsports.com",        # API endpoint
+    "news.ycombinator.com",     # link aggregator, no original reporting
+    "dealigg.com",              # retail deals aggregator
+    "prweb.com",                # press-release wire: paid placement
+    "blog.hubspot.com",         # corporate content marketing
+
+    # --- Content mills ------------------------------------------------------
+    # Volume financial content optimised for search, not reporting a business
+    # decision could rest on.
+    "insidermonkey.com",
+    "financefeeds.com",
+    "investedwallet.com",
+    "profitconfidential.com",
 }
 
 
