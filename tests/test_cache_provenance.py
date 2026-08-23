@@ -188,3 +188,61 @@ def test_both_agents_tag_themselves_distinctly():
 
     assert 'asked_by="research"' in research
     assert 'asked_by="risk_critic"' in risk
+
+
+def test_a_cache_hit_records_the_second_agent_too(tmp_path, monkeypatch):
+    """Found by review. A cache HIT writes nothing, so the entry kept only
+    whichever agent asked FIRST - and the two agents share a cache key on
+    purpose, since splitting it would double requests against a 100/day ceiling.
+    Attributing a shared article to one agent is the exact question this block
+    was added to answer."""
+    monkeypatch.setattr(news, "CACHE_DIR", tmp_path)
+
+    class FakeResponse:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"meta": {}, "data": []}
+
+    monkeypatch.setattr(news.requests, "get", lambda *a, **k: FakeResponse())
+
+    news.search_news("solar tariffs", asked_by="research")     # miss: writes
+    news.search_news("solar tariffs", asked_by="risk_critic")  # hit: must append
+
+    written = json.loads(next(tmp_path.glob("*.json")).read_text(encoding="utf-8"))
+    block = written[PROVENANCE_KEY]
+
+    assert block["asked_by"] == "research"
+    assert block["also_asked_by"] == ["risk_critic"]
+
+
+def test_the_same_agent_is_not_recorded_twice(tmp_path, monkeypatch):
+    monkeypatch.setattr(news, "CACHE_DIR", tmp_path)
+
+    class FakeResponse:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"meta": {}, "data": []}
+
+    monkeypatch.setattr(news.requests, "get", lambda *a, **k: FakeResponse())
+
+    for _ in range(3):
+        news.search_news("solar tariffs", asked_by="research")
+
+    block = json.loads(next(tmp_path.glob("*.json")).read_text(encoding="utf-8"))[PROVENANCE_KEY]
+    assert block.get("also_asked_by", []) == []
+
+
+def test_an_entry_written_before_provenance_is_left_alone(tmp_path, monkeypatch):
+    """The 224 older entries genuinely have no provenance. Inventing one on a
+    cache hit would claim an attribution nobody recorded."""
+    monkeypatch.setattr(news, "CACHE_DIR", tmp_path)
+    path = tmp_path / "old.json"
+    path.write_text(json.dumps({"meta": {}, "data": []}), encoding="utf-8")
+
+    news._record_asker(path, "risk_critic")
+
+    assert PROVENANCE_KEY not in json.loads(path.read_text(encoding="utf-8"))

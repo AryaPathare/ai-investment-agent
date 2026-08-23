@@ -187,3 +187,69 @@ def test_research_does_not_use_this_filter():
 
     source = (PROJECT_ROOT / "agents" / "research_agent.py").read_text(encoding="utf-8")
     assert "drop_press_releases" not in source
+
+
+# --- Journalism that reports ON an issuer document ---------------------------
+#
+# Found by review after the first version shipped. The rule caught these, and
+# every one is reporting a risk critic needs. The corpus contained none of them
+# and the tests above used invented headlines that happened to avoid the
+# construction, so neither caught it: the rule was verified against the cases it
+# was designed for.
+
+
+@pytest.mark.parametrize("title", [
+    "First Solar Reports Disappointing Second-Quarter Financial Results, Shares Plunge",
+    "Third-quarter results reveal accounting irregularities at Acme",
+    "Acme Q3 FY2025 results miss badly, shares tumble",
+    "Board declares special dividend amid activist pressure",
+    "Acme Reports Second Quarter Financial Results as revenue falls",
+    "Why Acme's Q2 2026 results worried analysts",
+    "Acme announces Q2 financial results; short seller alleges fraud",
+    "Acme Reports Full-Year Results, warns on guidance",
+])
+def test_reporting_on_results_is_never_treated_as_a_press_release(title):
+    """The veto. An issuer does not call its own results disappointing, does not
+    mention its shares plunging, and does not report that they revealed
+    accounting irregularities."""
+    assert is_press_release(_article(title)) is False
+
+
+def test_the_veto_beats_every_other_signal():
+    """Even a genuine wire dateline loses to journalism language in the title.
+
+    Deliberate. If the two signals disagree the article is ambiguous, and the
+    asymmetry says keep it: a press release through costs a slot, a removed
+    probe costs the agent its purpose.
+    """
+    article = _article(
+        "Acme Reports Q2 Results, accounting irregularities revealed",
+        description="NEW YORK, Aug. 18, 2026 (GLOBE NEWSWIRE) -- Acme today...",
+    )
+    assert is_press_release(article) is False
+
+
+# --- The wire marker must be a dateline, not a mention -----------------------
+
+
+def test_a_wire_named_mid_sentence_is_not_a_dateline():
+    """Found by review. A journalist attributing a claim to a wire release is
+    reporting ABOUT the company, which is the opposite of a press release."""
+    article = _article(
+        "Judge rules against Acme in patent suit",
+        description="Acme said in a PR Newswire release last month that the claim was baseless.",
+    )
+    assert is_press_release(article) is False
+
+
+@pytest.mark.parametrize("dateline", [
+    "DUBLIN, Ireland, Aug. 12, 2026 (GLOBE NEWSWIRE) -- Fusion Fuel today",
+    "WARNERTOWN, Australia, Aug. 17, 2026 /PRNewswire/ -- As Southern",
+    "/PRNewswire-PRWeb/ -- Caregility today announced",
+    "TORONTO, Aug.  20, 2026  (GLOBE NEWSWIRE) -- Flow Capital",
+])
+def test_real_datelines_from_the_corpus_still_match(dateline):
+    """Every one taken verbatim from .cache/news. The shape - wire wrapped in
+    parentheses or slashes, followed by a double dash - is what makes it a
+    dateline rather than a mention."""
+    assert is_press_release(_article("Some Company Update", description=dateline)) is True

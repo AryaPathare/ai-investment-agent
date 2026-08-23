@@ -208,6 +208,15 @@ def main() -> int:
         # a wrong answer or an unstable one, and both matter.
         merged = runs[0]
         merged["passed"] = all(r["passed"] for r in runs)
+        # Problems from EVERY run, not just the first. With --repeat the first
+        # run can pass while a later one fails, and keeping run 1's empty list
+        # printed a FAIL header with no reason under it.
+        seen_problems: list[str] = []
+        for r in runs:
+            for problem in r.get("problems", []):
+                if problem not in seen_problems:
+                    seen_problems.append(problem)
+        merged["problems"] = seen_problems
         answers = {r["actual"] for r in runs}
         if len(answers) > 1:
             inconsistent.append((case.name, answers))

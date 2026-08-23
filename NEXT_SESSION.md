@@ -21,7 +21,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **679 passed** in a few seconds.
+Expect **699 passed** in a few seconds.
 
 Then see it work, without spending quota on a real run:
 
@@ -160,8 +160,13 @@ exactly one article.** A list of names cannot cover that, and extending it
 further is not the fix. Two problems found in the same audit are still open and
 need different instruments:
 
-- **Press releases: DONE** (2026-08-23). Filtered by article shape, not
-  publisher, and only for the risk critic - the same article is ordinary
+- **Press releases: DONE** (2026-08-23), then **hardened after review found it
+  was dropping real bad news** - "First Solar Reports Disappointing
+  Second-Quarter Financial Results, Shares Plunge" and "Third-quarter results
+  reveal accounting irregularities" were both being removed. A journalism veto
+  now runs first and beats every other signal. **Do not remove it**; nine tests
+  exist to stop that. Filtered by article shape, not publisher, and only for the
+  risk critic - the same article is ordinary
   evidence for Agent 2. Two signals: the wire dateline ("GLOBE NEWSWIRE",
   "/PRNewswire/") and issuer document types in the title. 15 of 272 cached
   articles match, all genuine. **Do not loosen it to a bare "announces" rule** -
@@ -288,7 +293,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 679 tests, a few seconds, no network
+python -m pytest                        # 699 tests, a few seconds, no network
 
 python -m evals.runner                  # Agent 1: 30 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)

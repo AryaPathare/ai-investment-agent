@@ -1627,3 +1627,96 @@ sessions, and cited as justification without being re-examined. **A weakness
 recorded in prose is a claim, and it decays like any other claim.** The measured
 version was different every time, and twice it argued for doing less work
 rather than more.
+
+### 48. Reviewing 4,754 lines written in one day
+
+Everything above shipped in a single session, authored and tested by the same
+process, with no independent pass. A review of the eight-commit range found
+seven defects. Two were serious, and both were in code I had verified and
+written confident prose about.
+
+**The press-release filter removed the evidence it was built to protect.**
+
+Entry 45 argued at length that the dangerous version of this rule is the
+obvious one, listed the headlines it must never touch, and claimed the shipped
+version had zero false positives. It did not:
+
+    First Solar Reports Disappointing Second-Quarter Financial Results, Shares Plunge
+    Third-quarter results reveal accounting irregularities at Acme
+    Acme Q3 FY2025 results miss badly, shares tumble
+    Board declares special dividend amid activist pressure
+
+All four were dropped. Reporting on a bad quarter, accounting irregularities and
+activist pressure are the most useful things the risk critic could possibly
+retrieve, and the filter ate them while its docstring explained why that must
+never happen.
+
+**Why neither check caught it.** The corpus contained no headline of that shape,
+so the 15/272 measurement was clean. And the seven tests written alongside the
+rule used invented headlines that happened to avoid the "quarter ... results"
+construction, because they were written by the same person, at the same time,
+from the same mental model of what the rule was for. **A test written to
+demonstrate a rule tests the rule's intent, not its behaviour.**
+
+The fix is a veto: any title containing evaluative or market-reaction language
+is kept, whatever else matches. An issuer does not call its own results
+disappointing, does not mention its shares plunging, and does not report that
+they revealed accounting irregularities. The veto runs FIRST and beats a genuine
+wire dateline, because when the signals disagree the article is ambiguous and
+the asymmetry says keep it.
+
+**The wire marker had the same shape of error.** Matching the bare name dropped
+"Judge rules against Acme in patent suit" because its body said "Acme said in a
+PR Newswire release last month" - a journalist attributing a claim. Every real
+dateline in the corpus has a structure the mention does not:
+
+    DUBLIN, Ireland, Aug. 12, 2026 (GLOBE NEWSWIRE) -- Fusion Fuel today ...
+    WARNERTOWN, Australia, Aug. 17, 2026 /PRNewswire/ -- As Southern ...
+
+Wire wrapped in parentheses or slashes, followed by a double dash. Matching the
+shape rather than the name fixes it and still catches all 15.
+
+**Reusing `--thread-id` silently accepted a contradictory profile.**
+
+LangGraph merges new input into an existing thread, so a second run under the
+same id inherits the first run's `clarification_responses`. Reproduced across
+four runs: run 1 asked the clarification, and runs 2, 3 and 4 returned "profile
+valid" **without asking at all** - Agent 1 was handed a stale answer and
+believed the conflict resolved. A contradictory profile through the one gate
+built to stop it.
+
+Worth recording that the review described this differently, predicting escalating
+attempt counters. Running it showed something worse. **Reproducing a reported
+defect is not a formality**; the mechanism was right and the symptom was not,
+and the fix follows the symptom.
+
+Starting a new run on an existing thread is now refused, pointing at `--resume`.
+That is the design decision from entry 31 finally enforced rather than assumed.
+
+### 49. The other five, and what they have in common
+
+- **Ctrl-C during `graph.stream` printed a traceback.** `_read` converts Ctrl-C
+  at a prompt into `Cancelled`, but the three-minute research call never passes
+  through `_read` - the window where interruption is most likely was the one not
+  covered, while the docstring and README both promised it was safe.
+- **`_grounds` wrapped URLs.** `textwrap` broke long links mid-token, so the one
+  thing in the output a reader is meant to go and check could not be copied.
+- **`--repeat` merged results from run 1 only**, so a later run's failure printed
+  a FAIL header with no reason under it.
+- **Cache provenance recorded only the first asker.** Both agents share a cache
+  key deliberately - splitting it would double requests against a 100/day
+  ceiling - so a shared article was attributed to whoever asked first. That is
+  precisely the question the block was added to answer, and entry 43 claimed it
+  answered it.
+
+Four of the seven are the same failure: **a promise made in prose that the code
+did not keep.** The docstring said stopping was survivable; Ctrl-C tracebacked.
+The comment said the grounds block gives the reader something to check; the URL
+was unusable. Entry 43 said provenance makes attribution possible; it recorded
+one agent. Entry 45 said the filter had no false positives; it had a class of
+them.
+
+Every one of those sentences was written in the same session as the code, by
+someone who had just finished convincing themselves. That is the condition under
+which prose and behaviour drift apart, and no amount of care inside the session
+substitutes for a pass from outside it.

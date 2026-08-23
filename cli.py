@@ -491,16 +491,24 @@ def _grounds(condition, state: dict, indent: str = "         ") -> str:
             continue
         lines.append(f'"{article.title}"')
         lines.append(f"{article.source}, {article.published_at:%Y-%m-%d}")
-        lines.append(article.url)
+        # Appended AFTER wrapping, below: textwrap breaks a long URL mid-token,
+        # which makes it uncopyable - and a link the reader cannot follow
+        # defeats the only reason this block exists.
+        lines.append(("url", article.url))
 
     if not lines:
         lines = ["nothing checkable"]
 
-    block = [textwrap.fill(lines[0], width=WIDTH, initial_indent=lead, subsequent_indent=cont)]
-    block += [
-        textwrap.fill(line, width=WIDTH, initial_indent=cont, subsequent_indent=cont)
-        for line in lines[1:]
-    ]
+    block = []
+    for index, line in enumerate(lines):
+        prefix = lead if index == 0 else cont
+        if isinstance(line, tuple):  # a URL: emitted whole, never wrapped
+            block.append(prefix + line[1])
+        else:
+            block.append(
+                textwrap.fill(line, width=WIDTH, initial_indent=prefix,
+                              subsequent_indent=cont)
+            )
     return "\n".join(block)
 
 
@@ -794,6 +802,20 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"\nProfile saved to {args.save_profile}")
 
             thread_id = args.thread_id or f"cli-{uuid.uuid4().hex[:8]}"
+
+            # Starting a NEW run on a thread that already exists silently
+            # inherits its state. Verified: a second run under the same id is
+            # handed the first run's clarification_responses, so Agent 1 sees a
+            # conflict it believes was already resolved and returns "valid"
+            # WITHOUT ASKING - a contradictory profile straight through the one
+            # gate built to stop it. Refusing is the only safe answer, and it is
+            # why resuming is an explicit flag rather than something inferred.
+            if store.run(thread_id) is not None:
+                print()
+                print(f"A run called {thread_id!r} already exists.")
+                print("  Continue it:  python -m cli --resume " + thread_id)
+                print("  Or start fresh under a different --thread-id.")
+                return 1
             state = run(
                 store.graph,
                 thread_id,
@@ -802,9 +824,16 @@ def main(argv: list[str] | None = None) -> int:
             )
             return print_outcome(state)
 
-    except Cancelled:
-        # The state is already on disk, so this is genuinely recoverable now.
-        print("\n\nStopped. The run is saved; python -m cli --list will show it.")
+    except (Cancelled, KeyboardInterrupt):
+        # KeyboardInterrupt as well as Cancelled: _read() converts Ctrl-C at a
+        # PROMPT into Cancelled, but Ctrl-C during graph.stream - the three
+        # minutes where it is most likely - never passes through _read and would
+        # otherwise print a traceback. That directly contradicts the promise
+        # made in this module's docstring and in the README, and the state is
+        # genuinely safe, so saying so is the whole point.
+        print()
+        print()
+        print("Stopped. The run is saved; python -m cli --list will show it.")
         return 1
 
 

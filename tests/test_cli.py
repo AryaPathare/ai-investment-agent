@@ -712,3 +712,71 @@ def test_stopping_says_the_run_was_saved(monkeypatch, db, capsys):
     )
     assert cli.main(["--db", str(db)]) == 1
     assert "The run is saved" in capsys.readouterr().out
+
+
+# --- Fixes found by review ---------------------------------------------------
+
+
+def test_reusing_a_thread_id_for_a_new_run_is_refused(
+    always_valid, stub_pipeline, db, answers, capsys
+):
+    """Found by review, and worse than it looked.
+
+    LangGraph merges new input into an EXISTING thread, so a second run under
+    the same id inherits the first run's clarification_responses. Reproduced:
+    runs 2, 3 and 4 returned "profile valid" WITHOUT ASKING, because Agent 1 was
+    handed a stale clarification and believed the conflict resolved - a
+    contradictory profile straight through the one gate built to stop it.
+    """
+    stub_pipeline()
+    answers()
+
+    first = cli.main(["--db", str(db), "--thread-id", "reused",
+                      "--profile", "examples/beginner_renewables.json"])
+    assert first == 0
+
+    second = cli.main(["--db", str(db), "--thread-id", "reused",
+                       "--profile", "examples/beginner_renewables.json"])
+    out = capsys.readouterr().out
+
+    assert second == 1
+    assert "already exists" in out
+    assert "--resume reused" in out, "must point at the supported way to continue"
+
+
+def test_ctrl_c_during_the_run_is_not_a_traceback(
+    always_valid, monkeypatch, db, answers, capsys
+):
+    """_read() converts Ctrl-C at a PROMPT into Cancelled, but Ctrl-C during
+    graph.stream never passes through _read. That is the three-minute window
+    where it is most likely, and a traceback there contradicts the promise the
+    docstring and README both make."""
+    def interrupted(profile, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(workflow, "research_themes", interrupted)
+    answers()
+
+    code = cli.main(["--db", str(db), "--profile", "examples/beginner_renewables.json"])
+    out = capsys.readouterr().out
+
+    assert code == 1
+    assert "The run is saved" in out
+
+
+def test_a_long_url_is_printed_whole(articles):
+    """textwrap breaks a long URL mid-token, and a link the reader cannot copy
+    defeats the only reason the grounds block exists."""
+    from models.research import Article, ResearchFindings
+    from models.decision import ExitCondition
+
+    long_url = "https://example.com/" + "a" * 90 + "/story"
+    article = Article(
+        uuid="u9", title="A probe was opened", description="", snippet="",
+        url=long_url, source="reuters.com",
+        published_at=articles[0].published_at,
+    )
+    condition = ExitCondition(condition="the probe concludes", article_ids=["u9"])
+
+    rendered = cli._grounds(condition, {"research_findings": ResearchFindings(articles=[article])})
+    assert long_url in rendered, "the URL must survive intact on one line"

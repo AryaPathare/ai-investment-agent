@@ -206,17 +206,35 @@ def drop_low_quality(articles: list[Article]) -> tuple[list[Article], list[str]]
 # Canadian Solar stories with it. The missing half a percent is deliberate.
 
 _PR_WIRES = re.compile(
-    r"\b(pr\s?newswire|globe\s?newswire|business\s?wire|accesswire"
-    r"|newsfile corp|einpresswire|marketwired)\b",
+    r"[(/]\s*(pr\s?newswire[\w-]*|globe\s?newswire|business\s?wire|accesswire"
+    r"|newsfile corp|einpresswire|marketwired)\s*[)/]\s*--",
     re.IGNORECASE,
 )
-"""The distribution service named in the dateline.
+"""A wire dateline, matched by its SHAPE rather than just the wire's name.
 
-The strongest signal available and close to definitional: an article carrying
-"/PRNewswire/" was published BY the company through a paid wire. It also
-catches releases a title rule never could - "Purple Appoints Jimmy Serrano as
-Growth Director", "Pontiac Bancorp has agreed to acquire Ottawa Bancorp".
+Every press release in the corpus looks the same way round:
+
+    DUBLIN, Ireland, Aug. 12, 2026 (GLOBE NEWSWIRE) -- Fusion Fuel today ...
+    WARNERTOWN, Australia, Aug. 17, 2026 /PRNewswire/ -- As Southern ...
+
+The wire is wrapped in parentheses or slashes and followed by a double dash.
+That structure is what makes it a dateline, and it is what separates it from a
+journalist ATTRIBUTING a claim:
+
+    Acme said in a PR Newswire release last month that ...
+
+Matching the bare name dropped that second article, which is real reporting
+about the company - the opposite of what this filter is for.
 """
+
+_JOURNALISM = re.compile(
+    r"\b(disappointing|disappoints?|miss(es|ed)?|beat(s|en)?|plunge[sd]?|tumbl\w+"
+    r"|slid(e|es)|slump\w*|slash\w*|surge[sd]?|soar\w*|jump(s|ed)?|sink\w*"
+    r"|fall(s|en)?|fell|drop(s|ped)?|warn(s|ed|ing)?|reveal\w*|irregularit\w+"
+    r"|probe|investigat\w+|lawsuit|sued|fraud|activist|short[- ]seller"
+    r"|amid|despite|as .{0,30}(fall|rise|plunge|collapse)|why|analysts?)\b",
+    re.IGNORECASE,
+)
 
 _PR_TITLES = [
     re.compile(pattern, re.IGNORECASE)
@@ -233,17 +251,28 @@ _PR_TITLES = [
 ]
 """Document types only an issuer publishes about itself.
 
-Each names a KIND of document, never a bare verb, which is what keeps
-"Regulator announces probe" out of the net. This exists as a second signal
-because aggregators routinely strip the wire dateline while keeping the
-headline intact.
+Each names a KIND of document rather than a bare verb, which is what keeps
+"Regulator announces probe" out. A second signal is needed because aggregators
+strip the wire dateline and keep the headline.
+
+NOT sufficient on their own - see _JOURNALISM. A reporter writing about the same
+document uses the same nouns, and the difference is the evaluation they add.
 """
 
 
 def is_press_release(article: Article) -> bool:
-    """Whether this article is the company talking about itself."""
+    """Whether this article is the company talking about itself.
+
+    Ordered so the cheap veto runs first: anything reading like journalism is
+    kept whatever else matches, because removing real bad news defeats the agent
+    while letting a press release through merely wastes a slot.
+    """
+    if _JOURNALISM.search(article.title):
+        return False
+
     if _PR_WIRES.search(article.text):
         return True
+
     return any(pattern.search(article.title) for pattern in _PR_TITLES)
 
 
@@ -291,6 +320,30 @@ def _read_cache(path: Path, ttl_hours: float) -> dict | None:
 # never collide with a field the provider adds later: everything TheNewsAPI
 # returns is a bare name ("meta", "data").
 PROVENANCE_KEY = "_provenance"
+
+
+def _record_asker(path: Path, asked_by: str | None) -> None:
+    """Add an agent to an existing entry's provenance.
+
+    A cache HIT writes nothing, so without this the entry keeps only whichever
+    agent asked FIRST - and the two agents deliberately share a cache key, since
+    splitting it would double the requests against a 100/day ceiling. Attributing
+    a shared article to one agent is exactly the question the provenance block
+    was added to answer, so both are recorded.
+    """
+    if not asked_by:
+        return
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        block = payload.get(PROVENANCE_KEY)
+        if block is None:
+            return  # written before provenance existed; leave it honest
+        askers = block.setdefault("also_asked_by", [])
+        if asked_by != block.get("asked_by") and asked_by not in askers:
+            askers.append(asked_by)
+            path.write_text(json.dumps(payload), encoding="utf-8")
+    except (OSError, json.JSONDecodeError):
+        pass  # provenance is observability; failing to record is not an error
 
 
 def _write_cache(path: Path, payload: dict, provenance: dict | None = None) -> None:
@@ -469,6 +522,9 @@ def search_news(
 
     path = _cache_path(params)
     payload = _read_cache(path, settings.news_cache_ttl_hours) if use_cache else None
+
+    if payload is not None:
+        _record_asker(path, asked_by)
 
     if payload is None:
         try:
