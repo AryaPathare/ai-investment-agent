@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import time
 from datetime import date, datetime, timedelta, timezone
@@ -341,7 +342,14 @@ def _record_asker(path: Path, asked_by: str | None) -> None:
         askers = block.setdefault("also_asked_by", [])
         if asked_by != block.get("asked_by") and asked_by not in askers:
             askers.append(asked_by)
+            # The entry's AGE must not change. _read_cache measures staleness
+            # from the file's mtime, so rewriting the file resets the TTL clock
+            # - and a query both agents ask would then be refreshed on every
+            # run and never expire. That is stale news served indefinitely to
+            # the one agent whose job is to find out what has gone wrong.
+            original = path.stat().st_mtime
             path.write_text(json.dumps(payload), encoding="utf-8")
+            os.utime(path, (original, original))
     except (OSError, json.JSONDecodeError):
         pass  # provenance is observability; failing to record is not an error
 

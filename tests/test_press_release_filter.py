@@ -253,3 +253,26 @@ def test_real_datelines_from_the_corpus_still_match(dateline):
     parentheses or slashes, followed by a double dash - is what makes it a
     dateline rather than a mention."""
     assert is_press_release(_article("Some Company Update", description=dateline)) is True
+
+
+def test_the_veto_lets_some_positive_issuer_releases_through(capsys):
+    """An accepted cost, recorded so it is not mistaken for a defect.
+
+    The veto is broad, so an issuer release written in upbeat language - "Beats
+    Guidance", "Revenue Jumps 40%" - is kept. That is the trade the module
+    docstring commits to: ambiguity resolves toward keeping the article.
+
+    It costs nothing on the real corpus - all 15 press releases in .cache/news
+    are still caught - and the leaks are POSITIVE news, which a bear-case agent
+    has little use for either way. Narrowing the veto to reclaim them would
+    risk re-introducing the false positives that made it necessary.
+    """
+    leaks = [
+        "Acme Corp Announces Q2 2026 Financial Results Amid Strong Demand",
+        "Acme Announces Q2 2026 Financial Results; Revenue Jumps 40%",
+        "Acme Announces Q2 Financial Results, Beats Guidance",
+    ]
+    assert all(not is_press_release(_article(t)) for t in leaks), (
+        "if these start being caught the veto has been narrowed - check that "
+        "the journalism cases above still pass before accepting it"
+    )

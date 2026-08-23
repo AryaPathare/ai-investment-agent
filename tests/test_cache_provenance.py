@@ -246,3 +246,41 @@ def test_an_entry_written_before_provenance_is_left_alone(tmp_path, monkeypatch)
     news._record_asker(path, "risk_critic")
 
     assert PROVENANCE_KEY not in json.loads(path.read_text(encoding="utf-8"))
+
+
+def test_recording_an_asker_does_not_reset_the_cache_age(cache_file):
+    """A bug introduced by the provenance fix itself, caught on a second pass.
+
+    _read_cache measures staleness from the file's MTIME, and _record_asker
+    rewrites the file. So a query both agents ask was refreshed on every run
+    and could never expire - stale news served indefinitely to the one agent
+    whose job is finding out what has gone wrong.
+    """
+    import os
+    import time
+
+    _write_cache(cache_file, _payload(), provenance={"query": "s", "asked_by": "research"})
+    aged = time.time() - 10 * 3600
+    os.utime(cache_file, (aged, aged))
+
+    news._record_asker(cache_file, "risk_critic")
+
+    age_hours = (time.time() - cache_file.stat().st_mtime) / 3600
+    assert 9.5 < age_hours < 10.5, "the entry must keep its original age"
+    # ...and the recording must still have happened.
+    block = _written(cache_file)[PROVENANCE_KEY]
+    assert block["also_asked_by"] == ["risk_critic"]
+
+
+def test_an_expired_entry_stays_expired_after_a_second_agent_asks(cache_file):
+    """The consequence, stated directly."""
+    import os
+    import time
+
+    _write_cache(cache_file, _payload(), provenance={"query": "s", "asked_by": "research"})
+    aged = time.time() - 48 * 3600
+    os.utime(cache_file, (aged, aged))
+
+    news._record_asker(cache_file, "risk_critic")
+
+    assert news._read_cache(cache_file, ttl_hours=24) is None

@@ -21,7 +21,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **699 passed** in a few seconds.
+Expect **702 passed** in a few seconds.
 
 Then see it work, without spending quota on a real run:
 
@@ -293,7 +293,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 699 tests, a few seconds, no network
+python -m pytest                        # 702 tests, a few seconds, no network
 
 python -m evals.runner                  # Agent 1: 30 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)

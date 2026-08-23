@@ -1720,3 +1720,43 @@ Every one of those sentences was written in the same session as the code, by
 someone who had just finished convincing themselves. That is the condition under
 which prose and behaviour drift apart, and no amount of care inside the session
 substitutes for a pass from outside it.
+
+### 50. A bug introduced by the fix for a bug
+
+Asked whether the review fixes had left anything behind, two checks were worth
+running. One found a defect created by the review fixes themselves.
+
+`_record_asker` was added so a cache HIT records the second agent that asked,
+since both agents share a key deliberately. It works by rewriting the entry -
+and `_read_cache` measures staleness from the file's **mtime**. So recording
+the second asker reset the TTL clock to zero.
+
+The consequence: a query BOTH agents ask is refreshed on every run and can
+never expire. Stale news, served indefinitely, to the one agent whose job is
+finding out what has recently gone wrong. Proved by ageing an entry to ten
+hours, calling `_record_asker`, and watching it come back zero.
+
+Fixed by restoring the original mtime after the write. Two tests hold it,
+including one that ages an entry past the TTL and asserts it stays expired.
+
+The pattern is worth naming: **the fix was to an observability feature, and it
+broke a correctness property in a different module.** Provenance is about being
+able to ask questions later; the TTL is about not lying to the reader now. They
+met at the filesystem, through a field neither piece of code mentions.
+
+### 51. The other check: a trade-off, not a defect
+
+The journalism veto from entry 48 is broad, so an issuer release written in
+upbeat language slips through - "Beats Guidance", "Revenue Jumps 40%". Checked
+rather than assumed, and accepted:
+
+- On the real corpus it costs **nothing**: all 15 press releases are still
+  caught. The leaks are constructed headlines, not observed ones.
+- The leaks are POSITIVE news, which a bear-case agent has little use for
+  anyway.
+- Narrowing the veto to reclaim them would risk re-introducing the false
+  positives that made it necessary, one commit after they were removed.
+
+Recorded as a test asserting the leak, so a future narrowing shows up as a
+deliberate change rather than a silent one. **Tuning a filter immediately after
+being burned by tuning it is how you get burned twice.**
