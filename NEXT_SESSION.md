@@ -1,11 +1,11 @@
 # Start here
 
-Last worked: **2026-08-23** (session 6). **The pipeline is complete, demonstrable,
-and durable.** All five agents are built and verified against their own evals,
+Last worked: **2026-08-23** (session 7). **The pipeline is complete, demonstrable,
+and durable, and the hardening pass is finished.** All five agents are built and verified against their own evals,
 `python -m cli` runs the whole thing end to end, and a run that stops can be
 resumed.
 
-`docs/PROJECT_LOG.md` is current through Session 6.
+`docs/PROJECT_LOG.md` is current through Session 7.
 
 ---
 
@@ -16,7 +16,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **501 passed** in a few seconds.
+Expect **578 passed** in a few seconds.
 
 Then see it work, without spending quota on a real run:
 
@@ -70,9 +70,42 @@ Three things worth knowing before changing it:
 - **The database is not under `.cache/`** and must not move there. `.cache/` is
   documented as safe to delete; a paused clarification is not.
 
-### 2c. Harder Agent 1 eval cases
+### 2c. Harder Agent 1 eval cases — DONE this session
 
-It scores 18/18, so it catches regressions but cannot show improvement.
+12 new cases tagged `hard`, bringing the set to 30. `python -m evals.runner
+--tag hard` runs just those, 12 calls instead of 30.
+
+Why the old set scored 18/18: **every conflict case named the same word twice**
+(`technology` vs "Do not invest in technology companies"), and every valid case
+was lexically disjoint. The prompt gives that pattern as its worked example, so
+string matching alone scored full marks. 13 of 18 also expected `valid`, so
+answering "valid" every time was worth 72%.
+
+The hard set is balanced 6/6 between the two verdicts — a test enforces it — so
+a degenerate strategy scores 50%.
+
+Cases can now also assert what a clarification CHANGED, not just the verdict:
+
+```python
+expected_status="valid",
+expect_restrictions_exclude=("technology",),
+expect_sectors_include=("technology", "sports"),
+```
+
+`valid` alone would also be returned by a model that left the contradictory
+restriction in place, which is a contradictory profile reaching Agent 2.
+
+**THE IMPORTANT CAVEAT — read before running it.** These have never been run
+against the real model. They are validated against a deliberately naive
+string-matching fake (12/12 on the old false-positive cases, 4/12 on the hard
+set), which proves they separate string matching from judgment. **It does not
+prove the labels are right.** The first real run is as much a test of the
+labels as of the agent:
+
+- ~8-10 of 12 is a good result and a usable baseline.
+- **12/12 means they are still too easy**, not that the agent is perfect.
+- Below ~5, suspect the labels first. Every case carries a `why` written
+  specifically so that argument can be checked.
 
 ---
 
@@ -149,6 +182,9 @@ Worth knowing before trusting a clean eval run.
   `python -m evals.company_runner --limit 1` to confirm the drop accounting
   balances. **Check the ceiling before planning a session around evals** — it is
   a rolling 24-hour window, so a new calendar day does not reset it.
+- **The 12 hard Agent 1 cases have never been scored by the real model.**
+  See the caveat in 2c above: the first run tests the labels as much as the
+  agent. `python -m evals.runner --tag hard` is 12 calls.
 - **The CLI has never been run against the live pipeline end to end.** Every
   path is covered by tests with stubbed agents, and the rendering was checked
   against realistic fixtures, but no real profile has gone through it. One
@@ -206,9 +242,10 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 501 tests, a few seconds, no network
+python -m pytest                        # 578 tests, a few seconds, no network
 
-python -m evals.runner                  # Agent 1: 18 labelled cases
+python -m evals.runner                  # Agent 1: 30 labelled cases
+python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)
 python -m evals.research_runner         # Agent 2: process quality, 5 profiles
 python -m evals.company_runner          # Agent 3: runs 2 -> 3
 python -m evals.risk_runner             # Agent 4: runs 2 -> 3 -> 4

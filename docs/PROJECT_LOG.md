@@ -1167,3 +1167,154 @@ here, but it is the kind of thing that scales badly and silently.
    company in front of a person.
 3. Harder Agent 1 eval cases.
 
+---
+
+## Session 7 — 2026-08-23
+
+### Starting point
+
+The last item of the hardening pass, and the only one needing no quota. Agent
+1's eval scored 18/18, which the handoff described as "catches regressions but
+cannot show improvement".
+
+### 35. Why it scored 18/18
+
+Reading the set before adding to it was the whole job. **Every conflict case
+named the same word twice:**
+
+```
+sectors_of_interest = ["technology"]
+restrictions        = ["Do not invest in technology companies"]
+```
+
+`renewable energy` vs "renewable energy or energy companies". `pharmaceuticals`
+vs "pharmaceutical companies". And every valid case was lexically disjoint —
+`technology` against tobacco and gambling.
+
+The prompt gives that exact pattern as its worked example. So a model could
+score full marks by checking whether a restriction repeats a sector word, and
+never judge anything. Worse, 13 of the 18 expected `valid`, so answering
+"valid" every time — reading nothing at all — scored **72%**.
+
+That is not a hard set with a high score. It is an easy set, and the number was
+measuring the wrong thing.
+
+### 36. Building an instrument that can tell the difference
+
+Twelve cases that break the correlation between "shares a word" and "is a
+conflict", from three directions:
+
+- **Conflicts with no shared vocabulary.** `coal mining` against "nothing that
+  damages the environment". `defence primes` against "no companies that profit
+  from war". `SPACs and pre-revenue biotech` against low risk tolerance — the
+  easy version says "extremely speculative" outright; this one requires knowing
+  what a SPAC is.
+- **A non-conflict that DOES repeat the sector word.** `technology` against "no
+  financial technology companies". Fintech is one corner of technology; the
+  rest remains. This is the exact inverse of the pattern the prompt teaches,
+  and the sharpest single case in the set.
+- **Non-conflicts where the restriction is merely adjacent.** `energy` against
+  "no fossil fuel companies"; `semiconductors` against "no companies
+  headquartered in China". These narrow the search without emptying it, and
+  narrow is not contradictory. The trap for a model that reasons semantically
+  rather than lexically.
+
+Plus one that is neither: **risk tolerance is a ceiling, not a quota.** High
+tolerance with treasury bonds is coherent — being willing to take risk does not
+oblige anyone to take it. Its mirror, low tolerance with speculative sectors,
+IS a conflict, and telling those two apart is the judgment being measured.
+
+The hard set is **balanced 6/6** between the two verdicts, so answering
+everything the same way scores exactly 50% rather than 72%. A test enforces the
+balance, because it is the property that makes the number mean anything.
+
+### 37. Validating the instrument without spending any quota
+
+The obvious risk in writing twelve cases from scratch is that they are not
+actually harder, and there was no budget to find out by running the model.
+
+So the runner was pointed at a **deliberately naive stand-in**: a fake that
+flags a conflict only when a restriction repeats a sector word — precisely the
+strategy the old set could not distinguish from judgment.
+
+| | string-matching fake |
+|---|---|
+| original false-positive cases | **12/12 (100%)** |
+| hard set | **4/12 (33%)** |
+| clarification cases | **0/6** |
+
+That is the separation the set exists to produce, measured for free. It also
+corrected two things mid-flight:
+
+- The first draft's comment claimed the false-positive half had "high lexical
+  overlap". The fake passed all five, which proved otherwise: they are
+  *semantic* near-misses with no shared words. The comment was wrong and was
+  fixed rather than left to mislead whoever adds the next case.
+- That gap is what prompted the fintech case, the one genuine lexical-overlap
+  non-conflict. Adding it dropped the fake from 5/12 to 4/12 and from 100% to
+  94% on false-positives, which is the case doing exactly its job.
+
+### 38. Scoring the verdict was not enough
+
+`clarification_resolves_conflict` passed if the model returned `valid`. It
+would have passed just as happily if the model returned `valid` while leaving
+the contradictory restriction in place — which is not a cosmetic failure. It is
+a contradictory profile reaching Agent 2, the one thing Agent 1 exists to
+prevent.
+
+Cases can now assert what the clarification actually DID:
+
+```python
+expected_status="valid",
+expect_restrictions_exclude=("technology",),
+expect_sectors_include=("technology", "sports"),
+```
+
+Split by field on purpose: dropping the interest and dropping the restriction
+are opposite, equally legitimate resolutions of the same conflict, and a check
+over the combined text could not tell them apart. The fake fails all six
+clarification cases on exactly this.
+
+Matching uses **word boundaries, not substrings** — "technology" is a substring
+of "biotechnology", and a naive check would mark a correct answer wrong. The
+project already shipped one naive-substring bug in the exclusion check; putting
+the same flaw inside the instrument that measures it would generate false
+failures and send someone off fixing a prompt that was fine.
+
+### 39. Testing the eval
+
+An eval is an instrument and an instrument can be wrong, so the case set now
+has its own tests: unique names, every case tagged and explained, expectations
+only on cases that send a clarification, no expectation naming a term the input
+never contained, regressions never relabelled `hard`, and the 6/6 balance.
+
+One of those tests caught a wrong number in its own docstring — the claim that
+the original set was "12 valid to 6, worth 67%". Computing it gave 13 to 5 and
+72%. A number written from memory into a comment, in a session about an
+instrument that measures things.
+
+### Where it stands
+
+- **578 tests**, no network.
+- 30 eval cases: the original 18, plus 12 tagged `hard`.
+- `--tag hard` runs 12 calls instead of 30, which is the cheap way to iterate on
+  a prompt change.
+
+### NOT yet verified
+
+**The hard cases have never been run against the real model.** They are
+validated against a fake, which proves they separate string matching from
+judgment — it does not prove the labels are right. The first real run is as
+much a test of the labels as of the agent:
+
+- ~8-10 of 12 would be a good result and a usable baseline.
+- **12/12 would mean they are still too easy**, not that the agent is perfect.
+- Below ~5, suspect the labels before the prompt, and check the `why` on each
+  failure — it is written to make that argument checkable.
+
+### Next
+
+1. **Run the CLI against the live pipeline** — still never done end to end.
+2. **`--tag hard`** to get the first real baseline (12 calls).
+3. **Agent 3's exposure grade** — the one weakness putting a wrong-looking
+   company in front of a person.

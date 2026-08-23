@@ -132,9 +132,10 @@ python -m cli                           # run the pipeline and print the brief
 python -m cli --list                    # saved runs, and which can be resumed
 python -m cli --resume <id>             # continue a run that stopped
 python -m scripts.check_setup           # environment health check
-python -m pytest                        # unit tests (501, a few seconds, no network)
+python -m pytest                        # unit tests (578, a few seconds, no network)
 
-python -m evals.runner                  # Agent 1: accuracy on 18 labelled cases
+python -m evals.runner                  # Agent 1: accuracy on 30 labelled cases
+python -m evals.runner --tag hard       # only the 12 hard cases (cheaper to iterate)
 python -m evals.runner --tag regression # only the must-never-break cases
 
 python -m evals.research_runner         # Agent 2: process quality on 5 profiles

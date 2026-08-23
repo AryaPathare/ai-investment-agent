@@ -19,9 +19,10 @@ Every time the agent gets something wrong, add it here with the answer it
 should have given. The set only becomes more valuable over time.
 """
 
+import re
 from dataclasses import dataclass
 
-from models.profile import ProfileStatus
+from models.profile import InvestorProfile, ProfileStatus
 from models.user_input import UserInput
 
 
@@ -35,6 +36,62 @@ class EvalCase:
     expected_status: ProfileStatus
     clarifications: tuple[str, ...] = ()
     tags: tuple[str, ...] = ()
+
+    # --- What the clarification should have CHANGED --------------------------
+    #
+    # The status alone is not enough for a clarification case. "valid" means the
+    # model says the conflict is resolved; it does not mean the model actually
+    # resolved it. A profile that still lists technology as an interest AND
+    # forbids technology, returned as valid, scores as correct against status
+    # alone — and it is precisely the failure that would send a contradictory
+    # profile to Agent 2, which is what Agent 1 exists to prevent.
+    #
+    # Terms are matched against the FINAL profile, one field at a time, because
+    # "technology gone from restrictions" and "technology gone from interests"
+    # are opposite resolutions of the same conflict and both are legitimate.
+
+    expect_sectors_include: tuple[str, ...] = ()
+    expect_sectors_exclude: tuple[str, ...] = ()
+    expect_restrictions_include: tuple[str, ...] = ()
+    expect_restrictions_exclude: tuple[str, ...] = ()
+
+
+def _mentions(items: list[str], term: str) -> bool:
+    """Does any entry mention ``term`` as a whole word?
+
+    Word boundaries, not plain substrings. "technology" is a substring of
+    "biotechnology", so a naive check would read "No biotechnology companies" as
+    a restriction on technology and score a correct answer as wrong. The project
+    has already been bitten once by naive substring matching in the exclusion
+    check; there is no reason to repeat it in the instrument that measures it.
+    """
+    pattern = re.compile(rf"\b{re.escape(term)}\b", re.IGNORECASE)
+    return any(pattern.search(item) for item in items)
+
+
+def check_expectations(case: EvalCase, profile: InvestorProfile) -> list[str]:
+    """Every way the resulting profile failed the case's field expectations.
+
+    Returns an empty list when there is nothing to check or nothing wrong, so a
+    case that only cares about the status is unaffected.
+    """
+    problems: list[str] = []
+    checks = (
+        ("sectors_of_interest", profile.sectors_of_interest,
+         case.expect_sectors_include, case.expect_sectors_exclude),
+        ("restrictions", profile.restrictions,
+         case.expect_restrictions_include, case.expect_restrictions_exclude),
+    )
+
+    for field, values, required, forbidden in checks:
+        for term in required:
+            if not _mentions(values, term):
+                problems.append(f"{field} should still mention {term!r}: {values}")
+        for term in forbidden:
+            if _mentions(values, term):
+                problems.append(f"{field} should no longer mention {term!r}: {values}")
+
+    return problems
 
 
 def _user(**overrides) -> UserInput:
@@ -207,6 +264,10 @@ CASES: list[EvalCase] = [
             "I do want to invest in technology companies. Remove the restriction.",
         ),
         expected_status="valid",
+        # "valid" alone would also be returned by a model that left the
+        # restriction in place, which is the failure that matters.
+        expect_restrictions_exclude=("technology",),
+        expect_sectors_include=("technology", "sports"),
         tags=("clarification",),
     ),
     EvalCase(
@@ -223,6 +284,239 @@ CASES: list[EvalCase] = [
         expected_status="needs_clarification",
         tags=("clarification", "edge"),
     ),
+    # =======================================================================
+    # HARD CASES
+    #
+    # Added 2026-08-23 because the set above scored 18/18, which made it a
+    # regression alarm that could not show improvement. Reading it showed why
+    # it was easy: EVERY conflict case names the same word twice.
+    #
+    #     sectors_of_interest = ["technology"]
+    #     restrictions        = ["Do not invest in technology companies"]
+    #
+    # and every valid case is lexically disjoint ("technology" vs tobacco).
+    # The prompt gives that exact pattern as its worked example, so a model can
+    # score full marks by matching strings and never judging anything.
+    #
+    # These break the correlation between "shares a word" and "is a conflict"
+    # from both ends:
+    #
+    #   * conflicts with NO shared vocabulary, which a string match misses
+    #   * a non-conflict that DOES repeat the sector word, which a string match
+    #     flags (hard_restriction_names_the_sector_but_not_all_of_it)
+    #   * non-conflicts where the restriction is merely ADJACENT to the sector,
+    #     which is the trap for a model that reasons semantically: it narrows
+    #     the search without emptying it, and narrow is not contradictory
+    #
+    # Checked against a deliberately naive string-matching stand-in, which
+    # scores 12/12 on the original false-positive cases and 5/12 here. An eval
+    # that cannot separate string matching from judgment is not measuring
+    # judgment.
+    #
+    # Cases whose correct answer is genuinely arguable were deliberately left
+    # out. A label that cannot be defended from the agent's own stated rules
+    # makes the number less trustworthy, not more, and this set's whole job is
+    # to be a trustworthy instrument.
+    # =======================================================================
+
+    # --- Conflicts a string match cannot see --------------------------------
+    # The restriction rules out the only interest without repeating its name.
+
+    EvalCase(
+        name="hard_restriction_blocks_interest_semantically",
+        why=(
+            "Coal mining is the interest and environmental damage is the "
+            "restriction. Same structure as the technology case, with no word "
+            "in common. Requires knowing what coal mining does."
+        ),
+        user=_user(
+            sectors_of_interest=["coal mining"],
+            restrictions=["Nothing that damages the environment"],
+        ),
+        expected_status="needs_clarification",
+        tags=("hard", "true-positive"),
+    ),
+    EvalCase(
+        name="hard_defence_versus_profiting_from_war",
+        why=(
+            "Defence primes build weapons; the restriction rules out profiting "
+            "from war. Nothing lexical connects the two answers."
+        ),
+        user=_user(
+            sectors_of_interest=["defence primes"],
+            restrictions=["No companies that profit from war"],
+        ),
+        expected_status="needs_clarification",
+        tags=("hard", "true-positive"),
+    ),
+    EvalCase(
+        name="hard_betting_versus_addiction",
+        why=(
+            "Sports betting is the interest; the restriction rules out "
+            "profiting from addiction. The link is real and unstated."
+        ),
+        user=_user(
+            sectors_of_interest=["online sports betting"],
+            restrictions=["Nothing that profits from addiction"],
+        ),
+        expected_status="needs_clarification",
+        tags=("hard", "true-positive"),
+    ),
+    EvalCase(
+        name="hard_low_risk_with_implicitly_speculative_sectors",
+        why=(
+            "Neither SPACs nor pre-revenue biotech contains the word "
+            "speculative, unlike the easy case which says so outright. "
+            "Recognising them as speculative is the judgment being tested."
+        ),
+        user=_user(
+            risk_tolerance="low",
+            sectors_of_interest=["SPACs", "pre-revenue biotech startups"],
+        ),
+        expected_status="needs_clarification",
+        tags=("hard", "true-positive"),
+    ),
+
+    # --- Non-conflicts a string match would flag ----------------------------
+    # High lexical overlap between interest and restriction, and no conflict:
+    # the restriction NARROWS the search rather than emptying it. Getting these
+    # wrong means interrogating users who answered perfectly sensibly.
+
+    EvalCase(
+        name="hard_restriction_narrows_energy_without_blocking_it",
+        why=(
+            "Fossil fuels are a subset of energy, so plenty remains to research "
+            "- renewables, grid, storage. Tempting to flag because both answers "
+            "are obviously about the same industry."
+        ),
+        user=_user(
+            sectors_of_interest=["energy"],
+            restrictions=["No fossil fuel companies"],
+        ),
+        expected_status="valid",
+        tags=("hard", "false-positive"),
+    ),
+    EvalCase(
+        name="hard_restriction_names_the_sector_but_not_all_of_it",
+        why=(
+            "The sharpest probe in the set, and the exact inverse of the "
+            "pattern the prompt teaches. The restriction repeats the sector "
+            "word - technology appears in both fields - so any string match "
+            "flags it. But financial technology is one corner of technology, "
+            "and semiconductors, software, hardware and media all remain. "
+            "Passing this requires reading the restriction, not matching it."
+        ),
+        user=_user(
+            sectors_of_interest=["technology"],
+            restrictions=["No financial technology companies"],
+        ),
+        expected_status="valid",
+        tags=("hard", "false-positive"),
+    ),
+    EvalCase(
+        name="hard_restriction_excludes_one_kind_of_bank",
+        why=(
+            "Investment banks are one kind of bank. Retail and commercial "
+            "banking are untouched, so there is still something to research."
+        ),
+        user=_user(
+            sectors_of_interest=["banking"],
+            restrictions=["No investment banks"],
+        ),
+        expected_status="valid",
+        tags=("hard", "false-positive"),
+    ),
+    EvalCase(
+        name="hard_restriction_is_geographic_not_sectoral",
+        why=(
+            "A country restriction narrows a sector severely without emptying "
+            "it: TSMC, ASML, Nvidia and Samsung all remain. Narrow is not the "
+            "same as contradictory, and only the user can decide it is too "
+            "narrow to be worth doing."
+        ),
+        user=_user(
+            sectors_of_interest=["semiconductors"],
+            restrictions=["No companies headquartered in China"],
+        ),
+        expected_status="valid",
+        tags=("hard", "false-positive"),
+    ),
+    EvalCase(
+        name="hard_high_risk_tolerance_with_conservative_sectors",
+        why=(
+            "Risk tolerance is a CEILING, not a quota. Being willing to take "
+            "risk does not oblige anyone to take it, so wanting treasuries "
+            "while tolerating risk is coherent. The mirror case - low tolerance "
+            "with speculative interests - IS a conflict, and telling the two "
+            "apart is the point."
+        ),
+        user=_user(
+            risk_tolerance="high",
+            sectors_of_interest=["treasury bonds", "money market funds"],
+        ),
+        expected_status="valid",
+        tags=("hard", "false-positive"),
+    ),
+
+    # --- Clarifications that do not resolve anything ------------------------
+
+    EvalCase(
+        name="hard_clarification_defers_the_choice_back",
+        why=(
+            "Deferring the choice back is not a resolution: only the user can "
+            "say which of their two answers to keep, and picking for them would "
+            "silently override something they stated. Harder than the existing "
+            "off-topic case because it sounds cooperative and decisive."
+        ),
+        user=_user(
+            sectors_of_interest=["sports", "technology"],
+            restrictions=["Do not invest in technology companies"],
+        ),
+        clarifications=("Either way is fine, you choose.",),
+        expected_status="needs_clarification",
+        tags=("hard", "clarification"),
+    ),
+    EvalCase(
+        name="hard_clarification_is_confidently_off_topic",
+        why=(
+            "A fluent, confident reply that answers a question nobody asked. "
+            "The existing off-topic case contains uncertainty words the model "
+            "can key on; this one contains none, so the judgment has to be "
+            "about relevance rather than about tone."
+        ),
+        user=_user(
+            sectors_of_interest=["sports", "technology"],
+            restrictions=["Do not invest in technology companies"],
+        ),
+        clarifications=(
+            "I have been investing for about six years and I follow the market "
+            "closely every day.",
+        ),
+        expected_status="needs_clarification",
+        tags=("hard", "clarification"),
+    ),
+    EvalCase(
+        name="hard_second_clarification_resolves_after_a_vague_first",
+        why=(
+            "Tests that the WHOLE clarification history is used, not just the "
+            "latest reply. This is the shape of a real bug: "
+            "clarification_responses was once a single string, so a second "
+            "answer erased the first. The vague first answer must not poison "
+            "the clear second one."
+        ),
+        user=_user(
+            sectors_of_interest=["sports", "technology"],
+            restrictions=["Do not invest in technology companies"],
+        ),
+        clarifications=(
+            "Hmm, I am not sure.",
+            "Alright - keep the restriction and drop technology. Sports only.",
+        ),
+        expected_status="valid",
+        expect_sectors_exclude=("technology",),
+        expect_sectors_include=("sports",),
+        tags=("hard", "clarification"),
+    ),
     EvalCase(
         name="clarification_drops_the_interest_instead",
         why="A conflict can be resolved either way; dropping the interest is valid.",
@@ -234,6 +528,11 @@ CASES: list[EvalCase] = [
             "Keep the restriction. I do not want technology. Only sports.",
         ),
         expected_status="valid",
+        # The mirror image of the case above: same conflict, opposite
+        # resolution. The restriction stays and the interest goes.
+        expect_sectors_exclude=("technology",),
+        expect_sectors_include=("sports",),
+        expect_restrictions_include=("technology",),
         tags=("clarification",),
     ),
 ]

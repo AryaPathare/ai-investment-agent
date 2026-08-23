@@ -1,6 +1,7 @@
 """Run the Agent 1 eval set against the real model and score the results.
 
-    python -m evals.runner                 # run every case once
+    python -m evals.runner                 # run every case once (30 calls)
+    python -m evals.runner --tag hard      # only the hard set (12 calls)
     python -m evals.runner --repeat 3      # measure consistency across runs
     python -m evals.runner --tag regression  # only the must-never-break cases
     python -m evals.runner --delay 1.0     # slow down if rate limited
@@ -20,6 +21,24 @@ WHY ACCURACY IS SPLIT BY TAG
 An agent that flags everything scores 100% on true-positives and 0% on
 false-positives. One that flags nothing does the reverse. A single overall
 number hides both failures, so the two are reported separately.
+
+The tag that matters most now is ``hard``. The original eighteen cases scored
+18/18, which made the set a working regression alarm that could not show
+improvement — every conflict in it named the same word twice, so string
+matching was enough. The hard set breaks that correlation in both directions
+and is balanced six/six between the two verdicts, so flagging everything or
+nothing scores 50% on it rather than 100%.
+
+``--tag hard`` is also the cheap way to iterate: twelve calls instead of
+thirty, which matters when the daily ceiling is the binding constraint.
+
+WHAT COUNTS AS PASSING
+----------------------
+The status must match AND the case's field expectations must hold. The second
+part exists because "valid" only means the model SAYS a conflict is resolved.
+A case can now assert what the resolution actually did to the profile, which is
+the difference between a clarification that worked and one that was declared to
+have worked.
 """
 
 import argparse
@@ -32,7 +51,7 @@ from pathlib import Path
 
 from agents.profile_agent import create_investor_profile
 from config import PROJECT_ROOT, get_settings
-from evals.cases import CASES, EvalCase
+from evals.cases import CASES, EvalCase, check_expectations
 
 RESULTS_DIR = PROJECT_ROOT / "evals" / "results"
 
@@ -53,16 +72,25 @@ def run_case(case: EvalCase) -> dict:
             "expected": case.expected_status,
             "actual": None,
             "passed": False,
+            "problems": [],
             "error": f"{type(exc).__name__}: {exc}",
             "seconds": round(time.perf_counter() - started, 2),
         }
+
+    # The verdict is not the whole answer for a clarification case. "valid"
+    # means the model SAYS the conflict is resolved; the field expectations
+    # check whether it actually resolved it. A profile still listing an
+    # interest it also forbids, returned as valid, is the exact failure Agent 1
+    # exists to prevent, and it scores as correct against the status alone.
+    problems = check_expectations(case, profile)
 
     return {
         "name": case.name,
         "tags": list(case.tags),
         "expected": case.expected_status,
         "actual": profile.status,
-        "passed": profile.status == case.expected_status,
+        "passed": profile.status == case.expected_status and not problems,
+        "problems": problems,
         "reason": profile.clarification_reason,
         "sectors_of_interest": profile.sectors_of_interest,
         "restrictions": profile.restrictions,
@@ -108,10 +136,16 @@ def print_report(results: list[dict], summary: dict, repeat: int) -> None:
         if not r["passed"]:
             if r["error"]:
                 print(f"         error: {r['error']}")
-            else:
+            elif r["expected"] != r["actual"]:
                 print(f"         expected {r['expected']!r}, got {r['actual']!r}")
                 if r.get("reason"):
                     print(f"         model said: {r['reason']}")
+            else:
+                # Right verdict, wrong resolution - worth distinguishing,
+                # because the two call for completely different prompt fixes.
+                print(f"         verdict {r['actual']!r} was correct, but:")
+                for problem in r.get("problems", []):
+                    print(f"           {problem}")
 
     print()
     print("-" * 72)
