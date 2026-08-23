@@ -243,6 +243,16 @@ arrive in local currency, and GBp is *pence*. Ranking touches `ComparableMetrics
 (all unitless); `CurrencyAmounts` is display only. Reaching the wrong one means
 crossing a type boundary rather than ignoring a comment.
 
+**What gets filtered out is reported, not silently dropped.** Two filters sit in
+front of the risk critic: one removes publishers that do no original reporting,
+the other removes press releases, which are the company describing itself and
+the most confirmatory input an agent arguing the bear case could be handed. Both
+report what they withheld, because "no risks found" means something different
+when four of twelve articles never reached the model. Both are also deliberately
+cautious in the same direction — a press release slipping through costs a
+mediocre input, while removing "Regulator announces probe" defeats the agent, so
+anything ambiguous is kept.
+
 **Rejections are recorded, never discarded.** `drop_summary` says where every
 examined company went. "3 candidates from 30 mentions" is either good filtering
 or a broken resolver, and those look identical without it — it caught three real
@@ -267,23 +277,53 @@ LANGSMITH_PROJECT=ai-investment-agent
 
 ## Known limitations
 
-- **State is in memory.** `InMemorySaver` loses everything when the process
-  exits. Needs `SqliteSaver` before any real use.
-- **Agent 1's eval set scores 100%.** Good for catching regressions, but it has
-  no headroom to detect improvement. It needs harder cases, added as found.
+Ordered by how much each would change an answer a reader actually sees.
+
+- **Agent 3 grades data-centre operators as *direct* exposure to renewables.**
+  The renewables profile is recommended **Google and Amazon**, because both buy
+  battery storage for their data centres. True, and a very loose link: a
+  beginner asking about renewable energy gets two mega-cap advertising and
+  retail businesses. This is the one weakness currently putting a
+  wrong-looking company in front of a person.
+- **Agent 5 barely reads the articles.** 1 of 8 exit conditions cites one; the
+  rest are metric thresholds, which are the cheap answer and read identically
+  for any company in any sector. The prompt now demands at least one
+  article-cited condition, which moved it from 0/9 — progress, not a solution.
+- **The source filter cannot cover its long tail.** Audited against 272 cached
+  articles from 130 sources: 86 of those sources contributed exactly one
+  article. Naming bad publishers handles the recurring offenders and can never
+  be complete.
 - **Agent 2 rarely records dissenting evidence.** Across the baseline, 0 of 5
-  profiles produced a single `weakens` or `complicates` stance, despite the
-  prompt asking for honest labelling. That is confirmation bias, and it is the
-  clearest thing to work on next.
+  profiles produced a single `weakens` or `complicates` stance. Structural
+  rather than a prompt problem — most themes cite one article, and one article
+  cannot disagree with itself. Worked around by giving Agent 4 its own
+  adversarial retrieval, so this returns only if that stops working.
 - **Most Agent 2 themes cite one source** (13 of 18 in the baseline), and it
   reaches the five-theme cap on well-covered sectors.
-- **`openai/gpt-oss-20b` is unevaluated against alternatives.** Now that the
-  eval set exists, comparing a larger model is a measurable question.
-- **Agent 3's eval baseline is incomplete.** The account hit Groq's 200k
-  tokens-per-day ceiling partway through. One profile completed cleanly with no
-  hard failures; the rest need re-running once quota resets.
+- **Ranking saturates, and financial companies are capped.** A company beyond
+  every cap scores a flat 1.000, so exceptional companies are not distinguishable
+  from each other; banks have no cost of goods, so their completeness caps at
+  0.50. Both are measured and accepted — they distort absolute scores without
+  changing any ordering that gets consumed. See `agents/screening.py`.
 - **Ticker resolution can be flaky between runs.** Provider search results vary
   over time for short ambiguous names. The system degrades safely — it records a
   drop reason rather than picking the wrong company.
-- **Ranking saturates.** A company maxing every metric scores a flat 1.0, so
-  exceptional companies are not currently distinguishable from each other.
+- **`openai/gpt-oss-20b` is unevaluated against alternatives.** Now that the
+  eval set exists, comparing a larger model is a measurable question.
+
+### Not yet verified
+
+Distinct from the above: these are not known to be wrong, they are simply
+untested against the live pipeline.
+
+- **The CLI has never been run end to end against real agents.** Every path is
+  covered by tests with stubbed agents and the rendering was checked against
+  realistic fixtures, but no real profile has gone through it.
+- **The 12 hard Agent 1 eval cases have never been scored by the real model.**
+  They are validated against a deliberately naive string-matching stand-in,
+  which proves they separate string matching from judgment — it does not prove
+  the labels are right.
+- **Agent 3's eval has not run since the operating-margin fix.** The effect was
+  verified offline across eleven companies; the eval itself is still owed.
+- **Agent 5's exclusion path has never run.** No live run has yet produced a
+  disqualification, so the code that handles one has unit tests only.
