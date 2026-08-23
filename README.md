@@ -14,6 +14,8 @@ recommendation just because recommending is its job.
 > **Not investment advice.** This is a personal learning project. It is not
 > licensed or qualified to advise anyone, and its output should not be acted on.
 
+MIT licensed — see [LICENSE](LICENSE).
+
 ---
 
 ## Status
