@@ -1497,3 +1497,62 @@ consumed.** `drop_low_quality` returned dropped sources into `_dropped`.
 `_write_cache` received a payload whose query it never saw. Neither shows up as
 a failing test, a wrong number, or a bad output. They show up much later, as a
 question that cannot be answered.
+
+### 45. Filtering the company's own voice out of the bear case
+
+The audit's largest finding was that 6% of the retrieved corpus is press
+releases, concentrated in a single source. A press release is the company
+describing itself, which makes it the most confirmatory input available to the
+one agent whose entire job is to argue the other side.
+
+It could not be fixed by blocking the publisher. This content arrives through
+ordinary newspapers that also do real reporting - blocking `manilatimes.net`
+would throw away its journalism to remove its syndicated wire copy. The article
+had to be judged, not the source.
+
+**The dangerous version of this rule is the obvious one.** "Announces" is the
+word that marks a press release, and it is also the word in:
+
+    Apple announces changes for apps in the European Union
+    Canadian Solar Announces Resolution of Maxeon U.S. Patent Litigation
+    SK Hynix Announces $38.5 Billion DRAM and NAND Manufacturing Expansion
+    Regulator announces probe into ...
+
+All real, all from the corpus, and all things the risk critic needs. A rule
+keyed on that word would blind the agent to precisely what it exists to find.
+**Letting a press release through costs a mediocre input; removing real bad
+news defeats the agent.** The asymmetry decides every judgement call here: when
+the signals are unclear, keep the article.
+
+**Two independent signals, both narrow:**
+
+1. *The wire dateline.* An article carrying "(GLOBE NEWSWIRE)" or "/PRNewswire/"
+   was published BY the company through a paid service. Close to definitional,
+   and it reaches releases no title rule could - "Purple Appoints Jimmy Serrano
+   as Growth Director", "Pontiac Bancorp has agreed to acquire Ottawa Bancorp".
+2. *Issuer document types in the title.* "Announces ... Financial Results",
+   "Provides Corporate Update", "Declares Dividend", "To Present At ...
+   Conference". Each names a KIND OF DOCUMENT rather than a verb, which is what
+   keeps "Regulator announces probe" out. It exists as a second signal because
+   aggregators strip the dateline and keep the headline.
+
+Measured against the 272 cached articles: **15 matched, 5.5%, and every one is
+an issuer document.** An earlier looser draft matched 6% and took the Apple and
+Canadian Solar stories with it. The missing half a percent is deliberate.
+
+Deliberately NOT filtered: **earnings call transcripts.** The company's own
+event, but the analyst Q&A is the one part of an earnings cycle where hard
+questions get asked out loud.
+
+**Applied by the risk critic and not by Agent 2.** The same article is ordinary
+evidence for theme research - a company announcing a 1.2GW order genuinely is a
+signal the theme is real. The filter is not "this article is bad"; it is "this
+article cannot serve THIS purpose". A test asserts research does not import it.
+
+`CandidateCritique.press_releases_withheld` carries the count and the CLI prints
+it, for the reason established one entry earlier: eight articles reviewed with
+four withheld as announcements is a finding about the SEARCH, not evidence that
+the company is sound.
+
+Verified by loosening the rule back to a bare "announces" and watching seven
+tests fail - the seven that name real headlines it would have destroyed.

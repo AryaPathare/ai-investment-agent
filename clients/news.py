@@ -173,6 +173,94 @@ def drop_low_quality(articles: list[Article]) -> tuple[list[Article], list[str]]
     return kept, dropped
 
 
+# --- Press releases ----------------------------------------------------------
+#
+# A DIFFERENT problem from low-quality sources, needing a different instrument.
+# The publisher is not the issue: these arrive through ordinary newspapers that
+# also do real reporting, so blocking manilatimes.net would throw away its
+# journalism to remove its syndicated wire copy. What has to be judged is the
+# ARTICLE.
+#
+# WHY THIS MATTERS TO THE RISK CRITIC SPECIFICALLY
+#
+# A press release is the company describing itself. Handing one to an agent
+# whose entire job is to build the bear case is worse than handing it nothing:
+# it is the single most confirmatory input available, dressed as news, and the
+# model cannot tell the difference from the text alone.
+#
+# For Agent 2 the same article is ordinary evidence - a company announcing a
+# 1.2GW order genuinely is a signal that a theme is real - which is exactly why
+# this filter is applied by the risk critic and NOT by research.
+#
+# THE ERROR THAT MUST BE AVOIDED
+#
+# Removing real bad news. "Regulator announces probe", "Canadian Solar
+# Announces Resolution of Patent Litigation" and "Apple announces changes for
+# apps in the European Union" are all things the critic needs, and all contain
+# "announces". A rule keyed on that word would blind the agent to precisely
+# what it exists to find, which is far worse than letting a press release
+# through. **When the two signals disagree with each other, keep the article.**
+#
+# Measured against the 272 cached articles: 15 matched (5.5%), and every one is
+# an issuer document. A looser earlier draft matched 6% and took the Apple and
+# Canadian Solar stories with it. The missing half a percent is deliberate.
+
+_PR_WIRES = re.compile(
+    r"\b(pr\s?newswire|globe\s?newswire|business\s?wire|accesswire"
+    r"|newsfile corp|einpresswire|marketwired)\b",
+    re.IGNORECASE,
+)
+"""The distribution service named in the dateline.
+
+The strongest signal available and close to definitional: an article carrying
+"/PRNewswire/" was published BY the company through a paid wire. It also
+catches releases a title rule never could - "Purple Appoints Jimmy Serrano as
+Growth Director", "Pontiac Bancorp has agreed to acquire Ottawa Bancorp".
+"""
+
+_PR_TITLES = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\b(announces|reports|posts)\b.{0,45}\b(financial results|quarterly results"
+        r"|full[- ]year results)\b",
+        r"\b(first|second|third|fourth)[- ]quarter\b.{0,30}\bresults\b",
+        r"\bq[1-4]\s*(fy)?\s*\d{2,4}\b.{0,30}\bresults\b",
+        r"\bprovides?\b.{0,25}\bcorporate update\b",
+        r"\bdeclares?\b.{0,25}\bdividend\b",
+        r"\bannounces\b.{0,35}\b(pricing|closing)\b.{0,25}\boffering\b",
+        r"\bto (present|participate)\b.{0,45}\bconference\b",
+    )
+]
+"""Document types only an issuer publishes about itself.
+
+Each names a KIND of document, never a bare verb, which is what keeps
+"Regulator announces probe" out of the net. This exists as a second signal
+because aggregators routinely strip the wire dateline while keeping the
+headline intact.
+"""
+
+
+def is_press_release(article: Article) -> bool:
+    """Whether this article is the company talking about itself."""
+    if _PR_WIRES.search(article.text):
+        return True
+    return any(pattern.search(article.title) for pattern in _PR_TITLES)
+
+
+def drop_press_releases(articles: list[Article]) -> tuple[list[Article], int]:
+    """Split articles into reporting and issuer self-description.
+
+    Returns:
+        (kept, number withheld). The count is returned rather than discarded for
+        the same reason ``drop_low_quality`` returns its sources: a filter that
+        removes evidence without saying so is its own kind of unreliable
+        narrator, and "no risks found" reads very differently when four of the
+        twelve articles were the company's own announcements.
+    """
+    kept = [a for a in articles if not is_press_release(a)]
+    return kept, len(articles) - len(kept)
+
+
 def _cache_path(params: dict) -> Path:
     """A stable filename for one set of request parameters.
 

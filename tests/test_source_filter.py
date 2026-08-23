@@ -187,9 +187,9 @@ def test_a_provider_failure_withholds_nothing_rather_than_crashing(monkeypatch):
         raise NewsAPIError("provider down")
 
     monkeypatch.setattr(risk_agent, "search_many", boom)
-    articles, queries, withheld = risk_agent._retrieve_bear_case(_candidate(), True)
+    result = risk_agent._retrieve_bear_case(_candidate(), True)
 
-    assert (articles, queries, withheld) == ([], [], [])
+    assert result == ([], [], [], 0)
 
 
 def test_the_cli_prints_what_was_withheld(capsys):

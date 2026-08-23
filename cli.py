@@ -362,6 +362,11 @@ def _report(progress: Progress, node: str, update: dict) -> None:
                 progress.detail(
                     f"  {critique.ticker}: not critiqued - {critique.skipped_reason}"
                 )
+            if critique.press_releases_withheld:
+                progress.detail(
+                    f"    withheld {critique.press_releases_withheld} company "
+                    f"press release(s)"
+                )
             if critique.sources_withheld:
                 # A filter that removes evidence without saying so is its own
                 # kind of unreliable narrator. Recording it in state and then

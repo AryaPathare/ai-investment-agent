@@ -176,6 +176,20 @@ class CandidateCritique(BaseModel):
     queries_used: list[str] = Field(default_factory=list)
     articles_reviewed: int = 0
 
+    press_releases_withheld: int = 0
+    """Articles removed because they were the company describing itself.
+
+    A count rather than a list of publishers, because unlike
+    ``sources_withheld`` this says nothing about who carried it: the same
+    newspaper publishes real journalism and syndicated wire copy, and only the
+    article can be judged.
+
+    Read it next to ``articles_reviewed``. Twelve articles retrieved and four
+    withheld as issuer announcements means the bear-case search mostly found
+    the company's own voice - which is a finding about the SEARCH, not about
+    the company being sound.
+    """
+
     sources_withheld: list[str] = Field(default_factory=list)
     """Publishers whose articles the source filter removed before the model saw
     them, one entry per article withheld.

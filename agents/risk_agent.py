@@ -47,7 +47,12 @@ from typing import Sequence
 from agents.bear_queries import bear_queries
 from agents.risk_rules import fundamental_risks
 from agents.structured import invoke_structured
-from clients.news import NewsAPIError, drop_low_quality, search_many
+from clients.news import (
+    NewsAPIError,
+    drop_low_quality,
+    drop_press_releases,
+    search_many,
+)
 from config import get_llm, get_settings
 from models.companies import CompanyCandidate, CompanyFindings
 from models.research import Article
@@ -250,7 +255,7 @@ def _resolve_citations(
 
 def _retrieve_bear_case(
     candidate: CompanyCandidate, use_cache: bool
-) -> tuple[list[Article], list[str], list[str]]:
+) -> tuple[list[Article], list[str], list[str], int]:
     """Search for bad news about one candidate.
 
     A provider failure is not allowed to end the run. The critic reporting
@@ -259,8 +264,9 @@ def _retrieve_bear_case(
 
     Returns:
         (articles worth reasoning over, queries that succeeded, publishers
-        withheld). The third used to be discarded here; see
-        ``CandidateCritique.sources_withheld`` for why it is carried now.
+        withheld, press releases withheld). The last two used to be discarded
+        here; see ``CandidateCritique.sources_withheld`` for why they are
+        carried now.
     """
     queries = bear_queries(candidate)
 
@@ -269,13 +275,20 @@ def _retrieve_bear_case(
             queries, use_cache=use_cache, asked_by="risk_critic"
         )
     except NewsAPIError:
-        return [], [], []
+        return [], [], [], 0
 
     # Commentary and advocacy are withheld before the model ever sees them.
     # A real citation to a worthless article still produces a worthless risk,
     # and the model cannot judge a source it is simply handed as evidence.
     kept, dropped = drop_low_quality(articles)
-    return kept, succeeded, dropped
+
+    # Then the company's own announcements. A press release is the single most
+    # confirmatory input available to an agent whose job is the bear case, and
+    # it arrives through ordinary newspapers, so it cannot be filtered by
+    # publisher the way the line above does.
+    kept, releases = drop_press_releases(kept)
+
+    return kept, succeeded, dropped, releases
 
 
 # Worst first, so the most severe of a duplicated pair is the one kept.
@@ -328,7 +341,9 @@ def critique_candidate(
         articles). The articles are returned so the assembled findings can carry
         them: a uuid Agent 5 cannot resolve is not a citation, it is a string.
     """
-    articles, queries_used, withheld = _retrieve_bear_case(candidate, use_cache)
+    articles, queries_used, withheld, releases = _retrieve_bear_case(
+        candidate, use_cache
+    )
 
     assessment, mapping = assess_news_risks(candidate, articles)
     news_risks, discarded = _resolve_citations(assessment, mapping, candidate.ticker)
@@ -350,6 +365,7 @@ def critique_candidate(
             queries_used=queries_used,
             articles_reviewed=len(articles),
             sources_withheld=withheld,
+            press_releases_withheld=releases,
         ),
         discarded,
         cited,

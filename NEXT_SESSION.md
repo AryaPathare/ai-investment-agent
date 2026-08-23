@@ -21,7 +21,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **648 passed** in a few seconds.
+Expect **679 passed** in a few seconds.
 
 Then see it work, without spending quota on a real run:
 
@@ -160,12 +160,17 @@ exactly one article.** A list of names cannot cover that, and extending it
 further is not the fix. Two problems found in the same audit are still open and
 need different instruments:
 
-- **Press releases are 6% of the corpus**, nine of `manilatimes.net`'s
-  twenty-three articles. Worthless to a risk critic, since it is the company's
-  own framing - but it arrives via ordinary newspapers that also report, so it
-  must be filtered by the SHAPE of the article, not the publisher.
-- **Off-topic matches.** `dealigg.com` returned retail battery deals for a
-  battery-storage query. A relevance failure; no source list fixes it.
+- **Press releases: DONE** (2026-08-23). Filtered by article shape, not
+  publisher, and only for the risk critic - the same article is ordinary
+  evidence for Agent 2. Two signals: the wire dateline ("GLOBE NEWSWIRE",
+  "/PRNewswire/") and issuer document types in the title. 15 of 272 cached
+  articles match, all genuine. **Do not loosen it to a bare "announces" rule** -
+  that catches "Regulator announces probe" and "Canadian Solar Announces
+  Resolution of Patent Litigation", which is exactly the evidence the agent
+  exists to find. Seven tests exist to stop that.
+- **Off-topic matches: still open.** `dealigg.com` returned retail battery deals
+  for a battery-storage query. A relevance failure; no source list fixes it, and
+  no instrument has been identified.
 
 Both smaller items the audit surfaced are **DONE** (2026-08-23):
 
@@ -272,7 +277,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 648 tests, a few seconds, no network
+python -m pytest                        # 679 tests, a few seconds, no network
 
 python -m evals.runner                  # Agent 1: 30 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)
