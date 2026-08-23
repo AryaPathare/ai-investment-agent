@@ -5,7 +5,12 @@ and durable, and the hardening pass is finished.** All five agents are built and
 `python -m cli` runs the whole thing end to end, and a run that stops can be
 resumed.
 
-`docs/PROJECT_LOG.md` is current through Session 7.
+`docs/PROJECT_LOG.md` is current through Session 8.
+
+**The git history was rewritten on 2026-08-23** to change the commit author from
+`Nilesh <nileshp@fucient.com>` to `Arya Pathare <patharearya@gmail.com>`. Every
+SHA before that point changed, so any commit hash written down elsewhere no longer
+resolves. Nothing is pushed and there is still no remote configured.
 
 ---
 

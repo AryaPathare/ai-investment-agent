@@ -905,7 +905,7 @@ wait rather than being unknown.
 ### Starting point
 
 All five agents built and verified, 433 tests, everything committed at
-`c930892`. The pipeline worked and could not be shown to anyone: it ran only
+`937e16c`. The pipeline worked and could not be shown to anyone: it ran only
 from Python snippets and eval runners. The hardening pass began here, with the
 CLI as its most valuable item.
 
@@ -951,7 +951,7 @@ AttributeError: 'dict' object has no attribute 'recommended_nothing'
 `workflow.py` passes a `JsonPlusSerializer` an explicit allow-list of Pydantic
 types. Agents 1, 2 and 3's types were all listed, with comments explaining that
 an unlisted type could not be reconstructed. **Agents 4 and 5 were added to the
-graph without being added to that list.** They shipped that way in `c930892`.
+graph without being added to that list.** They shipped that way in `937e16c`.
 
 What makes this worth writing down is why nothing caught it:
 
@@ -1027,7 +1027,7 @@ fields are the same set.
 - `python -m cli`, `--profile`, `--save-profile`; three example profiles, one of
   them deliberately contradictory so the interrupt can be demonstrated on
   demand.
-- The serializer defect from `c930892` is fixed and has a regression test.
+- The serializer defect from `937e16c` is fixed and has a regression test.
 
 ### Next
 
@@ -1136,7 +1136,7 @@ committed baseline was measured in a throwaway `git worktree`:
 
 | | cold | warm |
 |---|---|---|
-| `1dd95e0` (before this session) | 11.1s | 7.0–8.1s |
+| `5d2b322` (before this session) | 11.1s | 7.0–8.1s |
 | this session | 13.4s | 6.3–7.1s |
 
 **There was no regression.** The "3.07s" figure quoted in Session 5's README was
@@ -1318,3 +1318,39 @@ much a test of the labels as of the agent:
 2. **`--tag hard`** to get the first real baseline (12 calls).
 3. **Agent 3's exposure grade** — the one weakness putting a wrong-looking
    company in front of a person.
+
+---
+
+## Session 8 — 2026-08-23
+
+### 40. The author identity was rewritten, so every SHA changed
+
+Before publishing anything, the repository was audited: `.env` was never
+committed, no key-shaped strings appear anywhere in history, and `.cache/` and
+`evals/results/` were never tracked. Clean.
+
+The one thing that did need changing was the commit identity. All 38 commits
+were authored by `Nilesh <nileshp@fucient.com>`; publishing would have put a
+work email into public commit metadata permanently. Two `filter-branch` passes
+rewrote author AND committer to `Arya Pathare <patharearya@gmail.com>`, and
+`refs/original`, the reflog and unreachable objects were purged so the old
+identity survives nowhere.
+
+Verified before purging the backup: identical tree hashes, identical commit
+messages, 578 tests still passing. Only metadata moved.
+
+**Consequence worth recording: every commit SHA before this point changed.**
+Any SHA written down elsewhere - in notes, in an issue, in an earlier draft of
+this log - no longer resolves. The two references inside this file were updated
+in place:
+
+| old | new | commit |
+|---|---|---|
+| `c930892` | `937e16c` | Complete the pipeline: Agents 4 and 5 |
+| `1dd95e0` | `5d2b322` | Add the CLI, and fix the checkpointer types |
+
+The lesson is small but general: **a commit hash is a reference to something
+mutable.** Prose that cites one is making a promise the repository can break,
+and rewriting history breaks every such promise at once. Citing the commit
+SUBJECT alongside the hash, as the table above does, is what made these two
+recoverable at all.
