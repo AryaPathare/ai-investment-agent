@@ -1,16 +1,20 @@
 # Start here
 
-Last worked: **2026-08-23** (session 7). **The pipeline is complete, demonstrable,
-and durable, and the hardening pass is finished.** All five agents are built and verified against their own evals,
-`python -m cli` runs the whole thing end to end, and a run that stops can be
-resumed.
+Last worked: **2026-08-23**. **The pipeline is complete, demonstrable, durable,
+and published.** All five agents are built and verified against their own evals,
+`python -m cli` runs the whole thing end to end, a run that stops can be resumed,
+and CI proves the suite passes on machines that have never seen the project.
 
-`docs/PROJECT_LOG.md` is current through Session 8.
+**Everything that does not need Groq quota is finished.** All seven remaining
+tasks need it — see section 2.
 
-**The git history was rewritten on 2026-08-23** to change the commit author from
-`Nilesh <nileshp@fucient.com>` to `Arya Pathare <patharearya@gmail.com>`. Every
-SHA before that point changed, so any commit hash written down elsewhere no longer
-resolves. Nothing is pushed and there is still no remote configured.
+- Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
+- CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
+- `docs/PROJECT_LOG.md` is current through entry 51
+
+**The git history was rewritten on 2026-08-23** to change the commit author to
+`Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
+any commit hash written down elsewhere no longer resolves.
 
 ---
 
@@ -21,7 +25,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **702 passed** in a few seconds.
+Expect **707 passed** in a few seconds.
 
 Then see it work, without spending quota on a real run:
 
@@ -31,86 +35,105 @@ python -m cli --help
 
 ---
 
-## 2. THE TASK — finish the hardening pass
+## 2. THE TASK — seven items, all needing quota
 
-### 2a. A CLI — DONE this session
+**Check the Groq console before planning around these.** The ceiling is a rolling
+24-hour window, not a midnight reset, and it was at 196,521 / 200,000 on
+2026-08-23. A new calendar day does not reset it.
 
-`cli.py`. Asks the eight profile questions, runs the graph, handles Agent 1's
-clarification interrupt, prints the brief. `--profile FILE` replays a saved
-profile (three in `examples/`, one deliberately contradictory so the interrupt
-can be shown on demand); `--save-profile FILE` writes one out.
+Do them in this order. The first two are cheap and tell you whether anything
+else is even needed.
 
-Two things worth knowing before changing it:
-
-- It uses `stream(stream_mode="updates")`, not `invoke`, so each stage reports
-  as it lands. A run is several minutes and a dozen model calls; a silent
-  terminal is indistinguishable from a hang.
-- `stream` never yields accumulated state, so the final state is read back with
-  `get_state(config).values`. **That is what found the serializer bug below.**
-
-### 2b. `SqliteSaver` — DONE this session
-
-`checkpoints.py`. Every step is written to `.state/checkpoints.sqlite`, so
-closing the terminal at a clarification prompt loses nothing.
+### 2.1 Run the CLI live, end to end — ~12 calls
 
 ```powershell
-python -m cli --list                 # saved runs and which can be resumed
-python -m cli --resume nilesh-1      # continue one
-python -m cli --db other.sqlite      # point at a different database
+python -m cli --profile examples/beginner_renewables.json
 ```
 
-Three things worth knowing before changing it:
+The last unverified thing about the CLI, and the highest-value single run:
 
-- **A run has three states, not two.** `paused` (interrupted to ask a question,
-  resume with `Command(resume=...)`), `stopped` (process died mid-stage, resume
-  with `None`), `finished`. The `stopped` case resumes at the unfinished stage
-  and does NOT repeat completed ones — a test proves Agent 1 is not called
-  twice. On this project's quota that is the whole value.
-- **`allowed_msgpack_modules` opts into a STRICT allow-list.** Passing it means
-  unregistered types come back as dicts; passing no serializer at all falls back
-  to a permissive default that reconstructs everything and merely warns it will
-  stop. So dropping `serde=` looks harmless today and fails everywhere later.
-  A round-trip test cannot catch that, so the test asserts the serializer's
-  identity. Do not "simplify" it back to a round trip.
-- **The database is not under `.cache/`** and must not move there. `.cache/` is
-  documented as safe to delete; a paused clarification is not.
+- It exercises all five agents at once, so it doubles as a pipeline smoke test.
+- It produces the first **attributable cache**. The `_provenance` block records
+  which agent asked for each article, so afterwards you can finally answer
+  whether press releases reach the risk critic — a claim currently recorded as
+  unproven.
+- Afterwards `python -m cli --resume <id>` replays the real result forever, at
+  zero quota. That is the demo.
 
-### 2c. Harder Agent 1 eval cases — DONE this session
+**Expect it to find something.** Three times on 2026-08-23, running existing
+code under new conditions surfaced a real defect: reading state back exposed two
+unregistered types, a review found the press-release filter eating litigation
+news, and a clean clone found five tests silently reading `.env`. This run is
+the newest condition of all.
 
-12 new cases tagged `hard`, bringing the set to 30. `python -m evals.runner
---tag hard` runs just those, 12 calls instead of 30.
+### 2.2 Agent 1 hard-set baseline — 12 calls
 
-Why the old set scored 18/18: **every conflict case named the same word twice**
-(`technology` vs "Do not invest in technology companies"), and every valid case
-was lexically disjoint. The prompt gives that pattern as its worked example, so
-string matching alone scored full marks. 13 of 18 also expected `valid`, so
-answering "valid" every time was worth 72%.
-
-The hard set is balanced 6/6 between the two verdicts — a test enforces it — so
-a degenerate strategy scores 50%.
-
-Cases can now also assert what a clarification CHANGED, not just the verdict:
-
-```python
-expected_status="valid",
-expect_restrictions_exclude=("technology",),
-expect_sectors_include=("technology", "sports"),
+```powershell
+python -m evals.runner --tag hard
 ```
 
-`valid` alone would also be returned by a model that left the contradictory
-restriction in place, which is a contradictory profile reaching Agent 2.
-
-**THE IMPORTANT CAVEAT — read before running it.** These have never been run
-against the real model. They are validated against a deliberately naive
-string-matching fake (12/12 on the old false-positive cases, 4/12 on the hard
-set), which proves they separate string matching from judgment. **It does not
-prove the labels are right.** The first real run is as much a test of the
-labels as of the agent:
+**Read this as a test of the LABELS as much as of the agent.** The 12 hard cases
+have never been scored by a real model. They are validated only against a naive
+string-matching stand-in, which proves they separate string matching from
+judgment — not that the expected answers are right.
 
 - ~8-10 of 12 is a good result and a usable baseline.
 - **12/12 means they are still too easy**, not that the agent is perfect.
-- Below ~5, suspect the labels first. Every case carries a `why` written
-  specifically so that argument can be checked.
+- Below ~5, suspect the labels before the prompt. Every case carries a `why`
+  written specifically so that argument can be checked.
+
+### 2.3 Agent 3's eval — ~25-30k tokens
+
+```powershell
+python -m evals.company_runner --limit 1
+```
+
+Owed since the operating-margin fix. The effect was verified offline across
+eleven companies — only PowerBank changed, nothing fell below the completeness
+floor, no screening decision moved — but the eval itself has never run. Confirms
+the drop accounting still balances.
+
+### 2.4 The zero-candidate eval profile — 2-3 runs
+
+One of two research profiles keeps returning zero candidates. Article variance
+means each run tests a different slice, so a run of clean results is weaker
+evidence than the count suggests. **Verifying against the exact failing inputs
+has repeatedly proved stronger than another eval run.**
+
+### 2.5 Agent 3's exposure grade — several runs, OPEN-ENDED
+
+**The only remaining defect a reader meets in the output.** The
+`renewables_excluding_fossil_fuels` profile is recommended **Google and Amazon**,
+because both buy battery storage for their data centres. True, and a very loose
+link: a beginner asking about renewable energy gets two mega-cap advertising and
+retail businesses.
+
+The cause is Agent 3's exposure prompt. The cost is re-verifying Agent 3, and
+the prompt change is free while knowing whether it worked is not — this has no
+fixed size.
+
+Possible side effect worth watching: a stricter exposure grade should start
+disqualifying candidates, which would finally exercise **Agent 5's exclusion
+path** — code that has unit tests only because no live run has ever produced a
+disqualification.
+
+### 2.6 Agent 5 barely cites articles — several runs, OPEN-ENDED
+
+1 of 8 exit conditions cites one; the rest are metric thresholds, which are the
+cheap answer and read identically for any company in any sector. The prompt
+already demands at least one article-cited condition, which moved it from 0/9 to
+1/8 — so one round of prompt work has already been spent here and was not
+enough.
+
+The CLI makes this visible in a way the numbers did not: every condition prints
+its grounds, so a brief where four of five say `grounds: metric X` looks as thin
+on screen as it is.
+
+### 2.7 The PDF — no quota, deferred by choice
+
+`docs/PROJECT_LOG.md` is the source material: 51 numbered entries through
+Session 8, written as a narrative of what broke and why. Deliberately held back
+until the rest is done.
 
 ---
 
@@ -293,7 +316,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 702 tests, a few seconds, no network
+python -m pytest                        # 707 tests, a few seconds, no network
 
 python -m evals.runner                  # Agent 1: 30 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)
