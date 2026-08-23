@@ -21,7 +21,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **632 passed** in a few seconds.
+Expect **648 passed** in a few seconds.
 
 Then see it work, without spending quota on a real run:
 
@@ -167,15 +167,16 @@ need different instruments:
 - **Off-topic matches.** `dealigg.com` returned retail battery deals for a
   battery-storage query. A relevance failure; no source list fixes it.
 
-Two smaller things the audit surfaced, both cheap:
+Both smaller items the audit surfaced are **DONE** (2026-08-23):
 
-- `risk_agent.py:270` **discards what the filter withheld** (`_dropped`), so
-  nothing reports it - the exact failure `drop_low_quality`'s docstring warns
-  against, one line below the warning. Needs a `RiskFindings` field.
-- **The cache does not record the query**, only the response, so articles cannot
-  be attributed to Agent 2 vs Agent 4. That is why "press releases reach the
-  risk critic" is stated above as unproven. A few lines would fix it and make
-  future audits free.
+- **The cache now records its own questions.** `_provenance` block carrying the
+  query, the asking agent (`research` / `risk_critic`), the date window and the
+  fetch time. The 224 older entries have none and stay readable. **The payoff is
+  entirely in future runs**, which is why this was done before the next live
+  one - do not run the CLI live and then wish you had this.
+- **The filter now reports what it withheld.** `CandidateCritique.sources_withheld`,
+  printed by the CLI. Once the next live run exists, the press-release claim
+  above becomes answerable rather than unproven.
 
 ### Two accepted scoring limits
 
@@ -271,7 +272,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 632 tests, a few seconds, no network
+python -m pytest                        # 648 tests, a few seconds, no network
 
 python -m evals.runner                  # Agent 1: 30 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)

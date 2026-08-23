@@ -38,7 +38,7 @@ import hashlib
 import json
 import re
 import time
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from difflib import SequenceMatcher
 from pathlib import Path
 
@@ -199,9 +199,41 @@ def _read_cache(path: Path, ttl_hours: float) -> dict | None:
         return None  # a corrupt cache entry should never break a real run
 
 
-def _write_cache(path: Path, payload: dict) -> None:
+# The key the provenance block is written under. Leading underscore so it can
+# never collide with a field the provider adds later: everything TheNewsAPI
+# returns is a bare name ("meta", "data").
+PROVENANCE_KEY = "_provenance"
+
+
+def _write_cache(path: Path, payload: dict, provenance: dict | None = None) -> None:
+    """Write a response to the cache, with a record of what asked for it.
+
+    WHY THE PROVENANCE BLOCK EXISTS
+
+    The cache used to store the provider's reply and nothing else. That made it
+    a corpus of articles with no record of the questions that produced them,
+    and the cost showed up the first time anyone tried to learn from it: an
+    audit of 272 cached articles could see that 6% were press releases and
+    could NOT tell whether they reached the theme research or the risk critic -
+    two agents for whom that content means completely different things.
+
+    A press release is ordinary input for Agent 2 and close to worthless for
+    Agent 4, whose entire job is the bear case. So the one question worth asking
+    was the one the cache could not answer, and the finding had to be written
+    down as unproven.
+
+    The block is namespaced under a leading underscore and everything else is
+    left exactly as the provider sent it, so `payload["data"]` is untouched and
+    the 224 entries written before this change stay readable - they simply have
+    no provenance, which is itself accurate.
+    """
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
+        if provenance is not None:
+            # Copied, not mutated: the caller's payload is also what gets
+            # parsed into Articles, and quietly adding a key to it would be a
+            # surprising side effect of caching.
+            payload = {**payload, PROVENANCE_KEY: provenance}
         path.write_text(json.dumps(payload), encoding="utf-8")
     except OSError:
         pass  # caching is an optimisation; failing to cache is not an error
@@ -312,6 +344,7 @@ def search_news(
     days_back: int | None = None,
     limit: int | None = None,
     use_cache: bool = True,
+    asked_by: str | None = None,
 ) -> list[Article]:
     """Search recent news for one query.
 
@@ -377,7 +410,20 @@ def search_news(
         except ValueError as exc:
             raise NewsAPIError("News API returned a non-JSON response.") from exc
 
-        _write_cache(path, payload)
+        _write_cache(
+            path,
+            payload,
+            provenance={
+                # The API token is deliberately absent, for the same reason it
+                # is excluded from the cache key: it identifies the caller, not
+                # the query, and must never be written to disk.
+                "query": query,
+                "asked_by": asked_by,
+                "days_back": days,
+                "limit": params["limit"],
+                "fetched_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
 
     articles = [a for a in map(_to_article, payload.get("data", [])) if a is not None]
     return articles
@@ -389,6 +435,7 @@ def search_many(
     days_back: int | None = None,
     limit: int | None = None,
     use_cache: bool = True,
+    asked_by: str | None = None,
 ) -> tuple[list[Article], list[str]]:
     """Run several queries and return one deduplicated pool of articles.
 
@@ -410,7 +457,11 @@ def search_many(
         try:
             collected.extend(
                 search_news(
-                    query, days_back=days_back, limit=limit, use_cache=use_cache
+                    query,
+                    days_back=days_back,
+                    limit=limit,
+                    use_cache=use_cache,
+                    asked_by=asked_by,
                 )
             )
             succeeded.append(query)

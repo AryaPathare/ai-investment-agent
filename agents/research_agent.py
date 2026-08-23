@@ -426,7 +426,9 @@ def research_themes(
         queries = queries[: settings.news_max_queries]
 
     # --- 2. queries -> real articles (Python) -------------------------------
-    articles, succeeded = search_many(queries, use_cache=use_cache)
+    articles, succeeded = search_many(
+        queries, use_cache=use_cache, asked_by="research"
+    )
 
     if len(succeeded) < len(queries):
         notes.append(

@@ -175,6 +175,23 @@ class CandidateCritique(BaseModel):
 
     queries_used: list[str] = Field(default_factory=list)
     articles_reviewed: int = 0
+
+    sources_withheld: list[str] = Field(default_factory=list)
+    """Publishers whose articles the source filter removed before the model saw
+    them, one entry per article withheld.
+
+    Recorded because ``drop_low_quality`` goes to the trouble of returning this
+    and its docstring argues the reason: "a filter that silently removes
+    evidence is its own kind of unreliable narrator." For three sessions the
+    caller assigned it to ``_dropped`` and threw it away, one line below that
+    warning, so the argument was made and then ignored.
+
+    It matters in the same way ``articles_reviewed`` does. "No risks found"
+    means something different when twelve articles were reviewed than when
+    eight were reviewed and four were withheld - and different again if all
+    four came from one publisher, which is the shape of a filter that is too
+    aggressive rather than a company that is sound.
+    """
     skipped_reason: str | None = Field(
         default=None,
         description=(

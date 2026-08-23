@@ -113,3 +113,105 @@ def test_a_legitimate_publisher_is_not_caught_by_a_similar_name():
         kept, dropped = drop_low_quality([make_article("u1", source=source)])
         assert dropped == [], f"{source} should not be filtered"
         assert len(kept) == 1
+
+
+# --- What the filter withheld must reach the reader --------------------------
+#
+# drop_low_quality returns the dropped sources and its docstring argues why:
+# "a filter that silently removes evidence is its own kind of unreliable
+# narrator." For three sessions risk_agent assigned them to `_dropped` and threw
+# them away, one line below that warning. These hold the chain together from the
+# filter, through state, to the screen.
+
+
+def _candidate():
+    from models.companies import (
+        CompanyCandidate, ComparableMetrics, CurrencyAmounts, Fundamentals,
+    )
+
+    return CompanyCandidate(
+        ticker="WAAREE", name="Waaree Energies", exchange="NSE", currency="INR",
+        exposure="direct", exposure_rationale="Makes the modules.",
+        themes=["solar"], evidence_article_ids=["a1"], screen_score=0.7,
+        fundamentals=Fundamentals(
+            comparable=ComparableMetrics(operating_margin=0.14),
+            amounts=CurrencyAmounts(currency="INR"),
+            source="fmp",
+        ),
+    )
+
+
+def test_the_critique_records_which_publishers_were_withheld(monkeypatch):
+    """The end of the chain that used to stop at `_dropped`."""
+    from agents import risk_agent
+    from models.risk import NewsRiskAssessment
+
+    articles = [
+        make_article("u1", "Real reporting on a probe", source="reuters.com"),
+        make_article("u2", "Commentary", source="zerohedge.com"),
+        make_article("u3", "More commentary", source="revolver.news"),
+    ]
+    monkeypatch.setattr(risk_agent, "search_many", lambda q, **k: (articles, list(q)))
+    monkeypatch.setattr(
+        risk_agent, "assess_news_risks",
+        lambda c, a: (NewsRiskAssessment(risks=[]), {}),
+    )
+
+    critique, _discarded, _cited = risk_agent.critique_candidate(_candidate())
+
+    assert sorted(critique.sources_withheld) == ["revolver.news", "zerohedge.com"]
+    assert critique.articles_reviewed == 1, "only the kept article was reviewed"
+
+
+def test_nothing_withheld_records_nothing(monkeypatch):
+    """An empty list, not a missing field - "none withheld" is information."""
+    from agents import risk_agent
+    from models.risk import NewsRiskAssessment
+
+    articles = [make_article("u1", source="reuters.com")]
+    monkeypatch.setattr(risk_agent, "search_many", lambda q, **k: (articles, list(q)))
+    monkeypatch.setattr(
+        risk_agent, "assess_news_risks",
+        lambda c, a: (NewsRiskAssessment(risks=[]), {}),
+    )
+
+    critique, _, _ = risk_agent.critique_candidate(_candidate())
+    assert critique.sources_withheld == []
+
+
+def test_a_provider_failure_withholds_nothing_rather_than_crashing(monkeypatch):
+    from agents import risk_agent
+    from clients.news import NewsAPIError
+
+    def boom(*a, **k):
+        raise NewsAPIError("provider down")
+
+    monkeypatch.setattr(risk_agent, "search_many", boom)
+    articles, queries, withheld = risk_agent._retrieve_bear_case(_candidate(), True)
+
+    assert (articles, queries, withheld) == ([], [], [])
+
+
+def test_the_cli_prints_what_was_withheld(capsys):
+    """Recording it in state and not showing it would move the silence rather
+    than end it."""
+    import cli
+    from models.risk import CandidateCritique, RiskFindings
+
+    update = {
+        "risk_findings": RiskFindings(
+            critiques=[
+                CandidateCritique(
+                    ticker="WAAREE", name="Waaree Energies", risks=[],
+                    queries_used=["q"], articles_reviewed=1,
+                    sources_withheld=["zerohedge.com", "zerohedge.com", "revolver.news"],
+                )
+            ]
+        )
+    }
+    cli._report(cli.Progress(), "risk_critic", update)
+    out = capsys.readouterr().out
+
+    assert "withheld 3 article(s)" in out
+    assert "revolver.news" in out and "zerohedge.com" in out
+    assert out.count("zerohedge.com") == 1, "publishers listed once, count separate"

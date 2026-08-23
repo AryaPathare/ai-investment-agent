@@ -362,6 +362,15 @@ def _report(progress: Progress, node: str, update: dict) -> None:
                 progress.detail(
                     f"  {critique.ticker}: not critiqued - {critique.skipped_reason}"
                 )
+            if critique.sources_withheld:
+                # A filter that removes evidence without saying so is its own
+                # kind of unreliable narrator. Recording it in state and then
+                # not printing it would move the silence rather than end it.
+                withheld = ", ".join(sorted(set(critique.sources_withheld)))
+                progress.detail(
+                    f"    withheld {len(critique.sources_withheld)} article(s) "
+                    f"from: {withheld}"
+                )
         progress.stage(*STAGE_LABELS["decide"])
 
     elif node == "decide":

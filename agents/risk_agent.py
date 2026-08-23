@@ -250,25 +250,32 @@ def _resolve_citations(
 
 def _retrieve_bear_case(
     candidate: CompanyCandidate, use_cache: bool
-) -> tuple[list[Article], list[str]]:
+) -> tuple[list[Article], list[str], list[str]]:
     """Search for bad news about one candidate.
 
     A provider failure is not allowed to end the run. The critic reporting
     "nothing retrieved" for one company is a far better outcome than the whole
     pipeline failing, and the empty article count records that it happened.
+
+    Returns:
+        (articles worth reasoning over, queries that succeeded, publishers
+        withheld). The third used to be discarded here; see
+        ``CandidateCritique.sources_withheld`` for why it is carried now.
     """
     queries = bear_queries(candidate)
 
     try:
-        articles, succeeded = search_many(queries, use_cache=use_cache)
+        articles, succeeded = search_many(
+            queries, use_cache=use_cache, asked_by="risk_critic"
+        )
     except NewsAPIError:
-        return [], []
+        return [], [], []
 
     # Commentary and advocacy are withheld before the model ever sees them.
     # A real citation to a worthless article still produces a worthless risk,
     # and the model cannot judge a source it is simply handed as evidence.
-    kept, _dropped = drop_low_quality(articles)
-    return kept, succeeded
+    kept, dropped = drop_low_quality(articles)
+    return kept, succeeded, dropped
 
 
 # Worst first, so the most severe of a duplicated pair is the one kept.
@@ -321,7 +328,7 @@ def critique_candidate(
         articles). The articles are returned so the assembled findings can carry
         them: a uuid Agent 5 cannot resolve is not a citation, it is a string.
     """
-    articles, queries_used = _retrieve_bear_case(candidate, use_cache)
+    articles, queries_used, withheld = _retrieve_bear_case(candidate, use_cache)
 
     assessment, mapping = assess_news_risks(candidate, articles)
     news_risks, discarded = _resolve_citations(assessment, mapping, candidate.ticker)
@@ -342,6 +349,7 @@ def critique_candidate(
             risks=risks,
             queries_used=queries_used,
             articles_reviewed=len(articles),
+            sources_withheld=withheld,
         ),
         discarded,
         cited,

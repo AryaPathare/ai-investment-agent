@@ -1428,3 +1428,72 @@ bear-case search. The claim "press releases are reaching the risk critic" is
 therefore *unproven* - it is in the corpus, and which agent retrieved it is not
 recoverable. Recording the query alongside the response is a few lines and
 would make every future audit of this kind possible for free.
+
+### 43. Making the filter answerable, in both directions
+
+Session 8's audit ended with two things it could not do, both for the same
+underlying reason: the system removed and retrieved evidence without recording
+enough about either to be questioned afterwards. Both are now fixed, and
+neither is a behaviour change - no different article reaches any agent. They
+change what can be ASKED.
+
+**The cache did not record its own questions.** Cached responses stored the
+provider's reply and nothing else, so 272 cached articles could be measured for
+press-release content and could not be attributed to Agent 2 versus Agent 4 -
+the only question that mattered, since a press release is ordinary input for
+theme research and close to worthless to a risk critic. The finding had to be
+written down as unproven.
+
+`_write_cache` now takes a provenance block: the query, the asking agent, the
+date window, and when it was fetched. Namespaced under `_provenance` so it can
+never collide with a provider field, copied rather than mutated onto the
+payload so caching stays free of side effects, and deliberately without the API
+token - the cache key already excludes it, and writing it into the value
+instead would put a live credential in the one file designed to be kept and
+inspected.
+
+The two call sites tag themselves in one word each, `asked_by="research"` and
+`asked_by="risk_critic"`, which is the whole point: a query string can be
+guessed at, an explicit label cannot.
+
+**Timing matters here and nearly went wrong.** The 224 existing entries keep no
+provenance and stay readable, which is accurate - they genuinely have none. But
+that means the payoff is entirely in FUTURE runs, and the next live run is the
+most valuable corpus this project will generate. Doing this after that run
+would have produced one more unattributable cache and wasted the one chance.
+
+**The filter discarded what it withheld.** `drop_low_quality` returns the
+dropped sources and its docstring argues the case - "a filter that silently
+removes evidence is its own kind of unreliable narrator" - and `risk_agent`
+assigned them to `_dropped` and threw them away, one line below the warning.
+Three sessions of that.
+
+`CandidateCritique.sources_withheld` now carries them, and the CLI prints them:
+
+```
+  WAAREE: survives (1 risk(s) from 6 article(s))
+    withheld 3 article(s) from: revolver.news, zerohedge.com
+```
+
+It matters the same way `articles_reviewed` does. "No risks found" means
+something different when twelve articles were reviewed than when eight were
+reviewed and four withheld - and different again when all four came from one
+publisher, which is the shape of a filter that is too aggressive rather than a
+company that is sound.
+
+Recording it in state and not printing it would have moved the silence rather
+than ended it, so the chain is tested end to end: filter, to critique, to
+screen. Verified by putting the discard back and watching a test fail.
+
+### 44. The pattern in both of these
+
+Neither was a bug. Both were places where the system did something defensible
+and kept no record of having done it, which is indistinguishable from not
+having done it at all - and in one case had already cost a real finding, which
+had to be published as unproven.
+
+The tell was the same both times: **a function returned information nobody
+consumed.** `drop_low_quality` returned dropped sources into `_dropped`.
+`_write_cache` received a payload whose query it never saw. Neither shows up as
+a failing test, a wrong number, or a bad output. They show up much later, as a
+question that cannot be answered.
