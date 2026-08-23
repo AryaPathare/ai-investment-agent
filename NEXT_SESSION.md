@@ -168,9 +168,20 @@ need different instruments:
   that catches "Regulator announces probe" and "Canadian Solar Announces
   Resolution of Patent Litigation", which is exactly the evidence the agent
   exists to find. Seven tests exist to stop that.
-- **Off-topic matches: still open.** `dealigg.com` returned retail battery deals
-  for a battery-storage query. A relevance failure; no source list fixes it, and
-  no instrument has been identified.
+- **Off-topic matches: ACCEPTED, not open.** `dealigg.com` returned retail
+  battery deals for a battery-storage query. Measured 2026-08-23 rather than
+  assumed: **the model already discards it.** In eight of nine recorded research
+  evals every theme produced was on topic, and only 40-70% of retrieved articles
+  are cited at all. The cost is wasted retrieval budget and prompt tokens, not
+  corrupted output.
+
+  Two instruments were checked and both failed: provider categories (the
+  no-category bucket also holds *"Francisco Partners to acquire Weave for
+  $650m"*) and query-term matching (*"6-Pack Lithium **Battery**"* legitimately
+  matches a battery query). **Settled on the same terms as the scoring limits.**
+  If it is ever reopened, do it after a live run - the provenance block now
+  records which query produced each article, which is the only thing that would
+  make a fix well-targeted.
 
 Both smaller items the audit surfaced are **DONE** (2026-08-23):
 

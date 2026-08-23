@@ -1556,3 +1556,74 @@ the company is sound.
 
 Verified by loosening the rule back to a bare "announces" and watching seven
 tests fail - the seven that name real headlines it would have destroyed.
+
+### 46. Measuring the off-topic problem instead of describing it
+
+Off-topic retrieval had been carried for two entries as "a real failure, no
+instrument identified" - `dealigg.com` returning *"Best Deal: 6-Pack Lithium
+Battery"* for a battery-storage query. Asked what could actually be done about
+it, the honest first step was to stop characterising it and measure it.
+
+**Two candidate instruments, both checked against real data, both dead:**
+
+*Provider categories.* TheNewsAPI tags articles `business`, `tech`, `general`
+and so on, and the "Best Deal" articles carry none - which looks like a clean
+signal until you read the other twenty-four articles that also carry none:
+"Francisco Partners to acquire Weave for $650m", "US lawmaker wants gov't to
+enforce regulation to ensure chipmakers...", "Samsung's fab roadmaps examined".
+Category absence is not a junk signal, it is a metadata gap.
+
+*Query-term matching.* An article that matches none of the query terms is
+off-topic - except "Best Deal: 6-Pack Lithium **Battery**" legitimately matches
+a query about battery storage. The junk is topically adjacent, which is exactly
+why it was retrieved.
+
+**Then the question that should have been asked first: does it reach the
+output at all?** The saved research evals answer it:
+
+| retrieved | cited | on-topic themes |
+|---|---|---|
+| 11 | 7 | 4 of 4 |
+| 18 | 8 | 5 of 5 |
+| 17 | 5 | 5 of 5 |
+| 12 | 5 | 4 of 4 |
+| 10 | 7 | 4 of **5** |
+
+The model cites 40-70% of what is retrieved, and in **eight of nine recorded
+cases every theme it produced was on topic**. One off-topic theme, in one run,
+ever. The junk is retrieved and then discarded by the model.
+
+So the cost is not corrupted output. It is wasted retrieval budget - 100
+requests a day at three articles each - and wasted prompt tokens on a tight
+daily ceiling. Both real, both efficiency rather than correctness.
+
+**Accepted, on the same terms as the two scoring limits: measured, documented,
+judged not worth the cost.** It was mischaracterised in entries 41 and 43 as a
+failure sitting in the output; it is not, and the correction matters because
+those entries would have justified spending on it.
+
+One thing does change the picture cheaply. The provenance block added in entry
+43 records which query produced each article, so the next live run will show
+whether specific queries are responsible rather than junk arriving diffusely.
+If a fix is ever worth building, that is what would make it well-targeted - and
+it costs nothing extra, because the run has to happen anyway.
+
+### 47. The shape of this whole session
+
+Four items were carried into today as known weaknesses. Two turned out to be
+smaller than their description, and one turned out to be a different problem
+than its description:
+
+- *"The source filter is seven domains"* - the count was not the problem. 86 of
+  130 sources appear exactly once, so no list of names can ever cover it.
+- *"Press releases are 6% of the corpus"* - accurate, and the obvious fix would
+  have destroyed the litigation and regulatory news the risk critic exists to
+  find. The shipped rule catches 5.5% and the missing half a percent is the
+  point.
+- *"Off-topic retrieval is a real failure"* - the model already discards it.
+
+In each case the description had been written once, carried forward across
+sessions, and cited as justification without being re-examined. **A weakness
+recorded in prose is a claim, and it decays like any other claim.** The measured
+version was different every time, and twice it argued for doing less work
+rather than more.
