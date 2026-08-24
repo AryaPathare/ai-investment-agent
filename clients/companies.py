@@ -222,8 +222,39 @@ def _symbol_matches_query(ticker: str, query: str) -> bool:
 # --- Resolution --------------------------------------------------------------
 
 
-def _search_raw(name: str, use_cache: bool) -> list[dict]:
-    """Raw search hits from yfinance, cached."""
+def _without_noise_words(name: str) -> str | None:
+    """``name`` with its legal-form words removed, or None if that changes nothing.
+
+    The provider's search matches the name as typed, so a legal suffix that a
+    news article always writes can stop a real company from being found at all:
+    "Waaree Energies Ltd." returned NOTHING while "Waaree Energies" returned the
+    NSE and BSE listings of India's largest solar manufacturer. It was recorded
+    as ``no_ticker_found`` — the label for a name that is not a company — and
+    dropped out of a renewable-energy brief that had room for it.
+
+    Reuses ``_NOISE_WORDS``, which already declares these words carry no
+    identifying information. That knowledge was only ever applied to SCORING the
+    candidates that came back, never to asking for them.
+    """
+    # Only TRAILING legal form is removed. "Energy Technology Ltd." loses the
+    # "Ltd."; "Technology Select Sector" keeps every word, because a noise word
+    # in the middle of a name is usually part of it.
+    words = name.split()
+    while words and not _tokens(words[-1]):
+        words.pop()
+
+    # "First Solar, Inc." leaves a dangling comma once "Inc." goes.
+    stripped = " ".join(words).strip().rstrip(",;-").strip()
+
+    # No retry when nothing was dropped, or when the name was ALL legal form and
+    # stripping leaves nothing to search for.
+    if not stripped or stripped == name.strip():
+        return None
+    return stripped
+
+
+def _search_one(name: str, use_cache: bool) -> list[dict]:
+    """Raw search hits from yfinance for exactly this string, cached."""
     path = _cache_path("search", name.lower())
     settings = get_settings()
 
@@ -240,6 +271,24 @@ def _search_raw(name: str, use_cache: bool) -> list[dict]:
 
     _write_cache(path, quotes)
     return quotes
+
+
+def _search_raw(name: str, use_cache: bool) -> list[dict]:
+    """Search hits for a company name, retrying once without its legal form.
+
+    ONLY retries on an empty result, so a name that already resolves keeps
+    whatever it resolved to and no existing behaviour moves. Every caller
+    benefits, including the drop-reason check, which would otherwise report
+    no_ticker_found for a company this function can now find.
+    """
+    hits = _search_one(name, use_cache)
+    if hits:
+        return hits
+
+    stripped = _without_noise_words(name)
+    if stripped is None:
+        return hits
+    return _search_one(stripped, use_cache)
 
 
 def resolve_company(name: str, *, use_cache: bool = True) -> ResolvedCompany | None:

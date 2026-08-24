@@ -361,3 +361,91 @@ def test_a_margin_of_exactly_one_is_kept(fake_info):
     """100% is the boundary, not beyond it."""
     fake_info({"0981.HK": {"grossMargins": 1.0, "currency": "HKD"}})
     assert fetch_fundamentals(foreign_company()).comparable.gross_margin == 1.0
+
+
+# --- The legal-suffix retry --------------------------------------------------
+#
+# Found on the first live CLI run (2026-08-24). "Waaree Energies Ltd." returned
+# NOTHING from the provider while "Waaree Energies" returned the NSE and BSE
+# listings of India's largest solar manufacturer. It was recorded as
+# no_ticker_found - the label meaning "this name is not a company" - and
+# dropped out of a renewable-energy brief that had room for it.
+
+
+@pytest.fixture
+def fake_search_by_query(monkeypatch):
+    """Control the search PER QUERY STRING, and record what was asked for.
+
+    Stubs ``_search_one`` rather than ``_search_raw`` so the retry logic under
+    test actually runs. Returns the list of queries the resolver issued.
+    """
+    def _install(responses):
+        asked = []
+
+        def fake(name, use_cache):
+            asked.append(name)
+            return responses.get(name, [])
+
+        monkeypatch.setattr(C, "_search_one", fake)
+        return asked
+    return _install
+
+
+def test_a_name_that_already_resolves_is_never_retried(fake_search_by_query):
+    """The retry must not move any existing behaviour. It fires only on empty."""
+    asked = fake_search_by_query({"PowerBank Corporation": [hit(symbol="PBK")]})
+
+    assert C._search_raw("PowerBank Corporation", True) == [hit(symbol="PBK")]
+    assert asked == ["PowerBank Corporation"]
+
+
+def test_an_empty_result_retries_without_the_legal_suffix(fake_search_by_query):
+    """The Waaree case, exactly as it failed."""
+    asked = fake_search_by_query({
+        "Waaree Energies": [hit(symbol="WAAREEENER.NS",
+                                name="Waaree Energies Limited", exchange="NSI")],
+    })
+
+    got = C._search_raw("Waaree Energies Ltd.", True)
+
+    assert asked == ["Waaree Energies Ltd.", "Waaree Energies"]
+    assert got[0]["symbol"] == "WAAREEENER.NS"
+
+
+def test_a_genuinely_unlisted_company_still_resolves_to_nothing(fake_search_by_query):
+    """Five of the six names dropped by that run were private companies. The
+    retry must not invent a match for them - it only widens the search."""
+    asked = fake_search_by_query({})
+
+    assert C._search_raw("Waaree Transpower Private Limited", True) == []
+    assert len(asked) == 2  # tried, retried, still nothing
+
+
+def test_a_noise_word_inside_a_name_is_kept(fake_search_by_query):
+    """Only TRAILING legal form is removed. Stripping every noise word anywhere
+    would search for "Select Sector" here, which is a different thing."""
+    asked = fake_search_by_query({})
+
+    C._search_raw("Technology Select Sector", True)
+
+    assert asked == ["Technology Select Sector"]  # no retry at all
+
+
+def test_a_name_that_is_only_legal_form_is_never_searched_as_empty(
+    fake_search_by_query,
+):
+    """Stripping "Ltd" leaves nothing, and searching for "" would match anything."""
+    asked = fake_search_by_query({})
+
+    C._search_raw("Ltd", True)
+
+    assert asked == ["Ltd"]
+
+
+def test_the_dangling_comma_goes_with_the_suffix(fake_search_by_query):
+    """"First Solar, Inc." must retry as "First Solar", not "First Solar,"."""
+    asked = fake_search_by_query({})
+
+    C._search_raw("First Solar, Inc.", True)
+
+    assert asked == ["First Solar, Inc.", "First Solar"]
