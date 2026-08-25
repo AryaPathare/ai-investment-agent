@@ -78,7 +78,13 @@ def test_the_wire_marker_catches_what_a_title_rule_cannot():
     "Apple announces changes for apps in the European Union",
     "Canadian Solar Announces Resolution of Maxeon U.S. Patent Litigation",
     "SK Hynix Announces $38.5 Billion DRAM and NAND Manufacturing Expansion",
-    "PowerBank Announces 4 MW Solar Project in North Bruce Peninsula, Ontario",
+    # "PowerBank Announces 4 MW Solar Project in North Bruce Peninsula, Ontario"
+    # was here until 2026-08-24, when the first live run showed it reaching the
+    # risk critic and producing no risk at all. It is an issuer announcing its
+    # own good news, and it now belongs to the corporate-development cases at
+    # the bottom of this file. It sat here because a BARE "announces" rule
+    # caught it alongside the rest of this list - the objection was to that
+    # instrument, not a finding that this headline is reporting.
     # Invented, but these are the shape of what the critic exists to find.
     "Regulator announces probe into Acme Corp accounting",
     "FTC announces investigation into Acme Corp",
@@ -276,3 +282,56 @@ def test_the_veto_lets_some_positive_issuer_releases_through(capsys):
         "if these start being caught the veto has been narrowed - check that "
         "the journalism cases above still pass before accepting it"
     )
+
+
+# --- Corporate development ---------------------------------------------------
+#
+# Added 2026-08-24, from the first live CLI run. The risk critic received three
+# PowerBank announcements - a permit, a project and an acquisition - and
+# reported no risk from any of them. The patterns above covered only the
+# financial calendar, so an issuer announcing operational good news passed
+# straight through to the agent whose job is the bear case.
+
+
+@pytest.mark.parametrize("title", [
+    "PowerBank Acquires New York Solar Portfolio with US$32.5 Million Construction Facility",
+    "PowerBank Receives Final Environmental Permit for C$14 Million Nova Scotia Community Solar Project",
+    "PowerBank Announces 4 MW Solar Project in North Bruce Peninsula, Ontario",
+    "Recurrent Energy Secures $695 Million in Project Financing for 330 MW California Storage Project",
+    "European Energy secures EUR 234m financing for 225 MW agri-pv project in Italy",
+])
+def test_corporate_development_announcements_are_filtered(title):
+    """All five are real headlines from the cached corpus, and all five reached
+    an agent before this rule existed."""
+    assert is_press_release(_article(title)) is True
+
+
+def test_the_litigation_headline_off_the_same_wire_is_kept():
+    """THE case that rules out filtering by source.
+
+    This came off globalrenewablenews.com, the same aggregator as all five
+    announcements above. A domain rule would have removed it, and it is exactly
+    the evidence the risk critic exists to find: a patent suit big enough to
+    need resolving. The document types keep it because none of them names
+    litigation as the object of the announcement.
+    """
+    title = "Canadian Solar Announces Resolution of Maxeon U.S. Patent Litigation"
+    assert is_press_release(_article(title)) is False
+
+
+@pytest.mark.parametrize("title", [
+    "Regulator receives approval to widen its probe into grid operators",
+    "Solar developer secures financing despite falling module prices",
+    "First Solar Receives Permit Approval as Analysts Warn on Margins",
+])
+def test_journalism_still_beats_the_new_patterns(title):
+    """The veto runs first and must keep winning. Each of these matches one of
+    the corporate-development patterns AND reads like reporting."""
+    assert is_press_release(_article(title)) is False
+
+
+def test_an_acquisition_of_a_company_is_not_assumed_to_be_a_release():
+    """The pattern requires an ASSET as the object - a portfolio, a project, a
+    stake. M&A reporting names the company instead, and is ordinary news."""
+    title = "Francisco Partners to acquire Weave for $650m"
+    assert is_press_release(_article(title)) is False

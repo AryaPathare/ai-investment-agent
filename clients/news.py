@@ -248,6 +248,17 @@ _PR_TITLES = [
         r"\bdeclares?\b.{0,25}\bdividend\b",
         r"\bannounces\b.{0,35}\b(pricing|closing)\b.{0,25}\boffering\b",
         r"\bto (present|participate)\b.{0,45}\bconference\b",
+        # Corporate development, added 2026-08-24. The first live run sent three
+        # PowerBank announcements to the RISK CRITIC - a permit, a project and
+        # an acquisition - and it reported no risk from any of them, because an
+        # issuer announcing its own good news is not the bad news that agent
+        # exists to find. Everything above covers only the financial calendar:
+        # results, dividends, offerings, conferences.
+        r"\bacquires\b.{0,40}\b(portfolio|project|facility|plant|stake|assets?)\b",
+        r"\b(receives|obtains|is granted)\b.{0,30}"
+        r"\b(permit|approval|licen[cs]e|certification)\b",
+        r"\bannounces\b.{0,35}\b(\d+\s*(mw|gw|kw)\b|project|portfolio|facility)\b",
+        r"\bsecures\b.{0,35}\b(financing|funding|investment|order)\b",
     )
 ]
 """Document types only an issuer publishes about itself.
@@ -258,6 +269,13 @@ strip the wire dateline and keep the headline.
 
 NOT sufficient on their own - see _JOURNALISM. A reporter writing about the same
 document uses the same nouns, and the difference is the evaluation they add.
+
+Each corporate-development pattern names the OBJECT of the announcement - a
+permit, a megawatt figure, a portfolio - and that object is what keeps
+"Canadian Solar Announces Resolution of Maxeon U.S. Patent Litigation" out. That
+headline came off the SAME aggregator as the five announcements these patterns
+were written for, which is why the domain cannot be the signal: an industry wire
+carries the issuer's good news and the litigation the critic needs, side by side.
 """
 
 
