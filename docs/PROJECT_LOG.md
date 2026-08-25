@@ -2221,5 +2221,21 @@ refused, so the honest options are to read the console, or to accept that a long
 run may stop partway and be resumable. **Do not probe for headroom with a call
 too small to be refused.**
 
-Cost: the last of the day's budget, and a verification that has to be run again
-tomorrow.
+Cost: a verification that has to be run again. **Not the budget** - that was
+already gone, spent by the CLI run and three evals, and the refused requests
+consumed nothing. Corrected the same night after the console appeared to
+disagree: it buckets by CALENDAR DAY and the limit is a rolling 24 hours, so a
+session running past midnight is split across two rows that neither of them is
+the number being enforced.
+
+The three 429s show it directly, seconds apart:
+
+    Used 199921
+    Used 199916
+    Used 199912
+
+**Used goes DOWN while requests are refused.** The window drains continuously as
+old calls pass the 24-hour mark, and a rejected call adds nothing to it. Which
+also means the refusal is not merely the honest instrument, it is a FREE one:
+starting the real run costs nothing when there is no room for it, and the error
+states Limit, Used and Requested exactly. There was never a reason to probe.

@@ -50,8 +50,17 @@ reading `Limit 200000, Used 199921`.
 
 **Do not probe for headroom with a tiny call.** A one-token request fits in the
 79 tokens that were left, so it returns 200 and tells you nothing about whether
-25,000 will fit. It cost a verification run - entry 66. Read the console, or
-accept that a long run may stop partway.
+25,000 will fit. **Just start the real run**: a refused request consumes nothing
+and its 429 states Limit, Used and Requested exactly. That is the free and
+honest instrument - entry 66.
+
+**The console buckets by CALENDAR DAY and the limit is a rolling 24 hours.** A
+session running past midnight is split across two rows, neither of which is the
+number being enforced. Session 9 read "22.8K" off the Aug 24 row while 197,000
+was actually in use.
+
+Measured drain rate on 2026-08-25: **~6,400 tokens/hour**, and it is not linear -
+the block a big run consumed comes back 24 hours after that run, not gradually.
 
 ### 2.1 Run the CLI live, end to end - **DONE 2026-08-24**
 
