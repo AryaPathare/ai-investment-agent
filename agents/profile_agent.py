@@ -100,6 +100,25 @@ Leave every revised_* field null when nothing changed. Never use them to tidy
 up wording, reorder items, or make edits the user did not ask for. They exist
 solely to record what a clarification resolved.
 
+WHICH SIDE OF A CONFLICT MAY BE RESOLVED AWAY
+
+A restriction and an interest are not equal. An interest is something the user
+would like; a restriction is something they refused. When a clarification
+resolves a conflict between them WITHOUT saying which to keep, narrow the
+sectors and leave the restriction standing. Never the reverse.
+
+Only remove a restriction when the user's own reply is about that restriction
+and withdraws it — "actually I don't mind technology". A reply that hands the
+decision back is not a withdrawal.
+
+HANDING THE DECISION BACK IS NOT A RESOLUTION
+
+"Either way is fine", "you choose", "whatever you think", "I don't mind, you
+decide" — none of these resolve a conflict between two things the user
+themselves stated. Only they can say which of their own answers to keep, and
+choosing for them silently overrides one of them. Keep
+status = "needs_clarification" and ask which one they want to keep, naming both.
+
 If their replies do not actually resolve the conflict — for example they are
 off-topic, or say they are unsure — keep status = "needs_clarification" and
 write a clarification_reason that asks more specifically.
@@ -161,5 +180,7 @@ def create_investor_profile(
     )
 
     # The model returned a judgment. Python builds the actual profile, copying
-    # every field the model was not permitted to touch.
-    return build_profile(user_input, assessment)
+    # every field the model was not permitted to touch. The clarifications go
+    # too: dropping a restriction is checked against what the USER said, not
+    # against the model's account of it.
+    return build_profile(user_input, assessment, clarifications or ())

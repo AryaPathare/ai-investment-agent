@@ -113,8 +113,27 @@ def test_clarifications_are_numbered_in_order(fake_llm, conflicted_user):
 
 def test_model_revisions_are_applied_to_the_profile(fake_llm, conflicted_user):
     fake_llm(ProfileAssessment(status="valid", revised_restrictions=[]))
-    profile = profile_agent.create_investor_profile(conflicted_user, ["drop it"])
+    # The reply has to name what is being withdrawn. "drop it" stood here until
+    # 2026-08-24 and no longer authorises anything, which is the point of the
+    # guard: a reply that identifies no subject cannot delete a restriction.
+    profile = profile_agent.create_investor_profile(
+        conflicted_user, ["I don't mind technology after all"]
+    )
     assert profile.restrictions == []
+
+
+def test_the_agent_passes_the_users_replies_to_the_guard(fake_llm, conflicted_user):
+    """The seam that made the bug reachable.
+
+    build_profile can only refuse an unauthorised removal if the agent hands it
+    the clarifications. It did not until 2026-08-24, so there was nothing to
+    check against.
+    """
+    fake_llm(ProfileAssessment(status="valid", revised_restrictions=[]))
+    profile = profile_agent.create_investor_profile(
+        conflicted_user, ["Either way is fine, you choose."]
+    )
+    assert profile.restrictions == conflicted_user.restrictions
 
 
 def test_clarification_verdict_is_passed_through(fake_llm, conflicted_user):

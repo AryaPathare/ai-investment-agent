@@ -28,6 +28,8 @@ was never the problem — using it as the model's output schema was. Keeping it
 avoids restating eight field definitions.
 """
 
+import re
+from collections.abc import Sequence
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
@@ -142,15 +144,88 @@ class InvestorProfile(UserInput):
         return self.status == "needs_clarification"
 
 
+# Words that appear in almost every restriction and so cannot show that a
+# clarification is ABOUT one. "Do not invest in technology companies" is only
+# identified by "technology"; everything else is grammar.
+_RESTRICTION_BOILERPLATE = {
+    "do", "does", "not", "no", "none", "never", "avoid", "exclude", "excluding",
+    "invest", "investing", "investment", "investments", "in", "into", "any",
+    "all", "the", "a", "an", "and", "or", "of", "with", "that", "please",
+    "company", "companies", "stock", "stocks", "share", "shares", "sector",
+    "sectors", "business", "businesses", "want", "dont",
+}
+
+
+def _subject_words(text: str) -> set[str]:
+    """The words in ``text`` that could identify WHAT a restriction is about."""
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    return {w for w in words if w not in _RESTRICTION_BOILERPLATE}
+
+
+def _user_mentioned(restriction: str, clarifications: Sequence[str]) -> bool:
+    """Whether the user's own replies refer to this restriction at all.
+
+    Deliberately generous - a single shared subject word counts - because this
+    gates a SAFETY check, and the failure to avoid is refusing a withdrawal the
+    user really did make. What it will not accept is a reply that never touches
+    the subject, which is the case that produced the bug.
+    """
+    subject = _subject_words(restriction)
+    if not subject:
+        return True  # Nothing identifiable in it; not this guard's business.
+    return any(subject & _subject_words(reply) for reply in clarifications)
+
+
+def _restrictions_after_revision(
+    original: list[str],
+    revised: list[str],
+    clarifications: Sequence[str],
+) -> list[str]:
+    """Apply a revision to the restrictions, refusing UNAUTHORISED removals.
+
+    Found on 2026-08-24 by the hard eval case
+    ``hard_clarification_defers_the_choice_back``. Asked to pick between an
+    interest and a restriction that contradict each other, and told "Either way
+    is fine, you choose", the model returned ``revised_restrictions=[]`` with
+    status "valid". It deleted "Do not invest in technology companies" and every
+    downstream agent then researched technology for somebody who had forbidden
+    it. No reason was recorded, because nothing required one.
+
+    Of the two ways to resolve that conflict - drop the interest or drop the
+    prohibition - only one can hurt the user, and the model chose it.
+
+    So removals are conditional and additions are not. A restriction survives
+    unless the user's own replies mention what it is about. **The check is on
+    the USER's words, never the model's**, which is what stops a fluent
+    explanation from authorising its own deletion.
+
+    A withdrawal the user really did make still works: "actually I don't mind
+    technology" shares "technology" with the restriction and is honoured.
+    """
+    kept = list(revised)
+    for restriction in original:
+        if restriction in kept:
+            continue
+        if _user_mentioned(restriction, clarifications):
+            continue  # The user raised it; the model may act on it.
+        kept.append(restriction)
+    return kept
+
+
 def build_profile(
     user_input: UserInput,
     assessment: ProfileAssessment,
+    clarifications: Sequence[str] = (),
 ) -> InvestorProfile:
     """Combine trusted user input with the LLM's assessment.
 
     Every field starts as the user's own answer. Only the three whitelisted
     fields can be overridden, and only when the assessment explicitly supplies
     a revision. The model has no path to alter anything else.
+
+    A restriction is the one revision that can HARM the user, so it carries an
+    extra condition: it may only be dropped if the user's own replies mention
+    what it is about. See ``_restrictions_after_revision``.
     """
     data = user_input.model_dump()
 
@@ -158,7 +233,9 @@ def build_profile(
         data["sectors_of_interest"] = assessment.revised_sectors_of_interest
 
     if assessment.revised_restrictions is not None:
-        data["restrictions"] = assessment.revised_restrictions
+        data["restrictions"] = _restrictions_after_revision(
+            user_input.restrictions, assessment.revised_restrictions, clarifications
+        )
 
     if assessment.revised_risk_tolerance is not None:
         data["risk_tolerance"] = assessment.revised_risk_tolerance
