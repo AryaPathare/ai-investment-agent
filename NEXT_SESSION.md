@@ -113,7 +113,7 @@ paid.
 
 It surfaced 2.3b.
 
-### 2.3b The restriction check tests words, not companies - **NEW**
+### 2.3b The restriction check tests words, not companies - **FIXED 2026-08-24**
 
 That run recommended **TotalEnergies (TTE)** and **RWE** for a profile whose
 restrictions are "No fossil fuel companies" and "No coal, oil or gas". The
