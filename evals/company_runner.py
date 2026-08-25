@@ -124,11 +124,39 @@ def score_run(
     # A restriction the investor stated must survive all the way to the
     # candidate list. Agent 2 is already checked for this on its themes; a theme
     # can comply while the company chosen from it does not.
+    # Two haystacks, deliberately, because they need different vocabularies.
+    #
+    # On 2026-08-24 this reported NO violations on a run whose top candidate was
+    # TotalEnergies, under a profile forbidding "coal, oil or gas". Every field
+    # it read was language - a name, a rationale the model wrote, theme labels -
+    # and all three described an oil major by its solar division, which is not
+    # even inaccurate. The provider calls its industry "Oil & Gas Integrated".
+    #
+    # The forbidden terms are PHRASES ("crude oil", "natural gas") because prose
+    # needs them to be: bare "oil" matches "spoiled". A classification field is
+    # not prose, so it is matched on the bare words instead, and "Oil & Gas
+    # Integrated" only ever matches the phrases by accident.
+    #
+    # Kept as its own expression rather than calling agents.selection, because a
+    # check that runs the implementation's own logic can only ever agree with
+    # it - the mistake that made Agent 5's eval miss a restriction breach.
+    forbidden_words = {
+        word
+        for term in case.forbidden_terms
+        for word in term.split()
+        if len(word) > 2
+    }
+
     restriction_violations = [
         (c.ticker, term)
         for c in candidates
         for term in case.forbidden_terms
         if term in f"{c.name} {c.exposure_rationale} {' '.join(c.themes)}".lower()
+    ] + [
+        (c.ticker, word)
+        for c in candidates
+        for word in sorted(forbidden_words)
+        if word in f"{c.sector} {c.industry}".lower()
     ]
 
     # Soft: growth figures the ranking would clip into invisibility.

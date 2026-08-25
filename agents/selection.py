@@ -93,9 +93,24 @@ def restriction_terms(restrictions: list[str]) -> list[str]:
 def _violates_restrictions(
     candidate: CompanyCandidate, terms: list[str]
 ) -> str | None:
-    """The first restriction term this candidate matches, if any."""
+    """The first restriction term this candidate matches, if any.
+
+    Sector and industry are in the haystack because everything else in it is
+    LANGUAGE - a name, a rationale the model wrote, theme labels. All three can
+    describe an oil major entirely in terms of its solar division, and on
+    2026-08-24 one did: TotalEnergies reached the candidate list for a profile
+    forbidding "coal, oil or gas", and no text-based check objected because none
+    of those words appeared anywhere in the text. Its industry is "Oil & Gas
+    Integrated".
+    """
     haystack = " ".join(
-        [candidate.name, candidate.exposure_rationale, *candidate.themes]
+        [
+            candidate.name,
+            candidate.sector,
+            candidate.industry,
+            candidate.exposure_rationale,
+            *candidate.themes,
+        ]
     ).lower()
     return next((term for term in terms if term in haystack), None)
 

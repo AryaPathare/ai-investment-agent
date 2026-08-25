@@ -575,6 +575,8 @@ def analyse_companies(
                 name=company.name,
                 exchange=company.exchange,
                 currency=company.currency or fundamentals.amounts.currency,
+                sector=company.sector or "",
+                industry=company.industry or "",
                 fundamentals=fundamentals,
                 exposure=verdict["exposure"],
                 exposure_rationale=verdict["rationale"],

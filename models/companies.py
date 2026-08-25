@@ -196,6 +196,19 @@ class CompanyCandidate(BaseModel):
     exchange: str
     currency: str
 
+    # What the PROVIDER says this company does, carried through from
+    # ResolvedCompany. Both were already known at construction and thrown away.
+    #
+    # They exist because a restriction has to be checked against what a company
+    # IS, not against the words used to describe it. On 2026-08-24 the eval
+    # recommended TotalEnergies for a profile forbidding "coal, oil or gas":
+    # the name contains none of those words and the rationale was about solar
+    # and wind, so every text-based check passed it. Its industry is "Oil & Gas
+    # Integrated", which is a fact Python controls rather than a sentence the
+    # model wrote.
+    sector: str = ""
+    industry: str = ""
+
     fundamentals: Fundamentals
 
     exposure: ExposureLevel

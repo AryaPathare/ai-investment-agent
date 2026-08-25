@@ -29,9 +29,10 @@ def profile(restrictions=()):
 
 
 def candidate(ticker="AAA", name=None, score=0.7, rationale="builds the thing",
-              themes=("Some Theme",)):
+              themes=("Some Theme",), sector="", industry=""):
     return CompanyCandidate(
         ticker=ticker, name=name or ticker, exchange="NMS", currency="USD",
+        sector=sector, industry=industry,
         fundamentals=Fundamentals(
             comparable=ComparableMetrics(revenue_growth=0.2, operating_margin=0.1),
             amounts=CurrencyAmounts(currency="USD"), source="fmp",
@@ -216,3 +217,69 @@ def test_every_candidate_ends_as_a_selection_or_a_recorded_exclusion():
     got = run(cands, crits)
     accounted = {c.ticker for c, _ in got.selected} | {e.ticker for e in got.excluded}
     assert accounted == {f"T{i}" for i in range(6)}
+
+
+# --- A restriction is about what a company IS --------------------------------
+#
+# From the Agent 3 eval on 2026-08-24. TotalEnergies was recommended for a
+# profile whose restrictions are "No fossil fuel companies" and "No coal, oil or
+# gas". Its name contains none of those words, its exposure rationale was about
+# solar and wind, and its themes were renewable ones - so every check that read
+# only the TEXT passed it. The provider calls its industry "Oil & Gas
+# Integrated". The classifications below are the provider's real values.
+
+FOSSIL_FREE = ["No fossil fuel companies", "No coal, oil or gas"]
+
+
+def test_an_oil_major_is_excluded_by_its_industry_not_its_description():
+    """THE case. Nothing in the language gives it away; the classification does."""
+    tte = candidate(
+        "TTE", name="TotalEnergies SE",
+        sector="Energy", industry="Oil & Gas Integrated",
+        rationale="Expanding its solar and battery storage portfolio across Europe.",
+        themes=("Solar asset acquisitions accelerate",),
+    )
+    got = run([tte], [critique("TTE")], restrictions=FOSSIL_FREE)
+
+    assert got.selected == []
+    assert got.excluded[0].ticker == "TTE"
+    assert got.excluded[0].reason == "restriction_violation"
+
+
+def test_a_genuine_renewable_utility_is_not_caught_by_the_same_terms():
+    """The fix must not exclude the companies the profile is FOR."""
+    pbk = candidate(
+        "PBK", name="PowerBank Corporation",
+        sector="Utilities", industry="Utilities - Renewable",
+        rationale="Acquires and operates community solar projects.",
+    )
+    got = run([pbk], [critique("PBK")], restrictions=FOSSIL_FREE)
+    assert [c.ticker for c, _ in got.selected] == ["PBK"]
+
+
+def test_a_candidate_with_no_classification_behaves_as_before():
+    """sector and industry default to empty, so nothing that already worked moves."""
+    got = run(
+        [candidate("AAA", rationale="builds wind turbines")],
+        [critique("AAA")],
+        restrictions=["No coal, oil or gas"],
+    )
+    assert [c.ticker for c, _ in got.selected] == ["AAA"]
+
+
+def test_a_coal_burning_utility_classified_as_diversified_still_gets_through():
+    """A RECORDED GAP, not an aspiration.
+
+    RWE burns lignite, and the provider classifies it "Utilities - Diversified",
+    which is accurate and says nothing about fuel mix. No field Python controls
+    carries that fact, so this check cannot see it and no honest widening of it
+    would. Asserted so a future fix that DOES catch it shows up as a deliberate
+    change rather than a silent one.
+    """
+    rwe = candidate(
+        "RWE.DE", name="RWE AG",
+        sector="Utilities", industry="Utilities - Diversified",
+        rationale="Large offshore wind developer.",
+    )
+    got = run([rwe], [critique("RWE.DE")], restrictions=FOSSIL_FREE)
+    assert [c.ticker for c, _ in got.selected] == ["RWE.DE"]
