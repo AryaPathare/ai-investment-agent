@@ -2106,3 +2106,26 @@ Agent 5 is the exact move this project's first lesson warns against.
 - the exposure prompt (a query problem), the zero candidates (a query problem),
 and now the citation rate (a supply problem). The common shape: each was
 described by looking at the output of the last stage that touched it.
+
+### 63. The rendered log went stale in four minutes
+
+`docs/project_log.html` was committed so the document is available without
+running anything. Three entries were appended to the markdown immediately
+afterwards, and the committed HTML still described the previous state - caught
+by chance while writing the summary, not by anything in the repo.
+
+A copy nobody regenerates is a copy that lies, and this one lies in the document
+handed to a person. It is the same failure as prose drifting from behaviour, so
+it gets the same instrument: a test that rebuilds from the markdown and fails if
+the committed file is not what comes out. Broken on purpose first - append an
+entry, do not rebuild, watch it go red.
+
+The assertion reduces to a bool before comparing. Asserting the strings directly
+made pytest dump both sides, a hundred kilobytes of HTML, and the only useful
+line - the command to run - scrolled off the top. **A guard whose failure
+message cannot be read is most of the way to no guard at all.**
+
+Four tests, not one: the drift check, an entry count so a converter that
+silently drops a section is caught on the day it happens rather than the next
+time somebody looks, a check that no raw markdown reaches the reader, and
+idempotence, without which the drift check would fail at random.
