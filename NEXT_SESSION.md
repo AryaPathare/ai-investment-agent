@@ -1,16 +1,17 @@
 # Start here
 
-Last worked: **2026-08-23**. **The pipeline is complete, demonstrable, durable,
+Last worked: **2026-08-24**. **The pipeline is complete, demonstrable, durable,
 and published.** All five agents are built and verified against their own evals,
 `python -m cli` runs the whole thing end to end, a run that stops can be resumed,
 and CI proves the suite passes on machines that have never seen the project.
 
-**Everything that does not need Groq quota is finished.** All seven remaining
-tasks need it — see section 2.
+**The live CLI run and the Agent 1 hard set are now done** (2026-08-24). Five
+tasks remain plus one new defect - see section 2. The new one, 2.2b, is where
+to start: Agent 1 deletes a user's restriction.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry 51
+- `docs/PROJECT_LOG.md` is current through entry 56
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -25,7 +26,9 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **707 passed** in a few seconds.
+Expect **721 passed, 1 skipped** in a few seconds. (Not 707 - that was the
+COLLECTED count. Do not add `-q`: pytest.ini already sets it, and `-qq`
+suppresses the summary line, which is how the wrong number survived.)
 
 Then see it work, without spending quota on a real run:
 
@@ -35,107 +38,98 @@ python -m cli --help
 
 ---
 
-## 2. THE TASK — seven items, all needing quota
+## 2. THE TASK
 
-**Check the Groq console before planning around these.** The ceiling is a rolling
-24-hour window, not a midnight reset, and it was at 196,521 / 200,000 on
-2026-08-23. A new calendar day does not reset it.
+**Check the Groq console before planning around these.** On 2026-08-24 the
+console showed 113 tokens used for the day and a full CLI run went through
+without a 429, so the rolling window HAD aged out overnight - the ceiling is
+less binding than session 8 assumed. Read the console, not this paragraph.
 
-Do them in this order. The first two are cheap and tell you whether anything
-else is even needed.
+### 2.1 Run the CLI live, end to end - **DONE 2026-08-24**
 
-### 2.1 Run the CLI live, end to end — ~12 calls
+Ran in 255s, exit 0, run id **`cli-163fffe8`**. `python -m cli --resume
+cli-163fffe8` replays the whole thing at zero quota. **That is the demo, and it
+now exists.** Found three defects; see entries 52-54 of the log. Two are fixed.
 
-```powershell
-python -m cli --profile examples/beginner_renewables.json
-```
+### 2.2 Agent 1 hard-set baseline - **DONE 2026-08-24**
 
-The last unverified thing about the CLI, and the highest-value single run:
+**11/12, 91.7%.** Against the rubric written with the cases (8-10 good, 12 means
+too easy) the labels are one case away from not being hard enough. Worth
+hardening when Agent 1 is next touched.
 
-- It exercises all five agents at once, so it doubles as a pipeline smoke test.
-- It produces the first **attributable cache**. The `_provenance` block records
-  which agent asked for each article, so afterwards you can finally answer
-  whether press releases reach the risk critic — a claim currently recorded as
-  unproven.
-- Afterwards `python -m cli --resume <id>` replays the real result forever, at
-  zero quota. That is the demo.
+The single failure is not a label problem. It is 2.2b.
 
-**Expect it to find something.** Three times on 2026-08-23, running existing
-code under new conditions surfaced a real defect: reading state back exposed two
-unregistered types, a review found the press-release filter eating litigation
-news, and a clean clone found five tests silently reading `.env`. This run is
-the newest condition of all.
+### 2.2b Agent 1 DELETES a user's restriction - **NEW, do this first**
 
-### 2.2 Agent 1 hard-set baseline — 12 calls
+`hard_clarification_defers_the_choice_back`. Sectors sports + technology,
+restriction "Do not invest in technology companies", clarification "Either way
+is fine, you choose." The agent returned:
 
-```powershell
-python -m evals.runner --tag hard
-```
+    sectors_of_interest: ["sports", "technology"]
+    restrictions:        []
+    problems: []   reason: null
 
-**Read this as a test of the LABELS as much as of the agent.** The 12 hard cases
-have never been scored by a real model. They are validated only against a naive
-string-matching stand-in, which proves they separate string matching from
-judgment — not that the expected answers are right.
+It resolved the conflict by **deleting the prohibition**, recorded no problem
+and gave no reason. Every downstream agent then researches technology for
+somebody who said not to. Of the two ways to resolve that conflict it picked
+the unsafe one.
 
-- ~8-10 of 12 is a good result and a usable baseline.
-- **12/12 means they are still too easy**, not that the agent is perfect.
-- Below ~5, suspect the labels before the prompt. Every case carries a `why`
-  written specifically so that argument can be checked.
+The prompt in `agents/profile_agent.py` exposes `revised_restrictions` and
+forbids using it to tidy wording, but says nothing about DIRECTION - which side
+of a conflict may be resolved away. A blanket "never remove a restriction" is
+wrong, because a clarification legitimately can ("actually I don't mind tech").
+The rule needs to be about which side wins when the user does not say.
 
-### 2.3 Agent 3's eval — ~25-30k tokens
+**Cheapest thing in the project to iterate on**: the hard set is 12 calls.
+
+### 2.3 Agent 3's eval - ~25-30k tokens
 
 ```powershell
 python -m evals.company_runner --limit 1
 ```
 
-Owed since the operating-margin fix. The effect was verified offline across
-eleven companies — only PowerBank changed, nothing fell below the completeness
-floor, no screening decision moved — but the eval itself has never run. Confirms
-the drop accounting still balances.
+Unchanged and still owed since the operating-margin fix. Verified offline
+across eleven companies; the eval itself has never run.
 
-### 2.4 The zero-candidate eval profile — 2-3 runs
+### 2.4 The zero-candidate eval profile - 2-3 runs
 
-One of two research profiles keeps returning zero candidates. Article variance
-means each run tests a different slice, so a run of clean results is weaker
-evidence than the count suggests. **Verifying against the exact failing inputs
-has repeatedly proved stronger than another eval run.**
+Unchanged. One of two research profiles keeps returning nothing, and verifying
+against the exact failing inputs has repeatedly beaten another eval run.
 
-### 2.5 Agent 3's exposure grade — several runs, OPEN-ENDED
+### 2.5 Agent 3's exposure grade - OPEN-ENDED, and **re-diagnosed**
 
-**The only remaining defect a reader meets in the output.** The
-`renewables_excluding_fossil_fuels` profile is recommended **Google and Amazon**,
-because both buy battery storage for their data centres. True, and a very loose
-link: a beginner asking about renewable energy gets two mega-cap advertising and
-retail businesses.
+Still the defect a reader meets: the renewables profile recommends Google and
+Amazon because they buy battery storage for data centres.
 
-The cause is Agent 3's exposure prompt. The cost is re-verifying Agent 3, and
-the prompt change is free while knowing whether it worked is not — this has no
-fixed size.
+**The live run changed what the fix has to do.** Agent 3 chose from 3
+investable companies out of 10 examined. Six were dropped as `no_ticker_found`
+and five of those are genuinely private - renewable-energy news is dominated by
+private and foreign firms. So Agent 3 is not preferring megacaps over
+pure-plays; the pure-plays mostly are not listed.
 
-Possible side effect worth watching: a stricter exposure grade should start
-disqualifying candidates, which would finally exercise **Agent 5's exclusion
-path** — code that has unit tests only because no live run has ever produced a
-disqualification.
+**A stricter exposure grade on its own would empty the brief rather than
+improve it.** Today it would leave PBK alone, or PBK plus Waaree Energies now
+that the suffix bug is fixed. Whatever is done here has to be paired with
+something that widens the candidate pool.
 
-### 2.6 Agent 5 barely cites articles — several runs, OPEN-ENDED
+Side effect still worth watching: a stricter grade should start disqualifying
+candidates, which would finally exercise Agent 5's exclusion path.
 
-1 of 8 exit conditions cites one; the rest are metric thresholds, which are the
-cheap answer and read identically for any company in any sector. The prompt
-already demands at least one article-cited condition, which moved it from 0/9 to
-1/8 — so one round of prompt work has already been spent here and was not
-enough.
+### 2.6 Agent 5 barely cites articles - OPEN-ENDED
 
-The CLI makes this visible in a way the numbers did not: every condition prints
-its grounds, so a brief where four of five say `grounds: metric X` looks as thin
-on screen as it is.
+**Measured live and unchanged at 1 of 8** exit conditions. The other seven are
+bare metric thresholds.
 
-### 2.7 The PDF — no quota, deferred by choice
+New detail the run added: the ONE condition that does cite an article cites
+`oliverwillis.com`, a personal blog, for the Twitch class action. It is
+on-topic - Twitch is Amazon's - but the single cited article in the whole brief
+comes from the source long tail that cannot be enumerated. Improving the count
+and improving what gets cited are the same problem.
 
-`docs/PROJECT_LOG.md` is the source material: 51 numbered entries through
-Session 8, written as a narrative of what broke and why. Deliberately held back
-until the rest is done.
+### 2.7 The PDF - no quota, deferred by choice
 
----
+`docs/PROJECT_LOG.md` is the source material: **56 numbered entries through
+Session 9.**
 
 ## 3. Then the known weaknesses
 
@@ -153,6 +147,11 @@ This is the one weakness currently putting a wrong-LOOKING company in front of a
 person — and now it is in front of them in a readable brief rather than a Python
 repr, which raises the cost of leaving it. The cause is Agent 3's exposure
 prompt; the cost is re-verifying Agent 3.
+
+**Re-diagnosed 2026-08-24 - read 2.5 before acting on this.** The live run
+showed Agent 3 choosing from 3 investable companies out of 10 examined, because
+renewable-energy news is dominated by private and foreign firms. Fixing the
+prompt alone empties the brief instead of improving it.
 
 ### Agent 5 barely reads the articles
 
@@ -191,8 +190,15 @@ need different instruments:
   exist to stop that. Filtered by article shape, not publisher, and only for the
   risk critic - the same article is ordinary
   evidence for Agent 2. Two signals: the wire dateline ("GLOBE NEWSWIRE",
-  "/PRNewswire/") and issuer document types in the title. 15 of 272 cached
-  articles match, all genuine. **Do not loosen it to a bare "announces" rule** -
+  "/PRNewswire/") and issuer document types in the title. 18 of 283 cached
+  articles match, all genuine. **Extended 2026-08-24** with four
+  corporate-development document types - acquires an asset, receives a permit,
+  announces a megawatt figure, secures project financing - after the live run
+  sent three PowerBank announcements to the risk critic and it found no risk in
+  any of them. **Filtering by SOURCE was tried and rejected on evidence**: six
+  of the seven cached articles from globalrenewablenews.com are issuer
+  announcements and the seventh is the Canadian Solar litigation headline, so
+  the domain carries both and cannot be the signal. **Do not loosen it to a bare "announces" rule** -
   that catches "Regulator announces probe" and "Canadian Solar Announces
   Resolution of Patent Litigation", which is exactly the evidence the agent
   exists to find. Seven tests exist to stop that.
@@ -256,15 +262,11 @@ Worth knowing before trusting a clean eval run.
   `python -m evals.company_runner --limit 1` to confirm the drop accounting
   balances. **Check the ceiling before planning a session around evals** — it is
   a rolling 24-hour window, so a new calendar day does not reset it.
-- **The 12 hard Agent 1 cases have never been scored by the real model.**
-  See the caveat in 2c above: the first run tests the labels as much as the
-  agent. `python -m evals.runner --tag hard` is 12 calls.
-- **The CLI has never been run against the live pipeline end to end.** Every
-  path is covered by tests with stubbed agents, and the rendering was checked
-  against realistic fixtures, but no real profile has gone through it. One
-  `python -m cli --profile examples/beginner_renewables.json` when quota allows.
-  Do this FIRST next session, before the eval — it exercises all five agents and
-  is the last unverified thing about the CLI.
+- **The 12 hard Agent 1 cases are DONE** (2026-08-24): 11/12. The labels held
+  up; the one failure is a real defect, now 2.2b. At 11/12 the set is close to
+  being too easy - harden it when Agent 1 is next touched.
+- **The CLI live run is DONE** (2026-08-24, run id `cli-163fffe8`, 255s). It
+  worked on the first attempt. `--resume cli-163fffe8` replays it at zero quota.
 
 ---
 

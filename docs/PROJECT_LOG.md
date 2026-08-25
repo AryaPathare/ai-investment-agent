@@ -1760,3 +1760,138 @@ rather than assumed, and accepted:
 Recorded as a test asserting the leak, so a future narrowing shows up as a
 deliberate change rather than a silent one. **Tuning a filter immediately after
 being burned by tuning it is how you get burned twice.**
+
+## Session 9 — 2026-08-24
+
+The session the live run was finally affordable. Everything below came out of
+two commands.
+
+### 52. The first live end-to-end run
+
+`python -m cli --profile examples/beginner_renewables.json`, 255 seconds, exit
+0, run id `cli-163fffe8`. Every path through this CLI had been covered by tests
+with stubbed agents; none had ever been walked by the real pipeline.
+
+It worked. The brief rendered, the checkpoint saved, and `--resume` now replays
+the whole thing at zero quota. Three defects came out of it anyway, which is now
+the fourth consecutive time that running existing code under a new condition
+found something no test did.
+
+Worth recording precisely because it is the boring outcome nobody writes down:
+**the pipeline ran end to end on the first attempt.** The prediction that it
+would break on contact was wrong. What it did instead was make things visible.
+
+### 53. A real company lost to the word "Ltd."
+
+The run examined 10 companies and dropped 6 as `no_ticker_found` — the reason
+whose docstring says "extraction is producing names that are not companies".
+The extraction was fine. Five of the six are genuinely private: Waaree
+Transpower, Proton New Energy, DC Handal, JomCharge, ChargeEV, all correctly
+dropped.
+
+The sixth was **Waaree Energies Ltd.**, India's largest solar module
+manufacturer, listed on both the NSE and the BSE. Searching for it returned
+nothing. Searching for "Waaree Energies" returned both listings immediately.
+
+The search passed the name to the provider verbatim, so a legal suffix that a
+news article always writes could stop a real company being found at all. The
+sharp part: `_NOISE_WORDS` already contained "ltd" and "limited" and already
+declared they carry no identifying information — but that knowledge was only
+ever applied to SCORING the candidates that came back, never to asking for
+them. **The fix was a constant the file already had, used one step earlier.**
+
+Retries only on an empty result, and only strips a TRAILING run of legal form,
+so nothing that already resolved can move and "Technology Select Sector" keeps
+every word.
+
+This also corrects a diagnosis. The renewables brief recommending Google and
+Amazon was recorded as an Agent 3 exposure-prompt problem. It is mostly that —
+but the pool Agent 3 chooses from is 3 investable companies out of 10 examined,
+because renewable-energy news is dominated by private and foreign firms.
+**A stricter exposure grade alone would have emptied the brief rather than
+improved it.**
+
+### 54. The press release no source filter could ever catch
+
+The provenance block earned its keep on its first run. Eleven cache entries
+carry one, and they answer the question recorded as unproven: **press releases
+do reach the risk critic.** Three of the sixteen articles it received were
+PowerBank announcing a permit, a 4 MW project and a portfolio acquisition. It
+reported no risk from any of them, which is the correct response to a company
+announcing its own good news, and the reason it should never have seen them.
+
+`is_press_release` missed all three because the existing document types cover
+only the financial calendar — results, dividends, offerings, conferences — and
+these are operational announcements. The wire dateline was stripped by the
+aggregator, as the code already predicted aggregators do.
+
+The obvious instrument was the source: every one came from
+globalrenewablenews.com. **The corpus ruled it out.** All seven cached articles
+from that domain were audited. Six are issuer announcements. The seventh is
+"Canadian Solar Announces Resolution of Maxeon U.S. Patent Litigation" — the
+single headline this project has twice named as the thing that must never be
+filtered. An industry wire carries the issuer's good news and the litigation
+the critic needs, side by side.
+
+So the rule stayed where it was, extended with four document types that each
+name the OBJECT of the announcement: a permit, a megawatt figure, a portfolio,
+project financing. That object is what keeps the litigation headline out, along
+with "Apple announces changes for apps in the EU" and "SK Hynix Announces $38.5
+Billion Manufacturing Expansion". Measured over 283 cached articles: 13 matched
+before, 18 after, all five additions genuine issuer documents.
+
+**The domain was the third instrument tried and rejected here on evidence**,
+after provider categories and query-term matching. The pattern is consistent:
+every cheap signal for "is this article any good" has failed the same way, by
+being right about the aggregate and wrong about the one article that mattered.
+
+One test moved to make room. "PowerBank Announces 4 MW Solar Project" had been
+listed as must-keep since the bare-"announces" draft was rejected — but it sat
+there because that instrument caught it along with everything else, not because
+anyone had found the headline to be reporting. The live run is new evidence
+that it is not.
+
+### 55. Eleven of twelve, and the one that failed is the one that matters
+
+`python -m evals.runner --tag hard`, the first time the 12 hard Agent 1 cases
+have been scored by a real model rather than a string-matching stand-in.
+**11/12, 91.7%.** Against the rubric written when they were built — 8 to 10 is
+good, 12 means they are too easy — this says the labels are one case away from
+not being hard enough.
+
+The failure is `hard_clarification_defers_the_choice_back`. The user asks for
+sports and technology while also saying "Do not invest in technology companies",
+and clarifies with "Either way is fine, you choose." Expected
+`needs_clarification`; got `valid`.
+
+The label predicted that picking for the user "would silently override
+something they stated". What the agent actually returned:
+
+    sectors_of_interest: ["sports", "technology"]
+    restrictions:        []
+    problems: []   reason: null
+
+It did not defer and it did not ask. It resolved the conflict by **deleting the
+user's restriction**, recorded no problem, and gave no reason. Of the two
+available resolutions — drop the interest or drop the prohibition — it chose
+the prohibition, and every downstream agent then researches technology for
+someone who said not to.
+
+The prompt exposes `revised_restrictions` and forbids using it to tidy wording,
+but says nothing about which side of a conflict may be resolved away. **A field
+that can delete a user's stated constraint needs a rule about direction, not
+just a rule about tidiness** — and an eval whose expected answer is a status
+string could not have seen this, because the status was only the symptom. It
+was visible because the runner records the returned profile alongside the
+verdict.
+
+Not fixed this session. It is Agent 1 work, the hard set is 12 calls, and this
+is the cheapest agent in the project to iterate on.
+
+### 56. A documented number that was never right
+
+`python -m pytest` reports **706 passed, 1 skipped**, not the "707 passed" every
+handoff has claimed. 707 is the COLLECTED count. Nobody noticed because
+`pytest.ini` already sets `-q` in addopts, so the habit of adding `-q` produces
+`-qq`, which suppresses the summary line entirely — the number was being read
+off a progress bar of dots. Ends the session at 721 passed, 1 skipped.
