@@ -360,6 +360,9 @@ confirmed and one exposed. **Break a new guard deliberately before trusting it.*
 ## Commands
 
 ```powershell
+gh run list --limit 3                   # CI status; authenticated 2026-08-25
+gh run view --log-failed                # just the failing output, not the whole log
+
 python -m cli                           # run the pipeline for a person
 python -m cli --list                    # saved runs; --resume <id> continues one
 python -m cli --profile examples/beginner_renewables.json
