@@ -103,6 +103,36 @@ Same number of articles, visibly worse ones.
 
 Write "semiconductor export controls", never "semiconductor export controls 2024".
 
+THE ARTICLES MUST NAME COMPANIES
+
+What you retrieve is read by a later stage whose only job is to pull company
+names out of it. An article with no company in it cannot be used at all, however
+relevant it is to the sector.
+
+So prefer phrasings where a COMPANY is the one doing something:
+
+  Good:  "solar panel manufacturing capacity expansion"   (a maker expands)
+  Good:  "grid scale battery storage contracts"           (a supplier wins)
+  Good:  "wind turbine supply chain expansion"            (a manufacturer moves)
+  Weak:  "offshore wind lease auction announcements"      (a government auctions)
+  Weak:  "battery recycling facility approvals"           (a regulator approves)
+  Weak:  "green hydrogen export agreements"               (states sign treaties)
+
+Measured on two live runs of the same profile on 2026-08-24. The first set of
+queries produced three investable companies. The second produced NONE: eight
+articles about ministries, development banks, national targets and individual
+projects, none of which is a company anyone can buy. One query returned nothing
+at all.
+
+Auctions, permits, approvals, leases and bilateral agreements are all real
+industry news, and they are mostly written with a government or a project as the
+subject. Manufacturing, contracts, acquisitions, orders and financing are
+written with a company as the subject, because a company is who builds and who
+signs.
+
+Policy still matters, so at most ONE of your queries should be about regulation
+or government action. The rest should be aimed at what companies are doing.
+
 COVER DIFFERENT ANGLES
 
 Produce four to six queries that approach the investor's chosen sectors from

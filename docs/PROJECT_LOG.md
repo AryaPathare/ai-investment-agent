@@ -2022,3 +2022,87 @@ this is that situation exactly - a prompt changed an hour ago, a neighbouring
 case wobbling, and an obvious sentence to add. Recorded instead, so that
 clarifying the narrows-versus-blocks distinction is a decision somebody makes
 on purpose rather than a reflex while the last change is still warm.
+
+### 60. The zero-candidate profile, fixed one stage upstream
+
+Entry 58 found that the zero-candidate runs differ from the good ones by their
+QUERIES, not their articles. The query prompt was thorough about specificity,
+dates, restrictions and variety, and silent on the one thing that decides
+whether a retrieved article is usable at all: **whether a company is in it.**
+
+Its own list of what to search for - "regulation, capacity changes, supply
+chains, major contracts, technology shifts, policy decisions" - contains the
+failure. Regulation and policy are real industry news written with a government
+as the subject.
+
+Added a section saying so, with the observed contrast: manufacturing, contracts,
+acquisitions, orders and financing are written with a company as the subject,
+because a company is who builds and who signs; auctions, permits, approvals and
+bilateral agreements are not. Policy is capped at one query in six.
+
+Verified live on the profile that had been failing:
+
+    before   0 candidates    (8 articles about ministries and projects)
+    after    3 candidates    SUZLON.BO 0.486, GOOG 0.450, AMZN 0.286
+             completeness 83% -> 100%, 0 hard failures
+
+**The top candidate is now a wind turbine manufacturer** rather than a data
+centre operator, and it is an Indian listing in INR - the same class of company
+that entry 53 found being dropped over a legal suffix. Two fixes from opposite
+ends of the session pointing at the same gap: the pipeline was systematically
+losing the pure-plays and keeping the megacaps that happened to be nearby.
+
+### 61. Grade a buyer as a buyer
+
+Agent 3's exposure prompt already said a company "mentioned only as a customer"
+is incidental, and Alphabet and Amazon were still graded against a battery
+storage theme, because both buy battery storage for data centres.
+
+The prompt stated the principle without a ceiling. Added one: where the
+company's industry sits outside the theme's sector, the highest grade available
+is incidental unless the article shows it producing, supplying or building
+rather than using - and size does not change that, because a very large buyer is
+still a buyer. The test offered is which way the money flows. If the theme
+playing out means the company SPENDS more, it is a customer.
+
+**Written but NOT verified.** Quota ran out before Agent 3 could be re-run, and
+on this project a prompt change nobody has measured is a hypothesis.
+
+### 62. Agent 5 was never given anything to cite
+
+The recorded defect was that Agent 5 barely cites articles - 1 of 8 exit
+conditions - and one round of prompt work had already moved it from 0/9 to 1/8.
+Read as the model taking the cheap option, since metric thresholds are identical
+for every company in every sector.
+
+The live run says otherwise. Which company produced the one citation is the
+clue:
+
+    GOOG   0 risks                          0 articles reached Agent 5
+    AMZN   1 risk, 1 article_id             1 article  -> the ONE cited condition
+    PBK    2 risks, both article_ids=[]     0 articles reached Agent 5
+
+`RiskFindings.articles` deliberately keeps only the articles a risk actually
+CITED, and `risk_rules` produces metric-derived risks - leverage, negative free
+cash flow - which cite nothing. So for two of the three companies Agent 5 was
+handed no articles at all, and the prompt's rule is explicitly conditional:
+"when articles are supplied below, at least one of your conditions must be
+about what those articles describe."
+
+**It complied every time it could.** 1 of 1, not 1 of 8.
+
+The candidates were carrying evidence the whole way: `evidence_article_ids` has
+1, 1 and 2 entries for the three companies. Those Article objects live in
+`ResearchFindings`, which `decide()` is never passed.
+
+So the fix is to plumb research findings into `decide()` and widen
+`_evidence_for`. **Deliberately not done today.** It changes what the last agent
+in the graph is fed, and a theme article is bullish where a bear-case article is
+not - it could as easily produce worse conditions as better ones. There was not
+enough quota left to run the decision eval, and shipping an unmeasured change to
+Agent 5 is the exact move this project's first lesson warns against.
+
+**Three times today the recorded diagnosis was one stage upstream of the cause**
+- the exposure prompt (a query problem), the zero candidates (a query problem),
+and now the citation rate (a supply problem). The common shape: each was
+described by looking at the output of the last stage that touched it.

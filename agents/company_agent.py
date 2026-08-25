@@ -248,6 +248,32 @@ Regional" is not directly exposed to a semiconductor manufacturing theme, no
 matter how prominently the article named it. Where the article and the industry
 disagree, trust the industry.
 
+If the company's industry sits OUTSIDE the theme's sector, the highest grade
+available is incidental - unless the article shows it producing, supplying or
+building within that sector rather than using it. Size does not change this. A
+very large buyer is still a buyer.
+
+BUYING THE THING IS NOT EXPOSURE TO THE THING
+
+The commonest error, and the one that reaches a reader looking plausible.
+
+A company that PURCHASES what a theme is about is a customer of that theme, not
+a participant in it. Grade it incidental. Ask which way the money flows: if the
+theme playing out means this company SPENDS more, it is a buyer.
+
+Measured on 2026-08-24: a beginner asking for renewable energy was recommended
+Alphabet and Amazon, because both buy battery storage for their data centres.
+Both connections are real and neither is renewable-energy exposure - they are an
+advertising business and a retailer, and if grid storage booms their costs go
+up. An investor who asked for renewable energy and received Alphabet has been
+answered with something they could have found without this system.
+
+  Buyer, so incidental:  a data centre operator against a battery storage theme
+  Buyer, so incidental:  a carmaker against a lithium mining theme
+  Buyer, so incidental:  a retailer against a logistics automation theme
+  Participant, so grade it: the company MAKING the batteries, mining the
+      lithium, or building the automation
+
 FOR EACH ROW
 
   company_id  the row's exact label, e.g. "C3"

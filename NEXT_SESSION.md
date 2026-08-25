@@ -6,12 +6,12 @@ and published.** All five agents are built and verified against their own evals,
 and CI proves the suite passes on machines that have never seen the project.
 
 **The live CLI run and the Agent 1 hard set are now done** (2026-08-24). Five
-tasks remain plus one new defect - see section 2. 2.2b is fixed; 2.3b is where
-to start: the restriction check tests words, not companies.
+tasks remain plus one new defect - see section 2. Everything verifiable today is
+done. **Start with 2.6**: the fix is specified and needs one measured session.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry 59
+- `docs/PROJECT_LOG.md` is current through entry 62
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -26,7 +26,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **728 passed, 1 skipped** in a few seconds. (Not 707 - that was the
+Expect **732 passed, 1 skipped** in a few seconds. (Not 707 - that was the
 COLLECTED count. Do not add `-q`: pytest.ini already sets it, and `-qq`
 suppresses the summary line, which is how the wrong number survived.)
 
@@ -116,65 +116,67 @@ project's own design rules point at. **Fix it in ONE place for both agents.**
 Still true and now more interesting: Agent 5's exclusion path has never fired
 on real data. TTE is the first candidate that should trigger it.
 
-### 2.4 The zero-candidate profile - **DIAGNOSED 2026-08-24, not fixed**
+### 2.4 The zero-candidate profile - **FIXED 2026-08-24**
 
-**It is not article variance. It is QUERY variance, one stage earlier.**
+Not article variance: query variance. Agent 2's prompt was silent on whether a
+retrieved article contains a COMPANY, and its own list of good subjects included
+regulation and policy, which are written with a government as the subject.
 
-`renewables_excluding_fossil_fuels` produced 3 candidates at 00:17 and 0 at
-00:20 on the same day. The provider was not exhausted - the failing run
-retrieved 8 articles. What differed was the search queries, which Agent 2
-regenerates every run at temperature 0.0 and which do not repeat:
+Verified live on the profile that had been failing:
 
-    passing set                    failing set
-    solar panel manufacturing      offshore wind lease auction announcements
-    grid scale battery contracts   green hydrogen export agreements
-    offshore wind lease agreements utility-scale solar project financing
-    solar farm construction        battery recycling facility approvals
+    before   0 candidates (8 articles about ministries and projects)
+    after    3 candidates: SUZLON.BO 0.486, GOOG 0.450, AMZN 0.286
+             completeness 83% -> 100%, 0 hard failures
 
-The failing set asks about PROCESSES AND ASSETS - auctions, agreements,
-approvals - and gets articles about governments, banks and projects. Of its 8
-articles exactly 3 named an investable company, all from the one query phrased
-around financing. The passing set asks about MANUFACTURING AND CONTRACTS, which
-name companies, because a company is who manufactures and who signs.
+The top candidate is now a wind turbine manufacturer, and an Indian listing -
+the same class of company entry 53 found being dropped over a legal suffix.
 
-**A query is generated text, not a fact about the world, so this is
-controllable** - constrain Agent 2 toward company-naming phrasing. Both cached
-runs are on disk for verification without spending anything.
+### 2.5 Agent 3's exposure grade - **WRITTEN, NOT VERIFIED**
 
-### 2.5 Agent 3's exposure grade - OPEN-ENDED, and **re-diagnosed**
+The prompt said a company "mentioned only as a customer" is incidental but gave
+no ceiling, so Alphabet and Amazon were graded against a battery storage theme
+for buying batteries. Added: where the industry sits outside the theme's sector
+the highest grade is incidental unless the article shows the company producing
+or supplying rather than using, and size does not change that. The test is which
+way the money flows.
 
-Still the defect a reader meets: the renewables profile recommends Google and
-Amazon because they buy battery storage for data centres.
+**Run `python -m evals.company_runner --limit 1` before believing any of it.**
+Quota ran out first. Watch for GOOG and AMZN dropping out entirely, and for the
+brief emptying instead of improving - see the pool-size warning above.
 
-**The live run changed what the fix has to do.** Agent 3 chose from 3
-investable companies out of 10 examined. Six were dropped as `no_ticker_found`
-and five of those are genuinely private - renewable-energy news is dominated by
-private and foreign firms. So Agent 3 is not preferring megacaps over
-pure-plays; the pure-plays mostly are not listed.
+### 2.6 Agent 5's citations - **RE-DIAGNOSED, fix specified, NOT built**
 
-**A stricter exposure grade on its own would empty the brief rather than
-improve it.** Today it would leave PBK alone, or PBK plus Waaree Energies now
-that the suffix bug is fixed. Whatever is done here has to be paired with
-something that widens the candidate pool.
+**It was never given anything to cite.** The 1-of-8 rate was read as the model
+taking the cheap option. Which company produced the one citation says otherwise:
 
-Side effect still worth watching: a stricter grade should start disqualifying
-candidates, which would finally exercise Agent 5's exclusion path.
+    GOOG   0 risks                       0 articles reached Agent 5
+    AMZN   1 risk, 1 article_id          1 article -> the ONE cited condition
+    PBK    2 risks, both article_ids=[]  0 articles reached Agent 5
 
-### 2.6 Agent 5 barely cites articles - OPEN-ENDED
+`RiskFindings.articles` keeps only articles a risk actually CITED, and
+`risk_rules` produces metric-derived risks that cite nothing. The prompt's rule
+is conditional on articles being supplied. **Agent 5 complied every time it
+could: 1 of 1, not 1 of 8.**
 
-**Measured live and unchanged at 1 of 8** exit conditions. The other seven are
-bare metric thresholds.
+The candidates carry `evidence_article_ids` (1, 1 and 2) the whole way, but
+those Articles live in `ResearchFindings`, which `decide()` is never passed.
 
-New detail the run added: the ONE condition that does cite an article cites
-`oliverwillis.com`, a personal blog, for the Twitch class action. It is
-on-topic - Twitch is Amazon's - but the single cited article in the whole brief
-comes from the source long tail that cannot be enumerated. Improving the count
-and improving what gets cited are the same problem.
+**The fix**: plumb `ResearchFindings` into `decide()` and widen `_evidence_for`
+to include the candidate's own evidence articles. Not built today because it
+changes what the last agent is fed - a theme article is bullish where a
+bear-case article is not, so it could produce worse conditions as easily as
+better ones - and there was no quota left to run `decision_runner`. **Build it
+and measure it in the same session.**
 
-### 2.7 The PDF - no quota, deferred by choice
+### 2.7 The PDF - **DONE 2026-08-24**
 
-`docs/PROJECT_LOG.md` is the source material: **59 numbered entries through
-Session 9.**
+`python -m scripts.build_log_html` renders `docs/PROJECT_LOG.md` to
+`docs/project_log.html`. Open it and print to PDF: the stylesheet has page
+rules, so sessions start on a new page and code does not split across one.
+
+Written as a converter rather than a dependency because nothing in the
+toolchain does markdown - no pandoc, no weasyprint - and installing one for a
+file built twice a year is the worse trade.
 
 ## 3. Then the known weaknesses
 
