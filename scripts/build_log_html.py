@@ -74,7 +74,16 @@ def _table(rows: list[str]) -> str:
 
 
 def to_html(markdown: str) -> str:
-    """Convert the log's markdown subset to HTML."""
+    """Convert the log's markdown subset to HTML.
+
+    Line endings are normalised first. Every check below tests the START of a
+    line, except the table rule, which tests whether the NEXT line is all dashes
+    - and a trailing carriage return is neither a dash nor a colon. A CRLF
+    source therefore stopped tables being recognised, and the row fell through
+    to the paragraph branch, which refuses lines beginning with a pipe. The
+    result was a loop that consumed nothing and never ended.
+    """
+    markdown = markdown.replace("\r\n", "\n").replace("\r", "\n")
     lines = [html.escape(line, quote=False) for line in markdown.split("\n")]
     out: list[str] = []
     index = 0
@@ -105,9 +114,15 @@ def to_html(markdown: str) -> str:
             out.append("<pre><code>" + "\n".join(block) + "</code></pre>")
             continue
 
-        if line.startswith("|") and index + 1 < len(lines) and set(
+        # The separator row must actually contain dashes. Testing only that its
+        # characters are a SUBSET of {-, :} accepts the empty string, so a pipe
+        # line followed by a blank one was read as a one-row table.
+        rule = (
             lines[index + 1].replace("|", "").replace(" ", "")
-        ) <= {"-", ":"}:
+            if index + 1 < len(lines)
+            else ""
+        )
+        if line.startswith("|") and "-" in rule and set(rule) <= {"-", ":"}:
             block = []
             while index < len(lines) and lines[index].startswith("|"):
                 block.append(lines[index])
@@ -164,6 +179,17 @@ def to_html(markdown: str) -> str:
         ) and not lines[index].startswith("    "):
             paragraph.append(lines[index].strip())
             index += 1
+
+        # Progress is not optional. Every branch above either consumes a line or
+        # falls through to here, and this loop REFUSES some of the lines that
+        # can arrive - a pipe that opened no table, for one. Taking nothing and
+        # advancing nothing is an infinite loop, and it is silent: the build
+        # simply never returns. Consume the line rather than reason about which
+        # ones can reach this point.
+        if not paragraph:
+            paragraph.append(lines[index].strip())
+            index += 1
+
         out.append(f"<p>{_inline(' '.join(paragraph))}</p>")
 
     return "\n".join(out)

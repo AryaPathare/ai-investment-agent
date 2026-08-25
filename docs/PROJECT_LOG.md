@@ -2129,3 +2129,39 @@ Four tests, not one: the drift check, an entry count so a converter that
 silently drops a section is caught on the day it happens rather than the next
 time somebody looks, a check that no raw markdown reaches the reader, and
 idempotence, without which the drift check would fail at random.
+
+### 64. The build that never returned
+
+Checking whether the new render guard would survive a Windows checkout - git
+converts line endings, and the committed HTML would then be compared against
+output built from CRLF source - hung. Not failed. Hung, with no timeout and no
+output, and had to be killed.
+
+Every branch of the converter tests the START of a line. One does not: the table
+rule tests whether the NEXT line is all dashes and colons, and a trailing
+carriage return is neither. So under CRLF no table was recognised, the row fell
+through to the paragraph branch, and that branch **refuses lines beginning with
+a pipe**. It appended nothing and advanced nothing.
+
+Two fixes, because they answer different questions.
+
+Normalising line endings at the top removes the trigger. But the hazard is
+structural: every branch either consumes a line or falls through to a paragraph
+loop that rejects some of the lines which can arrive there, and reasoning about
+which ones is exactly the reasoning that was already wrong once. The paragraph
+branch now consumes a line unconditionally when it would otherwise take none.
+**Guarantee progress rather than proving it unnecessary.**
+
+A third thing fell out while testing the shapes: `set(rule) <= {"-", ":"}` is
+true for the empty string, so a pipe line followed by a BLANK one was read as a
+one-row table. The rule now has to contain a dash.
+
+Worth noting how this was found. Nothing in the session's own work touched
+CRLF - the check was speculative, aimed at a CI platform this machine is not,
+and it found a defect that had nothing to do with CI. **The guard written in
+entry 63 was itself unverified on one of the two platforms it runs on**, one
+commit after being described as a mechanism.
+
+The regression test asserts almost nothing about the output. It feeds nine
+malformed inputs and passes if the function RETURNS. A hang is the one failure
+a test suite cannot report.

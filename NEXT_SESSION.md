@@ -11,7 +11,7 @@ done. **Start with 2.6**: the fix is specified and needs one measured session.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry 62
+- `docs/PROJECT_LOG.md` is current through entry 64
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -26,7 +26,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **732 passed, 1 skipped** in a few seconds. (Not 707 - that was the
+Expect **748 passed, 1 skipped** in a few seconds. (Not 707 - that was the
 COLLECTED count. Do not add `-q`: pytest.ini already sets it, and `-qq`
 suppresses the summary line, which is how the wrong number survived.)
 

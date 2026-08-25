@@ -73,3 +73,46 @@ def test_the_source_is_where_the_builder_thinks():
     assert SOURCE.exists()
     assert SOURCE.name == "PROJECT_LOG.md"
     assert Path(TARGET).suffix == ".html"
+
+
+# --- The converter must always terminate -------------------------------------
+#
+# Found on 2026-08-25 by feeding it a CRLF copy of the log, which hung. Every
+# branch tests the START of a line except the table rule, which tests whether
+# the NEXT line is all dashes - and a trailing carriage return is neither a dash
+# nor a colon. Tables stopped being recognised, the row fell through to the
+# paragraph branch, and that branch refuses lines beginning with a pipe: it took
+# nothing and advanced nothing. A silent infinite loop, in a build with no
+# timeout.
+
+
+@pytest.mark.parametrize("source", [
+    "| not a table\n\ntext",     # a pipe row that opens no table
+    "|",                         # a lone pipe at end of input
+    "| a | b |\n| c | d |",      # pipes with no separator row
+    ">",
+    "```",                       # an unclosed fence
+    "    ",
+    "---",
+    "#",
+    "",
+])
+def test_odd_input_terminates(source):
+    """Each of these can reach the paragraph branch, which rejects some of them.
+
+    The assertion is almost beside the point - the test is that it RETURNS.
+    """
+    assert isinstance(to_html(source), str)
+
+
+def test_carriage_returns_do_not_change_the_output():
+    """A Windows checkout must render identically to a Unix one, or the drift
+    check above fails on one platform and passes on the other."""
+    markdown = SOURCE.read_text(encoding="utf-8")
+    assert to_html(markdown) == to_html(markdown.replace("\n", "\r\n"))
+
+
+def test_a_blank_line_is_not_a_table_separator():
+    """set("") is a subset of everything, so the emptiness had to be excluded."""
+    assert "<table" not in to_html("| text\n\nmore text")
+    assert "<table" in to_html("| a | b |\n|---|---|\n| c | d |")
