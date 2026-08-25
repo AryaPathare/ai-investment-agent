@@ -6,12 +6,12 @@ and published.** All five agents are built and verified against their own evals,
 and CI proves the suite passes on machines that have never seen the project.
 
 **The live CLI run and the Agent 1 hard set are now done** (2026-08-24). Five
-tasks remain plus one new defect - see section 2. The new one, 2.2b, is where
-to start: Agent 1 deletes a user's restriction.
+tasks remain plus one new defect - see section 2. 2.2b is fixed; 2.3b is where
+to start: the restriction check tests words, not companies.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry 56
+- `docs/PROJECT_LOG.md` is current through entry 59
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -26,7 +26,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **721 passed, 1 skipped** in a few seconds. (Not 707 - that was the
+Expect **728 passed, 1 skipped** in a few seconds. (Not 707 - that was the
 COLLECTED count. Do not add `-q`: pytest.ini already sets it, and `-qq`
 suppresses the summary line, which is how the wrong number survived.)
 
@@ -59,42 +59,87 @@ hardening when Agent 1 is next touched.
 
 The single failure is not a label problem. It is 2.2b.
 
-### 2.2b Agent 1 DELETES a user's restriction - **NEW, do this first**
+### 2.2b Agent 1 DELETES a user's restriction - **FIXED 2026-08-24**
 
-`hard_clarification_defers_the_choice_back`. Sectors sports + technology,
-restriction "Do not invest in technology companies", clarification "Either way
-is fine, you choose." The agent returned:
+Two halves. **Python**: `build_profile` refuses to drop a restriction unless the
+USER's own replies mention what it is about - additions ungated, and the check
+never reads the model's account of itself. **Prompt**: handing the decision back
+is not a resolution, and an unresolved conflict narrows the sectors rather than
+the restriction.
 
-    sectors_of_interest: ["sports", "technology"]
-    restrictions:        []
-    problems: []   reason: null
+Verified live: clarification category 2/3 -> **3/3**, stable across `--repeat 3`.
 
-It resolved the conflict by **deleting the prohibition**, recorded no problem
-and gave no reason. Every downstream agent then researches technology for
-somebody who said not to. Of the two ways to resolve that conflict it picked
-the unsafe one.
+### 2.2c The hard set has an error bar of one case - **NEW, measured**
 
-The prompt in `agents/profile_agent.py` exposes `revised_restrictions` and
-forbids using it to tidy wording, but says nothing about DIRECTION - which side
-of a conflict may be resolved away. A blanket "never remove a restriction" is
-wrong, because a clarification legitimately can ("actually I don't mind tech").
-The rule needs to be about which side wins when the user does not say.
+`--repeat 3` on the hard set: eleven cases agree with themselves every time.
+`hard_restriction_excludes_one_kind_of_bank` returns
+`['needs_clarification', 'valid']` on identical input at temperature 0.
 
-**Cheapest thing in the project to iterate on**: the hard set is 12 calls.
+So **a single-shot 12-case score carries about +/-1 of noise, all of it in that
+one case.** The two 11/12 scores recorded on 2026-08-24 are different results,
+not a flat line: the first failed the clarification case, the second the bank
+case. Use `--repeat` before concluding anything from a one-point move.
 
-### 2.3 Agent 3's eval - ~25-30k tokens
+The case sits on the decision boundary between a restriction that NARROWS a
+sector (banking, minus investment banks - valid) and one that BLOCKS it. A
+prompt sentence would probably settle it. **Deliberately not done**: the Agent 1
+prompt was changed an hour earlier, and entry 51 of the log is about exactly
+this - tuning immediately after being burned by tuning. Make it a decision, not
+a reflex.
 
-```powershell
-python -m evals.company_runner --limit 1
-```
+### 2.3 Agent 3's eval - **DONE 2026-08-24**
 
-Unchanged and still owed since the operating-margin fix. Verified offline
-across eleven companies; the eval itself has never run.
+**0 hard failures.** Drop accounting balances (7 examined = 3 candidates + 2
+no_ticker_found + 2 incidental_mention), 0 scores saturated at 1.0, average
+completeness 83%, no growth breaches. The debt from the operating-margin fix is
+paid.
 
-### 2.4 The zero-candidate eval profile - 2-3 runs
+It surfaced 2.3b.
 
-Unchanged. One of two research profiles keeps returning nothing, and verifying
-against the exact failing inputs has repeatedly beaten another eval run.
+### 2.3b The restriction check tests words, not companies - **NEW**
+
+That run recommended **TotalEnergies (TTE)** and **RWE** for a profile whose
+restrictions are "No fossil fuel companies" and "No coal, oil or gas". The
+eval's own check reported `restriction_violations: []`, because it is a
+substring match over `name + exposure_rationale + themes`, and "TotalEnergies
+SE" contains none of the forbidden terms while its rationale is about solar and
+wind.
+
+The recorded weakness was the FALSE-POSITIVE direction ("No crypto exposure" in
+a rationale reading as a breach). This is the false-negative direction and it is
+worse: the eval reports a clean run on a case a reader spots instantly.
+
+`ResolvedCompany` already carries `sector` and `industry` from the provider.
+"Oil & Gas Integrated" is a fact Python controls, which is the instrument this
+project's own design rules point at. **Fix it in ONE place for both agents.**
+
+Still true and now more interesting: Agent 5's exclusion path has never fired
+on real data. TTE is the first candidate that should trigger it.
+
+### 2.4 The zero-candidate profile - **DIAGNOSED 2026-08-24, not fixed**
+
+**It is not article variance. It is QUERY variance, one stage earlier.**
+
+`renewables_excluding_fossil_fuels` produced 3 candidates at 00:17 and 0 at
+00:20 on the same day. The provider was not exhausted - the failing run
+retrieved 8 articles. What differed was the search queries, which Agent 2
+regenerates every run at temperature 0.0 and which do not repeat:
+
+    passing set                    failing set
+    solar panel manufacturing      offshore wind lease auction announcements
+    grid scale battery contracts   green hydrogen export agreements
+    offshore wind lease agreements utility-scale solar project financing
+    solar farm construction        battery recycling facility approvals
+
+The failing set asks about PROCESSES AND ASSETS - auctions, agreements,
+approvals - and gets articles about governments, banks and projects. Of its 8
+articles exactly 3 named an investable company, all from the one query phrased
+around financing. The passing set asks about MANUFACTURING AND CONTRACTS, which
+name companies, because a company is who manufactures and who signs.
+
+**A query is generated text, not a fact about the world, so this is
+controllable** - constrain Agent 2 toward company-naming phrasing. Both cached
+runs are on disk for verification without spending anything.
 
 ### 2.5 Agent 3's exposure grade - OPEN-ENDED, and **re-diagnosed**
 
@@ -128,7 +173,7 @@ and improving what gets cited are the same problem.
 
 ### 2.7 The PDF - no quota, deferred by choice
 
-`docs/PROJECT_LOG.md` is the source material: **56 numbered entries through
+`docs/PROJECT_LOG.md` is the source material: **59 numbered entries through
 Session 9.**
 
 ## 3. Then the known weaknesses

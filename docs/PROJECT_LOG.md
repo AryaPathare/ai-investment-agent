@@ -1895,3 +1895,130 @@ handoff has claimed. 707 is the COLLECTED count. Nobody noticed because
 `pytest.ini` already sets `-q` in addopts, so the habit of adding `-q` produces
 `-qq`, which suppresses the summary line entirely — the number was being read
 off a progress bar of dots. Ends the session at 721 passed, 1 skipped.
+
+### 57. Agent 3's eval, finally run, and the oil major it let through
+
+`python -m evals.company_runner --limit 1`. **0 hard failures.** The drop
+accounting balances - 7 examined, 3 candidates, 2 no_ticker_found, 2
+incidental_mention - and that was the whole debt outstanding since the
+operating-margin fix. 0 scores saturated at 1.0, average completeness 83%, no
+growth-sanity breaches. The offline check across eleven companies held up.
+
+The interesting part is what passed. For a profile named
+`renewables_excluding_fossil_fuels`, carrying the restrictions "No fossil fuel
+companies" and "No coal, oil or gas", the candidates were:
+
+    0.316  TTE      TotalEnergies
+    0.304  RWE.DE   RWE
+    0.060  PBK      PowerBank
+
+TotalEnergies is an oil and gas major. RWE still burns lignite. And the eval's
+own restriction check reported `restriction_violations: []`, because it is:
+
+    term in f"{c.name} {c.exposure_rationale} {' '.join(c.themes)}".lower()
+
+with `forbidden_terms = ("fossil fuel", "coal", "crude oil", "natural gas",
+"petroleum")`. "TotalEnergies SE" contains none of them, and the rationale is
+about solar and wind. **The check tests the words used to describe a company,
+not what the company is.**
+
+The known weakness was recorded in the false-positive direction - "No crypto
+exposure" in a rationale registering as a breach. This is the false-negative
+direction and it is worse, because the eval reports a clean run on a case a
+reader spots in one second. The instrument that would work is already on the
+object: `ResolvedCompany` carries `sector` and `industry` from the provider,
+and "Oil & Gas Integrated" is a fact Python controls rather than a sentence the
+model wrote.
+
+### 58. The zero-candidate profile is not article variance. It is QUERY variance.
+
+Running the decision eval on that same profile twenty minutes later returned
+**0 candidates** - the failure recorded since session 5 as "one of two research
+profiles keeps returning nothing", attributed to article variance.
+
+Two runs of one profile, one day, both caches on disk, is the comparison that
+was never available before. The provider was not exhausted: the failing run
+retrieved 8 articles across 4 queries. What differed was the queries themselves.
+
+    company_runner 00:17          decision_runner 00:20
+    solar panel manufacturing     offshore wind lease auction announcements
+      capacity expansion          green hydrogen export agreements
+    grid scale battery storage    utility-scale solar project financing
+      contracts                   battery recycling facility approvals
+    offshore wind lease
+      agreements
+    utility-scale solar farm
+      construction permits
+
+**Same profile, temperature 0.0, entirely different search queries.** Agent 2
+regenerates them each run and they do not repeat.
+
+The failing set asks about PROCESSES AND ASSETS - lease auctions, export
+agreements, facility approvals - and those return articles about governments,
+banks and projects. One query returned nothing at all. Of the eight articles
+retrieved, exactly three named an investable company, and all three came from
+the single query phrased around financing rather than approval.
+
+The passing set asks about MANUFACTURING AND CONTRACTS, and those name
+companies, because a company is who manufactures and who signs.
+
+So the variance that matters is one stage earlier than recorded, and it is
+controllable: a query is generated text, not a fact about the world. **"The
+results vary" was true and stopped one step short of the cause.**
+
+Checked and cleared: the corporate-development patterns from entry 54 are not
+implicated. `drop_press_releases` is called only in `agents/risk_agent.py`, and
+the graph runs 2 to 3 to 4, so Agent 3 saw all three articles whatever the
+filter would later have done with them.
+
+### 59. The restriction guard, and what repeating the eval revealed
+
+Fixed entry 55 in two halves, deliberately split by what each half can be
+trusted with.
+
+**Python holds the invariant.** `build_profile` now refuses to drop a
+restriction unless the user's OWN replies mention what it is about. Additions
+are ungated; removal is the only direction that can hurt anybody. The check
+reads the user's words and never the model's, which is the part that matters:
+a guard that accepted the model's explanation would be one fluent sentence away
+from useless. "Either way is fine, you choose" shares no subject word with "Do
+not invest in technology companies" and authorises nothing; "actually I don't
+mind technology" shares "technology" and is honoured, so a real change of mind
+still works.
+
+**The prompt holds the judgment.** Two rules: handing the decision back is not
+a resolution, and where a clarification does not say which side to keep, narrow
+the SECTORS and leave the restriction standing.
+
+The invariant went in Python because this project has been taught the lesson
+four times. A prohibition disappearing is not a language judgment, and entry 55
+existed precisely because fluent, confident, wrong output had nothing checking
+it.
+
+Verified live: `--tag hard` moved clarification from 2/3 to **3/3**.
+
+**Then the score did not move, and that was the interesting part.** Still 11/12
+- but a different case failed: `hard_restriction_excludes_one_kind_of_bank`,
+expected valid, got needs_clarification. The obvious reading was that the new
+direction rule had over-corrected, teaching the model that a restriction which
+NARROWS a sector blocks it.
+
+`--repeat 3` says otherwise. That case returns
+`['needs_clarification', 'valid']` on identical input, and the other eleven -
+including the newly fixed one - agree with themselves every time. It is a
+boundary case that fell the right way in the morning run and the wrong way in
+the afternoon one.
+
+Two things follow.
+
+**A single-shot 12-case score has an error bar nobody had measured**, and all of
+it sits in one case. The two 11/12 results recorded today are not the same
+result: the first failed the clarification case and passed the bank case, the
+second did the reverse. **"Unchanged" was the wrong word for it.**
+
+**And the tempting next move is the wrong one.** Entry 51 ends "tuning a filter
+immediately after being burned by tuning it is how you get burned twice", and
+this is that situation exactly - a prompt changed an hour ago, a neighbouring
+case wobbling, and an obvious sentence to add. Recorded instead, so that
+clarifying the narrows-versus-blocks distinction is a decision somebody makes
+on purpose rather than a reflex while the last change is still warm.
