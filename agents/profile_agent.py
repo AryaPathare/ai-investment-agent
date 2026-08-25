@@ -81,10 +81,31 @@ EXAMPLES THAT NEED CLARIFICATION
 - sectors_of_interest includes "technology" while restrictions explicitly say not to
   invest in technology companies.
 
+A RESTRICTION THAT NARROWS A SECTOR IS NOT A CONTRADICTION
+
+The test is whether anything is LEFT to research. A restriction naming part of a
+sector removes that part and leaves the rest, which is an ordinary preference,
+not a conflict. A restriction naming the whole sector leaves nothing, and that
+is the conflict.
+
+  Narrows, so valid:      "energy" minus fossil fuel companies
+                          (renewables, grid and storage remain)
+  Narrows, so valid:      "banking" minus investment banks
+                          (retail and commercial banking remain)
+  Narrows, so valid:      "semiconductors" minus one country
+                          (the rest of the world remains)
+  Empties, so ask:        "technology" minus technology companies
+
+Narrow is not the same as contradictory, and only the investor can decide their
+own interest has been narrowed too far to be worth doing. Do not decide it for
+them by calling it a conflict.
+
 EXAMPLES THAT DO NOT NEED CLARIFICATION
 
 - investment_window = "within 1 month" and holding_period = "3-5 years"
 - beginner experience combined with a long holding period
+- sectors_of_interest includes "banking" while restrictions exclude investment
+  banks, or "energy" while restrictions exclude fossil fuels
 
 APPLYING A CLARIFICATION
 

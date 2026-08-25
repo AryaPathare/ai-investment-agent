@@ -6,12 +6,15 @@ and published.** All five agents are built and verified against their own evals,
 and CI proves the suite passes on machines that have never seen the project.
 
 **The live CLI run and the Agent 1 hard set are now done** (2026-08-24). Five
-tasks remain plus one new defect - see section 2. Everything verifiable today is
-done. **Start with 2.6**: the fix is specified and needs one measured session.
+tasks remain plus one new defect - see section 2. Session 9 spent the full 200k
+and ended on the ceiling. **Three verifications remain and they are the whole
+job**: 2.2c and 2.5 are written and unmeasured, 2.6 is specified and unbuilt.
+Budget roughly 100k of the 200k. Then write the closing entry - the project is
+being called done after these.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry 64
+- `docs/PROJECT_LOG.md` is current through entry 66
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -40,10 +43,15 @@ python -m cli --help
 
 ## 2. THE TASK
 
-**Check the Groq console before planning around these.** On 2026-08-24 the
-console showed 113 tokens used for the day and a full CLI run went through
-without a 429, so the rolling window HAD aged out overnight - the ceiling is
-less binding than session 8 assumed. Read the console, not this paragraph.
+**Check the Groq console before planning around these.** The window really
+does age out: 2026-08-24 opened at 113 tokens used after the previous day
+finished at 196,521. Session 9 then spent the whole 200,000 and stopped on a 429
+reading `Limit 200000, Used 199921`.
+
+**Do not probe for headroom with a tiny call.** A one-token request fits in the
+79 tokens that were left, so it returns 200 and tells you nothing about whether
+25,000 will fit. It cost a verification run - entry 66. Read the console, or
+accept that a long run may stop partway.
 
 ### 2.1 Run the CLI live, end to end - **DONE 2026-08-24**
 
@@ -69,23 +77,23 @@ the restriction.
 
 Verified live: clarification category 2/3 -> **3/3**, stable across `--repeat 3`.
 
-### 2.2c The hard set has an error bar of one case - **NEW, measured**
+### 2.2c Narrows versus blocks - **WRITTEN, NOT VERIFIED**
 
-`--repeat 3` on the hard set: eleven cases agree with themselves every time.
-`hard_restriction_excludes_one_kind_of_bank` returns
-`['needs_clarification', 'valid']` on identical input at temperature 0.
+`hard_restriction_excludes_one_kind_of_bank` sits on the decision boundary:
+"banking" with "No investment banks" returned `valid` on one run and
+`needs_clarification` on the next. Three hard cases test the same distinction
+and the prompt never stated it - only the EMPTYING example, technology minus
+technology companies. Entry 59's own fix pushed the other way.
 
-So **a single-shot 12-case score carries about +/-1 of noise, all of it in that
-one case.** The two 11/12 scores recorded on 2026-08-24 are different results,
-not a flat line: the first failed the clarification case, the second the bank
-case. Use `--repeat` before concluding anything from a one-point move.
+Added the rule with the test as a question: is anything LEFT to research.
 
-The case sits on the decision boundary between a restriction that NARROWS a
-sector (banking, minus investment banks - valid) and one that BLOCKS it. A
-prompt sentence would probably settle it. **Deliberately not done**: the Agent 1
-prompt was changed an hour earlier, and entry 51 of the log is about exactly
-this - tuning immediately after being burned by tuning. Make it a decision, not
-a reflex.
+Verification hit the daily ceiling mid-run. **Re-run
+`python -m evals.runner --tag hard --repeat 3` (36 calls, ~25k).** `--repeat` is
+required, not optional: the case is inconsistent, so a single pass cannot tell a
+fix from a coin landing the right way up.
+
+**Also still true**: one hard case being non-deterministic means a single-shot
+12-case score carries about +/-1 of noise. Do not read a one-point move.
 
 ### 2.3 Agent 3's eval - **DONE 2026-08-24**
 

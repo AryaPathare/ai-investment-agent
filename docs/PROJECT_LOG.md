@@ -2165,3 +2165,61 @@ commit after being described as a mechanism.
 The regression test asserts almost nothing about the output. It feeds nine
 malformed inputs and passes if the function RETURNS. A hang is the one failure
 a test suite cannot report.
+
+### 65. Narrowing a sector is not contradicting it
+
+Entry 59 left `hard_restriction_excludes_one_kind_of_bank` sitting on the
+model's decision boundary - "banking" with "No investment banks" returning
+`valid` on one run and `needs_clarification` on the next - and deliberately did
+not chase it, because the prompt had been changed an hour earlier.
+
+Chased it now, with the reason it wobbled. Three of the twelve hard cases test
+the same distinction: a restriction naming PART of a sector leaves the rest to
+research, and a restriction naming the WHOLE sector leaves nothing. The prompt
+never said so. Its conflict rule gave only the emptying example - technology
+minus technology companies - and its list of things that do NOT need
+clarification was about timeframes and experience levels.
+
+Worse, entry 59's own fix pushed against it: "a restriction and an interest are
+not equal, narrow the sectors and leave the restriction standing" is correct for
+a genuine conflict and reads, to a model, like a reason to treat any
+restriction-versus-sector pair as one.
+
+Added the missing rule with the test stated as a question - is anything LEFT to
+research - and the three real cases as worked examples. Narrow is not the same
+as contradictory, and only the investor can decide their own interest has been
+narrowed too far.
+
+**Written, NOT verified.** See the next entry.
+
+### 66. A probe that answered the wrong question
+
+The narrows-versus-blocks rule from entry 65 was written and then verified with
+`--tag hard --repeat 3`. The run returned **0/12**, every case a
+`RateLimitError`, and the error carried the number this project has spent nine
+sessions guessing at:
+
+    Limit 200000, Used 199921, Requested 3430
+
+Nothing was wrong with the prompt. The day was simply over.
+
+What is worth recording is the check that preceded it. Groq does not report the
+DAILY budget in its response headers - only the per-minute one - so remaining
+quota was tested by making one deliberately tiny call and seeing whether it came
+back 200. It did, and that was read as permission to start a 36-call run.
+
+**It was a true answer to a question nobody needed.** 79 tokens remained. A
+one-token probe fits in 79 tokens, so the probe could not have failed, and its
+success carried no information about whether 25,000 more would fit. A test that
+cannot fail is not evidence - session 6 learned exactly this about a mutation
+test and it was recorded as entry 51 - and here the same mistake was made about
+a quota check, one day later, by someone who had just re-read that entry.
+
+The instrument that does work is the failure itself: the 429 states Limit, Used
+and Requested exactly. There is no way to ask for that number without being
+refused, so the honest options are to read the console, or to accept that a long
+run may stop partway and be resumable. **Do not probe for headroom with a call
+too small to be refused.**
+
+Cost: the last of the day's budget, and a verification that has to be run again
+tomorrow.
