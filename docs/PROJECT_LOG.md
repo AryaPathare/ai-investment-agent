@@ -2362,10 +2362,11 @@ figure was never a measurement of the model's behaviour; it was a measurement of
 what reached it. This is now shown from the run's own data rather than argued
 from the code.
 
-**Built and NOT measured.** The live half - what the model does with five
-articles instead of one - hit the ceiling mid-run at `Limit 200000, Used 197710,
-Requested 3985`. Starting the run was still the right move: the refusal cost
-nothing and stated the number exactly, which is entry 66's lesson applied.
+**Built, and measured a few hours later - see entry 72.** The live half first
+hit the ceiling mid-run at `Limit 200000, Used 197710, Requested 3985`. Starting
+the run was still the right move: the refusal cost nothing and stated the number
+exactly, which is entry 66's lesson applied. The window then drained enough to
+finish the same day.
 
 And the free half surfaced the thing the live run has to check. PBK's two new
 articles are *"PowerBank Acquires New York Solar Portfolio"* and *"PowerBank
@@ -2420,3 +2421,75 @@ The lesson the whole log keeps returning to, stated once more because it applies
 to the closing decision as much as to any fix in it: **unit tests prove the code
 does what it says; only the evals show whether what it says is right.** 752
 tests pass. That was never the question.
+
+### 72. The measurement that arrived after the closing entry
+
+Entry 71 closed the project with 2.6 built and unmeasured, because the quota
+ceiling landed mid-run. The window drains continuously, and a few hours later
+there was room. **The measurement is done, and it is the last one this project
+owed.**
+
+Replayed over the frozen `cli-163fffe8` state, so the only variable is whether
+`decide()` was handed `ResearchFindings`:
+
+    recorded run, months of argument about it     1 of 8 conditions cited
+    same inputs, research WITHHELD, re-run now    1 of 7
+    same inputs, research SUPPLIED                3 of 7
+
+The middle row is the one that makes this readable. Re-running the baseline in
+the same session, against the same frozen state, reproduces 1-of-N - so the jump
+to 3 is the plumbing and not the weather.
+
+**But the rate was never the interesting half.** Entry 70 predicted a specific
+way this could go wrong: two of the newly citable articles are *"PowerBank
+Acquires New York Solar Portfolio"* and *"PowerBank Receives Final Environmental
+Permit"* - bullish issuer announcements, exactly what the press-release filter
+keeps away from the risk critic. An exit condition asks what would mean the case
+has BROKEN, and a permit being granted is not that. The fear was that the
+citation count would rise while the conditions got worse.
+
+It did not happen. The model INVERTED the bullish articles rather than restating
+them:
+
+    GOOG  "Google announces it will no longer finance battery storage projects"
+    PBK   "PowerBank's acquisition of the New York solar portfolio is delayed
+           or canceled"
+    AMZN  "found liable in the Twitch AI training lawsuit and fined more than
+           $100 million"                                      [the bear article]
+
+All three are checkable in six months with a yes or no, and each is the negation
+of the thesis it belongs to rather than an echo of it. The AMZN condition also
+gained a threshold it did not have before - the recorded run said only "is found
+liable".
+
+**What got displaced is the better part of the result.** PBK went from three
+conditions to two, and the three it had were `revenue_growth turns negative`,
+`operating_margin turns negative`, `gross_margin falls below 0.20` - the generic
+answer, written without reading anything, identical for any company in any
+sector. GOOG's were the same shape. Giving the model something real to cite did
+not merely add a citation; it **pushed out boilerplate**. Seven conditions
+carrying three real ones beats eight carrying one.
+
+Two things worth keeping from how this was measured.
+
+**The prediction was worth writing down even though it was wrong.** Entry 70
+named the failure mode in advance and said to read the conditions rather than
+trust the count. That is what turned a number into a result: 3-of-7 alone would
+not have distinguished "cites real evidence" from "cites a permit approval as a
+reason to sell". The check was cheap because the question was already written.
+
+**Two runs were lost to output handling, not to the model.** A print statement
+reached for a field name that did not exist, and a console encoding failed on a
+non-ASCII character - both AFTER the model calls had been paid for. The first
+cost a full Agent 3 replay and was plausibly the difference between finishing at
+the first attempt and hitting the ceiling. The second cost nothing, because by
+then the result was being written to disk before anything tried to print it.
+**On a metered API, persist the result before formatting it.** Formatting is
+free to retry and the call is not.
+
+A footnote on the candidates themselves: GOOG and AMZN would no longer reach
+Agent 5 at all, because entry 69's ceiling now grades them `incidental_mention`.
+The frozen state is deliberately stale - holding the inputs constant is what
+makes this a measurement of Agent 5 rather than of the pipeline. Read together,
+the two fixes agree: Agent 3 stops the data-centre buyers from arriving, and
+Agent 5 does better with whatever does.

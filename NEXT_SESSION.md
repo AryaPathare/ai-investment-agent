@@ -5,15 +5,19 @@ and published.** All five agents are built and verified against their own evals,
 `python -m cli` runs the whole thing end to end, a run that stops can be resumed,
 and CI proves the suite passes on machines that have never seen the project.
 
-**Session 10 closed the project.** 2.2c and 2.5 are verified, 2.6 is BUILT and
-unit-tested, and the closing entry is written. **One measurement remains** - what
-Agent 5 does with the articles it can now cite - plus one new defect found on
-the way (2.8, Agent 2's queries). Neither blocks anything: the log is closed at
-entry 71 and the accepted weaknesses are recorded as accepted.
+**Session 10 closed the project, and every verification it owed is done.**
+2.2c, 2.5 and 2.6 are all built, run and measured; the closing entry is written
+and entry 72 records the last measurement, which landed after it.
+
+**Nothing is outstanding except one defect found on the way** - 2.8, Agent 2
+writing queries too long to return anything. It is a prompt overshoot with its
+evidence attached, and it is the only reason a fresh live run on the renewables
+profile may come back empty. Everything else is either done or recorded as
+deliberately accepted.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **71**
+- `docs/PROJECT_LOG.md` is current through entry **72**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -43,7 +47,8 @@ python -m cli --help
 
 ## 2. THE TASK
 
-**One measurement is left: 2.6.** Everything else in this section is done.
+**Everything in this section is DONE except 2.8**, which was found on the last
+day and is the only open defect in the project.
 
 **Do not probe for headroom with a tiny call.** A one-token request fits in the
 79 tokens that were left, so it returns 200 and tells you nothing about whether
@@ -174,56 +179,26 @@ thinness is real and its cause is separate and known: only about 3 of 10
 examined companies are investable, because renewable news is dominated by
 private and foreign firms. Not repairable in Agent 3's prompt. Entry 69.
 
-### 2.6 Agent 5's citations - **BUILT, NOT MEASURED. THIS IS THE JOB.**
+### 2.6 Agent 5's citations - **DONE 2026-08-25**
 
-**The code is done and committed.** `decide()` now takes `ResearchFindings`;
-`_evidence_for` returns the articles a risk cited PLUS the candidate's own
-`evidence_article_ids`, deduplicated, **bear case first** (an exit condition is
-a bear-case question, so the bullish theme article is offered second). Four
-tests in `tests/test_decide_agent.py`; two go red when the widening is reverted,
-checked by reverting it.
+Built AND measured. `decide()` takes `ResearchFindings`; `_evidence_for` returns
+the articles a risk cited PLUS the candidate's own `evidence_article_ids`,
+deduplicated, bear case first. Four tests, two of which go red when the widening
+is reverted.
 
-The zero-quota half is already measured, from the frozen run's own data:
+Measured by replaying the frozen `cli-163fffe8` state, so the only variable is
+whether research was supplied:
 
-    GOOG   citable 0 -> 1     that run cited 0 of 3 conditions
-    AMZN   citable 1 -> 2     that run cited 1 of 2 conditions
-    PBK    citable 0 -> 2     that run cited 0 of 3 conditions
-                              total citable 1 -> 5
+    recorded run                          1 of 8 conditions cited
+    same inputs, research WITHHELD        1 of 7      <- same-session control
+    same inputs, research SUPPLIED        3 of 7
 
-**Cited equals citable on every row.** Agent 5 cited every article it was ever
-handed. 1-of-8 measured the plumbing, not the model. Entry 70.
-
-**What is left is the live half**, and the cheap instrument is the checkpoint,
-not the eval - it is a true A/B on identical inputs, where the eval would
-confound the fix with fresh retrieval:
-
-```python
-from checkpoints import open_store, CheckpointStore
-from agents.decide_agent import decide
-with open_store() as s:
-    v = s.graph.get_state(CheckpointStore.config("cli-163fffe8")).values
-c, r, p = v["company_findings"], v["risk_findings"], v["investor_profile"]
-before = decide(c, r, p)                          # baseline, research withheld
-after  = decide(c, r, p, v["research_findings"])  # the fix
-```
-
-Roughly 12k for both halves; temperature is 0.0 so the baseline should
-reproduce. `python -m evals.decision_runner --case renewables_excluding_fossil_fuels`
-(~45k) is the alternative and is worse right now, because 2.8 means Agent 2 may
-hand it nothing.
-
-**COUNT THE RATE, THEN READ THE CONDITIONS.** PBK's two new articles are
-*"PowerBank Acquires New York Solar Portfolio"* and *"PowerBank Receives Final
-Environmental Permit"* - both issuer announcements, and both exactly what the
-press-release filter keeps AWAY from the risk critic because it found no risk in
-them. They are fair theme evidence, but a permit being GRANTED is not a reason
-the case has broken. **The citation rate can rise while the conditions get
-worse.** If the new conditions read as thesis restatements wearing a citation,
-the fix is a prompt rule about what a theme article can ground - not removing
-the plumbing, which is correct.
-
-Bonus, still unclaimed: Agent 5's exclusion path has never fired on real data.
-The frozen state selects 3 and excludes 0, so it will not fire there either.
+**And the conditions read correctly**, which was the real question. The bullish
+theme articles were INVERTED, not restated - "PowerBank's acquisition of the New
+York solar portfolio is delayed or canceled", "Google announces it will no
+longer finance battery storage projects". The hazard entry 70 predicted did not
+happen. What got displaced was boilerplate: PBK's three generic metric
+thresholds became one real condition plus one metric. Entries 70 and 72.
 
 ### 2.7 The PDF - **DONE 2026-08-24**
 
@@ -276,11 +251,12 @@ examined companies are investable on this theme. **A thin brief is the honest
 output here** - the alternative was two mega-caps in front of a beginner asking
 about renewable energy.
 
-### Agent 5 barely reads the articles - **RE-DIAGNOSED, fix built**
+### Agent 5 barely reads the articles - **FIXED AND VERIFIED**
 
-Not a lazy model. It was never given anything to cite: cited equals citable on
-every candidate of the last real run. Built and unit-tested 2026-08-25, live
-half unmeasured. See 2.6 and entry 70.
+Not a lazy model. It was never given anything to cite: cited equalled citable on
+every candidate of the last real run. Fixed and measured 2026-08-25 - 1 of 7 to
+3 of 7 on identical inputs, and the new conditions displaced boilerplate rather
+than adding to it. See 2.6, entries 70 and 72.
 
 ### Agent 2 records almost no dissenting evidence - **ACCEPTED**
 
@@ -375,14 +351,12 @@ observed. Narrow it in ONE place for both agents if it ever fires falsely.
 
 Worth knowing before trusting a clean eval run.
 
-- **What Agent 5 writes with more than one article.** The plumbing is built and
-  unit-tested; the model half has never run. This is the one open measurement -
-  see 2.6.
 - **Agent 5's exclusion path has never run.** Every run produced three or fewer
   candidates and no disqualifications, so nothing has been excluded for real.
   Unit tests only. The frozen `cli-163fffe8` state selects 3 and excludes 0, so
-  it cannot be exercised there either.
-- **Agent 2's queries are known-bad right now** (2.8) and no eval that depends on
+  it cannot be exercised there either. **This is the last untested path in the
+  pipeline.**
+- **Agent 2's queries are known-bad** (2.8), so no eval that depends on
   retrieval should be read as clean until that is fixed. The 2026-08-25
   `company_runner` run returned 0 candidates for this reason and NOT because of
   anything it was testing.
@@ -390,8 +364,13 @@ Worth knowing before trusting a clean eval run.
   rubric written with them that is the definition. The number is no longer
   evidence about Agent 1.
 - **Verifying a fix against its exact failing inputs keeps beating another eval
-  run** - three of the last four verifications were done that way. The
-  checkpoint database is the place those inputs live.
+  run** - four of the last five verifications were done that way, including the
+  2.6 measurement, where a same-session control run made the result readable in
+  a way a single number could not have been.
+- **Agent 3's ceiling and Agent 5's citations were measured on stale candidates
+  on purpose.** GOOG and AMZN would no longer reach Agent 5 at all. Holding the
+  inputs constant is what made it a measurement of Agent 5 rather than of the
+  whole pipeline.
 
 ## The lesson this project kept re-teaching
 
