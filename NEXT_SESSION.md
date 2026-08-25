@@ -296,19 +296,13 @@ Worth knowing before trusting a clean eval run.
 - **Agent 5's exclusion path has never run.** Every run produced three or fewer
   candidates and no disqualifications, so nothing has been excluded for real.
   Unit tests only.
-- **One of two eval profiles keeps returning zero candidates.** Article variance
-  means each run tests a different slice, so a run of clean results is weaker
-  evidence than the count suggests. **Verifying a fix against its exact failing
-  inputs has repeatedly proved stronger than another eval run.**
-- **Agent 3's own eval has still not run since the margin fix** (2026-08-23).
-  Attempted again at the end of session 5 and blocked by the daily ceiling:
-  `196,521 of 200,000` tokens already used, one case needs ~25-30k. The effect
-  WAS checked offline across eleven companies spanning tech, semiconductors,
-  pharma, banks and small caps: only PowerBank changed, nothing was pushed below
-  the completeness floor, and no screening decision moved. Still worth one
-  `python -m evals.company_runner --limit 1` to confirm the drop accounting
-  balances. **Check the ceiling before planning a session around evals** — it is
-  a rolling 24-hour window, so a new calendar day does not reset it.
+- **The zero-candidate profile is FIXED** (2026-08-24, entry 60). It was query
+  variance, not article variance. Still true and worth keeping: verifying a fix
+  against its exact failing inputs has repeatedly beaten another eval run - that
+  is how this one was found.
+- **Agent 3's eval is DONE** (2026-08-24, entry 57): 0 hard failures, drop
+  accounting balances, 0 saturated scores. The margin fix is confirmed by the
+  eval and not just offline.
 - **The 12 hard Agent 1 cases are DONE** (2026-08-24): 11/12. The labels held
   up; the one failure is a real defect, now 2.2b. At 11/12 the set is close to
   being too easy - harden it when Agent 1 is next touched.
