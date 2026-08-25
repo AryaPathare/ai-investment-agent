@@ -412,7 +412,7 @@ def main() -> int:
             time.sleep(min(args.delay, 30))
             risks = critique_companies(companies, use_cache=cache)
             time.sleep(min(args.delay, 30))
-            decision = decide(companies, risks, case.profile)
+            decision = decide(companies, risks, case.profile, research)
             rows.append(score_run(case, companies, risks, decision))
         except Exception as exc:  # noqa: BLE001 - a failed run is a result
             rows.append({

@@ -47,7 +47,7 @@ from models.decision import (
     Recommendation,
 )
 from models.profile import InvestorProfile
-from models.research import Article
+from models.research import Article, ResearchFindings
 from models.risk import CandidateCritique, RiskFindings
 
 # Two or three sentences plus a few conditions, on top of what this model spends
@@ -88,7 +88,8 @@ are not deciding whether to recommend it. That decision is made.
 
 You will be given the company, the themes it was selected for, its measured
 fundamentals, the risks a critic already found against it, and the articles
-behind those risks.
+behind all of that - both the ones a critic cited AGAINST this company and the
+ones that put it in the theme to begin with.
 
 WRITE TWO THINGS
 
@@ -179,11 +180,50 @@ def _format_articles(articles: Sequence[Article]) -> tuple[str, dict[str, Articl
 
 
 def _evidence_for(
-    critique: CandidateCritique, risks: RiskFindings
+    critique: CandidateCritique,
+    risks: RiskFindings,
+    candidate: CompanyCandidate | None = None,
+    research: ResearchFindings | None = None,
 ) -> list[Article]:
-    """The articles behind this candidate's risks, deduplicated."""
+    """Every article this candidate is allowed to cite, deduplicated.
+
+    TWO sources, and for a long time Agent 5 was handed only the first.
+
+    ``RiskFindings.articles`` keeps the articles a risk actually CITED, and
+    ``risk_rules`` produces metric-derived risks that cite nothing. So a
+    candidate whose risks were all thresholds arrived here with an EMPTY list
+    and then satisfied the citation rule vacuously - there was nothing to cite.
+    That is what the 1-of-8 citation rate was really measuring: not a model
+    taking the cheap option, but one article reaching the only company that had
+    one. Agent 5 complied every time it could.
+
+    The second source is the candidate's own ``evidence_article_ids`` - the
+    articles that put it in the theme at all. They were carried the whole way
+    down and then never passed in, because they live in ``ResearchFindings``
+    and ``decide()`` was never given it.
+
+    Risk articles come FIRST because they are the bear case, and an exit
+    condition is a bear-case question. A theme article is bullish, so it is
+    weaker grounds for "what would mean this has broken" - available, but not
+    the first thing offered.
+
+    Both extra arguments are optional so that a caller with no research to hand
+    still gets the old behaviour rather than an error.
+    """
     wanted = {uuid for risk in critique.risks for uuid in risk.article_ids}
-    return [a for a in risks.articles if a.uuid in wanted]
+    evidence = [a for a in risks.articles if a.uuid in wanted]
+
+    if candidate is None or research is None:
+        return evidence
+
+    seen = {article.uuid for article in evidence}
+    theme_ids = set(candidate.evidence_article_ids)
+    for article in research.articles:
+        if article.uuid in theme_ids and article.uuid not in seen:
+            seen.add(article.uuid)
+            evidence.append(article)
+
+    return evidence
 
 
 def write_brief(
@@ -223,7 +263,8 @@ def write_brief(
         f"holding period: {profile.holding_period}; age {profile.age}\n\n"
         f"RISKS ALREADY FOUND\n{risk_lines}\n\n"
         f"{spent_line}\n\n"
-        f"ARTICLES BEHIND THOSE RISKS ({len(articles)})\n\n{rendered or 'none'}"
+        f"ARTICLES ({len(articles)}) - those a risk cited, then those "
+        f"the company was selected for\n\n{rendered or 'none'}"
     )
 
     brief = invoke_structured(
@@ -340,11 +381,18 @@ def decide(
     companies: CompanyFindings,
     risks: RiskFindings,
     profile: InvestorProfile,
+    research: ResearchFindings | None = None,
 ) -> Decision:
     """Produce the final recommendation, or say why there is none.
 
     Selection happens first and in Python. Only companies that survive it are
     ever described, so the model cannot talk a rejected candidate back in.
+
+    ``research`` is what a candidate was selected FOR. Without it a candidate
+    whose risks are all metric thresholds has no article to cite and cannot
+    meet the prompt's citation rule at all - see ``_evidence_for``. It is
+    optional because a decision is still produceable without it, and the
+    Selection above does not depend on it.
     """
     chosen: Selection = select(companies, risks, profile)
 
@@ -359,7 +407,7 @@ def decide(
     discarded_total = 0
 
     for candidate, critique in chosen.selected:
-        articles = _evidence_for(critique, risks)
+        articles = _evidence_for(critique, risks, candidate, research)
         brief, mapping = write_brief(candidate, critique, profile, articles)
 
         conditions, discarded = _resolve_conditions(

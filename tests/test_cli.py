@@ -383,7 +383,7 @@ def stub_pipeline(monkeypatch):
         )
         monkeypatch.setattr(
             workflow, "decide",
-            lambda companies, risks, profile: decision
+            lambda companies, risks, profile, research=None: decision
             or Decision(no_recommendation_reason="no candidates were produced"),
         )
 

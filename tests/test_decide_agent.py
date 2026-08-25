@@ -21,7 +21,7 @@ from models.companies import (
 )
 from models.decision import CompanyBrief, ExitCondition
 from models.profile import InvestorProfile
-from models.research import Article
+from models.research import Article, ResearchFindings
 from models.risk import CandidateCritique, Risk, RiskFindings
 
 
@@ -78,17 +78,19 @@ def writer(monkeypatch):
     )}
 
     def fake(cand, crit, prof, arts):
+        state.setdefault("given", []).append(list(arts))
         return state["brief"], {f"A{i}": a for i, a in enumerate(arts, start=1)}
 
     monkeypatch.setattr(decide_agent, "write_brief", fake)
     return state
 
 
-def run(cands, crits, articles=(), prof=None):
+def run(cands, crits, articles=(), prof=None, research=None):
     return decide(
         CompanyFindings(candidates=cands, companies_examined=len(cands)),
         RiskFindings(critiques=crits, articles=list(articles)),
         prof or profile(),
+        research,
     )
 
 
@@ -286,3 +288,66 @@ def test_the_fallback_never_reintroduces_an_already_met_condition(writer):
     condition = got.recommendations[0].exit_conditions[0]
 
     assert "further" in condition.condition.lower()
+
+
+# --- What Agent 5 is allowed to cite -----------------------------------------
+#
+# The 1-of-8 citation rate was read for weeks as the model taking the cheap
+# option. It was not. ``RiskFindings.articles`` holds only the articles a risk
+# CITED, and ``risk_rules`` produces metric-derived risks that cite nothing, so
+# most candidates reached Agent 5 with an empty list and satisfied the
+# citation rule vacuously. These tests pin the other source shut.
+
+
+def test_a_candidate_whose_risks_are_all_metrics_still_gets_its_theme_article(
+    writer,
+):
+    """The 2.6 defect exactly: every risk is a metric threshold, so nothing
+    reaches ``RiskFindings.articles`` and the old code handed the model an
+    empty list - then the prompt's citation rule had nothing to bind to."""
+    crit = critique(risks=[risk(metric="operating_margin")])
+    research = ResearchFindings(articles=[article("u-orig")], articles_retrieved=1)
+
+    run([candidate()], [crit], articles=(), research=research)
+
+    given = writer["given"][0]
+    assert [a.uuid for a in given] == ["u-orig"], (
+        "the article that put this company in the theme never reached Agent 5"
+    )
+
+
+def test_the_bear_case_is_offered_before_the_theme_article(writer):
+    """An exit condition is a bear-case question, so the article a critic cited
+    AGAINST the company is listed first. A theme article is bullish: available
+    to cite, but not the first thing the model reads."""
+    crit = critique(risks=[risk(uuids=("u-1",))])
+    research = ResearchFindings(articles=[article("u-orig")], articles_retrieved=1)
+
+    run([candidate()], [crit], articles=[article("u-1")], research=research)
+
+    assert [a.uuid for a in writer["given"][0]] == ["u-1", "u-orig"]
+
+
+def test_an_article_serving_as_both_risk_and_theme_evidence_is_offered_once(
+    writer,
+):
+    """Agent 4 retrieves adversarially but can land on the same article Agent 2
+    already cited. Two [A]-labels for one article invites two conditions that
+    are the same condition."""
+    crit = critique(risks=[risk(uuids=("u-orig",))])
+    research = ResearchFindings(articles=[article("u-orig")], articles_retrieved=1)
+
+    run([candidate()], [crit], articles=[article("u-orig")], research=research)
+
+    assert [a.uuid for a in writer["given"][0]] == ["u-orig"]
+
+
+def test_a_caller_with_no_research_still_gets_the_risk_articles(writer):
+    """``research`` is optional, and omitting it must degrade to the old
+    behaviour rather than raise - the eval runners and any caller that has only
+    the critic's output still work."""
+    crit = critique(risks=[risk(uuids=("u-1",))])
+
+    run([candidate()], [crit], articles=[article("u-1")])
+
+    assert [a.uuid for a in writer["given"][0]] == ["u-1"]

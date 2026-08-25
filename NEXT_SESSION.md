@@ -1,20 +1,19 @@
 # Start here
 
-Last worked: **2026-08-24**. **The pipeline is complete, demonstrable, durable,
+Last worked: **2026-08-25**. **The pipeline is complete, demonstrable, durable,
 and published.** All five agents are built and verified against their own evals,
 `python -m cli` runs the whole thing end to end, a run that stops can be resumed,
 and CI proves the suite passes on machines that have never seen the project.
 
-**The live CLI run and the Agent 1 hard set are now done** (2026-08-24). Five
-tasks remain plus one new defect - see section 2. Session 9 spent the full 200k
-and ended on the ceiling. **Three verifications remain and they are the whole
-job**: 2.2c and 2.5 are written and unmeasured, 2.6 is specified and unbuilt.
-Budget roughly 100k of the 200k. Then write the closing entry - the project is
-being called done after these.
+**Session 10 closed the project.** 2.2c and 2.5 are verified, 2.6 is BUILT and
+unit-tested, and the closing entry is written. **One measurement remains** - what
+Agent 5 does with the articles it can now cite - plus one new defect found on
+the way (2.8, Agent 2's queries). Neither blocks anything: the log is closed at
+entry 71 and the accepted weaknesses are recorded as accepted.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry 66
+- `docs/PROJECT_LOG.md` is current through entry **71**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -29,9 +28,10 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **748 passed, 1 skipped** in a few seconds. (Not 707 - that was the
-COLLECTED count. Do not add `-q`: pytest.ini already sets it, and `-qq`
-suppresses the summary line, which is how the wrong number survived.)
+Expect **752 passed, 1 skipped** in a few seconds. (748 until session 10 added
+four tests for 2.6. Not 707 - that was the COLLECTED count. Do not add `-q`:
+pytest.ini already sets it, and `-qq` suppresses the summary line, which is how
+the wrong number survived.)
 
 Then see it work, without spending quota on a real run:
 
@@ -43,24 +43,36 @@ python -m cli --help
 
 ## 2. THE TASK
 
-**Check the Groq console before planning around these.** The window really
-does age out: 2026-08-24 opened at 113 tokens used after the previous day
-finished at 196,521. Session 9 then spent the whole 200,000 and stopped on a 429
-reading `Limit 200000, Used 199921`.
+**One measurement is left: 2.6.** Everything else in this section is done.
 
 **Do not probe for headroom with a tiny call.** A one-token request fits in the
 79 tokens that were left, so it returns 200 and tells you nothing about whether
 25,000 will fit. **Just start the real run**: a refused request consumes nothing
 and its 429 states Limit, Used and Requested exactly. That is the free and
-honest instrument - entry 66.
+honest instrument - entries 66 and 70, where it worked twice.
 
 **The console buckets by CALENDAR DAY and the limit is a rolling 24 hours.** A
 session running past midnight is split across two rows, neither of which is the
-number being enforced. Session 9 read "22.8K" off the Aug 24 row while 197,000
-was actually in use.
+number being enforced.
 
-Measured drain rate on 2026-08-25: **~6,400 tokens/hour**, and it is not linear -
-the block a big run consumed comes back 24 hours after that run, not gradually.
+Session 10 ended on the ceiling at `Limit 200000, Used 197710, Requested 3985`,
+at about 14:10 local on 2026-08-25. Measured drain rate: **~6,400 tokens/hour**,
+and it is not linear - the block a big run consumed comes back 24 hours after
+that run, not gradually.
+
+**Replaying a frozen checkpoint is the cheap instrument and it keeps winning.**
+Three of the last four verifications were done by re-running ONE stage over the
+state saved in `.state/checkpoints.sqlite` rather than re-running an eval. It
+costs one stage instead of four, and it removes retrieval variance from
+measurements that have nothing to do with retrieval:
+
+```python
+from checkpoints import open_store, CheckpointStore
+with open_store() as s:
+    v = s.graph.get_state(CheckpointStore.config("cli-163fffe8")).values
+# v holds user_input, investor_profile, research_findings,
+# company_findings, risk_findings, decision - a real run's every stage
+```
 
 ### 2.1 Run the CLI live, end to end - **DONE 2026-08-24**
 
@@ -86,23 +98,18 @@ the restriction.
 
 Verified live: clarification category 2/3 -> **3/3**, stable across `--repeat 3`.
 
-### 2.2c Narrows versus blocks - **WRITTEN, NOT VERIFIED**
+### 2.2c Narrows versus blocks - **DONE 2026-08-25**
 
-`hard_restriction_excludes_one_kind_of_bank` sits on the decision boundary:
-"banking" with "No investment banks" returned `valid` on one run and
-`needs_clarification` on the next. Three hard cases test the same distinction
-and the prompt never stated it - only the EMPTYING example, technology minus
-technology companies. Entry 59's own fix pushed the other way.
+**12/12, every case agreeing with itself across `--repeat 3`.**
+`hard_restriction_excludes_one_kind_of_bank` - the case that flipped between
+`valid` and `needs_clarification` - now lands the same way three times running.
+Clarification held 3/3, nothing else started wobbling. Entry 67.
 
-Added the rule with the test as a question: is anything LEFT to research.
-
-Verification hit the daily ceiling mid-run. **Re-run
-`python -m evals.runner --tag hard --repeat 3` (36 calls, ~25k).** `--repeat` is
-required, not optional: the case is inconsistent, so a single pass cannot tell a
-fix from a coin landing the right way up.
-
-**Also still true**: one hard case being non-deterministic means a single-shot
-12-case score carries about +/-1 of noise. Do not read a one-point move.
+**The hard set is now TOO EASY and should not be trusted as a score.** The
+rubric written with these cases says 12/12 means exactly that. It scored 11
+yesterday with one case away from the boundary, that case was the defect, and
+fixing it spent the margin. **Write harder cases before running it again** -
+until then the run confirms rather than measures.
 
 ### 2.3 Agent 3's eval - **DONE 2026-08-24**
 
@@ -148,42 +155,75 @@ Verified live on the profile that had been failing:
 The top candidate is now a wind turbine manufacturer, and an Indian listing -
 the same class of company entry 53 found being dropped over a legal suffix.
 
-### 2.5 Agent 3's exposure grade - **WRITTEN, NOT VERIFIED**
+### 2.5 Agent 3's exposure grade - **DONE 2026-08-25**
 
-The prompt said a company "mentioned only as a customer" is incidental but gave
-no ceiling, so Alphabet and Amazon were graded against a battery storage theme
-for buying batteries. Added: where the industry sits outside the theme's sector
-the highest grade is incidental unless the article shows the company producing
-or supplying rather than using, and size does not change that. The test is which
-way the money flows.
+The rule holds. Verified by replaying Agent 3 over the 8 articles frozen in the
+`cli-163fffe8` checkpoint - the exact inputs that produced the bad grades -
+because the eval could not be used (see 2.8):
 
-**Run `python -m evals.company_runner --limit 1` before believing any of it.**
-Quota ran out first. Watch for GOOG and AMZN dropping out entirely, and for the
-brief emptying instead of improving - see the pool-size warning above.
+    GOOG   partial -> incidental_mention   "buys storage, not producing"
+    AMZN   partial -> incidental_mention   "finances storage, buyer"
+    META   -       -> incidental_mention   "buys solar electricity, not storage"
+    PBK    direct  -> direct               "acquires solar assets"
 
-### 2.6 Agent 5's citations - **RE-DIAGNOSED, fix specified, NOT built**
+The rationales quote the rule's own test back - which way the money flows.
 
-**It was never given anything to cite.** The 1-of-8 rate was read as the model
-taking the cheap option. Which company produced the one citation says otherwise:
+**The brief emptied as predicted: 3 candidates to 1.** That is the right outcome
+- the two losses were a mega-cap advertiser and a mega-cap retailer - but the
+thinness is real and its cause is separate and known: only about 3 of 10
+examined companies are investable, because renewable news is dominated by
+private and foreign firms. Not repairable in Agent 3's prompt. Entry 69.
 
-    GOOG   0 risks                       0 articles reached Agent 5
-    AMZN   1 risk, 1 article_id          1 article -> the ONE cited condition
-    PBK    2 risks, both article_ids=[]  0 articles reached Agent 5
+### 2.6 Agent 5's citations - **BUILT, NOT MEASURED. THIS IS THE JOB.**
 
-`RiskFindings.articles` keeps only articles a risk actually CITED, and
-`risk_rules` produces metric-derived risks that cite nothing. The prompt's rule
-is conditional on articles being supplied. **Agent 5 complied every time it
-could: 1 of 1, not 1 of 8.**
+**The code is done and committed.** `decide()` now takes `ResearchFindings`;
+`_evidence_for` returns the articles a risk cited PLUS the candidate's own
+`evidence_article_ids`, deduplicated, **bear case first** (an exit condition is
+a bear-case question, so the bullish theme article is offered second). Four
+tests in `tests/test_decide_agent.py`; two go red when the widening is reverted,
+checked by reverting it.
 
-The candidates carry `evidence_article_ids` (1, 1 and 2) the whole way, but
-those Articles live in `ResearchFindings`, which `decide()` is never passed.
+The zero-quota half is already measured, from the frozen run's own data:
 
-**The fix**: plumb `ResearchFindings` into `decide()` and widen `_evidence_for`
-to include the candidate's own evidence articles. Not built today because it
-changes what the last agent is fed - a theme article is bullish where a
-bear-case article is not, so it could produce worse conditions as easily as
-better ones - and there was no quota left to run `decision_runner`. **Build it
-and measure it in the same session.**
+    GOOG   citable 0 -> 1     that run cited 0 of 3 conditions
+    AMZN   citable 1 -> 2     that run cited 1 of 2 conditions
+    PBK    citable 0 -> 2     that run cited 0 of 3 conditions
+                              total citable 1 -> 5
+
+**Cited equals citable on every row.** Agent 5 cited every article it was ever
+handed. 1-of-8 measured the plumbing, not the model. Entry 70.
+
+**What is left is the live half**, and the cheap instrument is the checkpoint,
+not the eval - it is a true A/B on identical inputs, where the eval would
+confound the fix with fresh retrieval:
+
+```python
+from checkpoints import open_store, CheckpointStore
+from agents.decide_agent import decide
+with open_store() as s:
+    v = s.graph.get_state(CheckpointStore.config("cli-163fffe8")).values
+c, r, p = v["company_findings"], v["risk_findings"], v["investor_profile"]
+before = decide(c, r, p)                          # baseline, research withheld
+after  = decide(c, r, p, v["research_findings"])  # the fix
+```
+
+Roughly 12k for both halves; temperature is 0.0 so the baseline should
+reproduce. `python -m evals.decision_runner --case renewables_excluding_fossil_fuels`
+(~45k) is the alternative and is worse right now, because 2.8 means Agent 2 may
+hand it nothing.
+
+**COUNT THE RATE, THEN READ THE CONDITIONS.** PBK's two new articles are
+*"PowerBank Acquires New York Solar Portfolio"* and *"PowerBank Receives Final
+Environmental Permit"* - both issuer announcements, and both exactly what the
+press-release filter keeps AWAY from the risk critic because it found no risk in
+them. They are fair theme evidence, but a permit being GRANTED is not a reason
+the case has broken. **The citation rate can rise while the conditions get
+worse.** If the new conditions read as thesis restatements wearing a citation,
+the fix is a prompt rule about what a theme article can ground - not removing
+the plumbing, which is correct.
+
+Bonus, still unclaimed: Agent 5's exclusion path has never fired on real data.
+The frozen state selects 3 and excludes 0, so it will not fire there either.
 
 ### 2.7 The PDF - **DONE 2026-08-24**
 
@@ -195,46 +235,71 @@ Written as a converter rather than a dependency because nothing in the
 toolchain does markdown - no pandoc, no weasyprint - and installing one for a
 file built twice a year is the worse trade.
 
+### 2.8 Agent 2 writes queries too long to return anything - **NEW, NOT FIXED**
+
+`company_runner --limit 1` returned 1 theme, 1 article, 0 candidates. The
+provenance block said why immediately:
+
+    SunPower solar panel manufacturing expansion            found 0
+    Vestas wind turbine supply chain expansion              found 1
+    Orsted green hydrogen production facility investment    found 0
+    NextEra Energy renewable portfolio expansion contracts  found 0
+    Enphase Energy battery storage contracts                found 0
+
+Every query names a company and ANDs four or five more terms onto it.
+TheNewsAPI is space-separated AND with no `OR`; three ANDed terms usually
+returns nothing and five returns nothing at all.
+
+**This is 2.4's fix overshooting.** Teaching Agent 2 that a useful article
+contains a COMPANY was read as "name companies in the query" - the one place a
+name cannot help, because it becomes another term the article must match.
+
+The fix is a prompt rule about query LENGTH and shape, and the eval to prove it
+is `python -m evals.research_runner` (or `company_runner`, which shows the
+downstream effect). **Fix this before trusting any company or decision eval on
+this profile.** Entry 68.
+
 ## 3. Then the known weaknesses
 
 All measured, all deliberately left. Work them in the order they would change an
 answer a reader sees.
 
-### Agent 3 grades data-centre operators as "direct" exposure to renewables
+### Agent 3 grades data-centre operators as "direct" - **FIXED AND VERIFIED**
 
-**Start here.** The `renewables_excluding_fossil_fuels` profile is recommended
-**Google and Amazon**, because both buy battery storage for their data centres.
-True, and a very loose link: a beginner asking about renewable energy gets two
-mega-cap advertising and retail businesses.
+Resolved 2026-08-25, entry 69. Google and Amazon are now graded
+`incidental_mention` and dropped; the ceiling rule holds against the exact
+articles that produced the bad grades. See 2.5.
 
-This is the one weakness currently putting a wrong-LOOKING company in front of a
-person — and now it is in front of them in a readable brief rather than a Python
-repr, which raises the cost of leaving it. The cause is Agent 3's exposure
-prompt; the cost is re-verifying Agent 3.
+What remains is the consequence, and it is not a defect: the brief for
+`renewables_excluding_fossil_fuels` is now ONE company. Only about 3 of 10
+examined companies are investable on this theme. **A thin brief is the honest
+output here** - the alternative was two mega-caps in front of a beginner asking
+about renewable energy.
 
-**Re-diagnosed 2026-08-24 - read 2.5 before acting on this.** The live run
-showed Agent 3 choosing from 3 investable companies out of 10 examined, because
-renewable-energy news is dominated by private and foreign firms. Fixing the
-prompt alone empties the brief instead of improving it.
+### Agent 5 barely reads the articles - **RE-DIAGNOSED, fix built**
 
-### Agent 5 barely reads the articles
+Not a lazy model. It was never given anything to cite: cited equals citable on
+every candidate of the last real run. Built and unit-tested 2026-08-25, live
+half unmeasured. See 2.6 and entry 70.
 
-1 of 8 exit conditions cites one; the rest are metric thresholds, which are the
-cheap answer and read identically for any company in any sector. The prompt now
-demands at least one article-cited condition, which moved it from 0/9 to 1/8 -
-progress, not a solution.
-
-The CLI makes this visible in a way the eval numbers did not: every condition
-prints its grounds, so a brief where four of five say `grounds: metric X` looks
-as thin on screen as it is.
-
-### Agent 2 records almost no dissenting evidence
+### Agent 2 records almost no dissenting evidence - **ACCEPTED**
 
 Structural, not a prompt problem: most themes cite one article and one article
-cannot disagree with itself. Worked around by giving Agent 4 its own adversarial
-retrieval. If that stops working, this comes back.
+cannot disagree with itself. It is the shape of a three-article-per-request news
+budget. Worked around by giving Agent 4 its own adversarial retrieval, which
+means **the workaround is load-bearing** - if Agent 4's bear queries ever stop
+returning anything, this comes back immediately and there is nothing behind it.
 
-### Agent 4's source filter cannot cover its long tail
+**Recorded as accepted in entry 71**, on the same terms as the scoring limits.
+Do not reopen without a reason that has actually changed.
+
+### Agent 4's source filter cannot cover its long tail - **ACCEPTED**
+
+**Recorded as accepted in entry 71.** A list of names cannot cover a
+distribution whose mode is one, and both instruments that would work on the tail
+were tried and failed on real data. What replaced the list is the press-release
+filter, which tests article SHAPE rather than publisher. The detail below stays
+because the press-release rules under it are live and must not be loosened.
 
 **Widened 2026-08-23 from evidence, and the remaining problem is structural.**
 Audited against the 224 cached news responses on disk: 272 distinct articles,
@@ -310,23 +375,23 @@ observed. Narrow it in ONE place for both agents if it ever fires falsely.
 
 Worth knowing before trusting a clean eval run.
 
+- **What Agent 5 writes with more than one article.** The plumbing is built and
+  unit-tested; the model half has never run. This is the one open measurement -
+  see 2.6.
 - **Agent 5's exclusion path has never run.** Every run produced three or fewer
   candidates and no disqualifications, so nothing has been excluded for real.
-  Unit tests only.
-- **The zero-candidate profile is FIXED** (2026-08-24, entry 60). It was query
-  variance, not article variance. Still true and worth keeping: verifying a fix
-  against its exact failing inputs has repeatedly beaten another eval run - that
-  is how this one was found.
-- **Agent 3's eval is DONE** (2026-08-24, entry 57): 0 hard failures, drop
-  accounting balances, 0 saturated scores. The margin fix is confirmed by the
-  eval and not just offline.
-- **The 12 hard Agent 1 cases are DONE** (2026-08-24): 11/12. The labels held
-  up; the one failure is a real defect, now 2.2b. At 11/12 the set is close to
-  being too easy - harden it when Agent 1 is next touched.
-- **The CLI live run is DONE** (2026-08-24, run id `cli-163fffe8`, 255s). It
-  worked on the first attempt. `--resume cli-163fffe8` replays it at zero quota.
-
----
+  Unit tests only. The frozen `cli-163fffe8` state selects 3 and excludes 0, so
+  it cannot be exercised there either.
+- **Agent 2's queries are known-bad right now** (2.8) and no eval that depends on
+  retrieval should be read as clean until that is fixed. The 2026-08-25
+  `company_runner` run returned 0 candidates for this reason and NOT because of
+  anything it was testing.
+- **The 12 hard Agent 1 cases score 12/12 and are therefore too easy.** By the
+  rubric written with them that is the definition. The number is no longer
+  evidence about Agent 1.
+- **Verifying a fix against its exact failing inputs keeps beating another eval
+  run** - three of the last four verifications were done that way. The
+  checkpoint database is the place those inputs live.
 
 ## The lesson this project kept re-teaching
 
@@ -379,7 +444,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 707 tests, a few seconds, no network
+python -m pytest                        # 752 tests, a few seconds, no network
 
 python -m evals.runner                  # Agent 1: 30 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)

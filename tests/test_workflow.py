@@ -543,8 +543,8 @@ def fake_decider(monkeypatch):
     calls = []
 
     def _install(decision=None, error=None):
-        def fake(companies, risks, profile):
-            calls.append((companies, risks, profile))
+        def fake(companies, risks, profile, research=None):
+            calls.append((companies, risks, profile, research))
             if error is not None:
                 raise error
             return decision if decision is not None else Decision(
@@ -572,11 +572,13 @@ def test_the_critic_flows_into_the_decision(
     assert "error" not in result
 
 
-def test_the_decision_receives_candidates_criticism_and_the_profile(
+def test_the_decision_receives_candidates_criticism_the_profile_and_research(
     always_valid, fake_research, fake_companies, fake_critic, fake_decider, clean_user
 ):
-    """The only node needing three pieces of state. The profile matters: the
-    investor's restrictions are re-checked at this last gate."""
+    """The node needing the most state. The profile matters: the investor's
+    restrictions are re-checked at this last gate. The RESEARCH matters because
+    it holds the Articles a candidate was selected for, and a candidate whose
+    risks are all metric thresholds has nothing else it is allowed to cite."""
     from models.companies import CompanyFindings
     from models.risk import RiskFindings
 
@@ -586,11 +588,13 @@ def test_the_decision_receives_candidates_criticism_and_the_profile(
     decide_calls = fake_decider()
 
     _run(clean_user, "t-decide-handoff")
-    companies, risks, profile = decide_calls[0]
+    companies, risks, profile, research = decide_calls[0]
 
     assert companies.companies_examined == 7
     assert risks.articles_retrieved == 11
     assert profile.status == "valid"
+    assert research is not None, "Agent 5 was given nothing to cite"
+    assert research.articles_retrieved == 7
 
 
 def test_the_decision_does_not_run_when_the_critic_failed(

@@ -206,11 +206,13 @@ def risk_node(state: InvestmentState) -> dict:
 def decide_node(state: InvestmentState) -> dict:
     """Run Agent 5 over the candidates and the criticism of them.
 
-    The only node needing three pieces of state at once: the candidates, the
-    criticism, and the PROFILE. The profile matters because the restrictions the
+    The node needing the most state at once: the candidates, the criticism, the
+    PROFILE and the RESEARCH. The profile matters because the restrictions the
     investor stated are re-checked here, at the last gate before a person reads
     anything, and because a brief is supposed to say plainly when a company is a
-    poor fit for their risk tolerance or their horizon.
+    poor fit for their risk tolerance or their horizon. The research matters
+    because it holds the Articles a candidate was selected for; without it a
+    candidate whose risks are all metric thresholds has nothing it may cite.
 
     Runs even when nothing survived: the decision records WHY there is no
     recommendation, which is a more useful output than an absent key.
@@ -220,6 +222,7 @@ def decide_node(state: InvestmentState) -> dict:
             state["company_findings"],
             state["risk_findings"],
             state["investor_profile"],
+            state.get("research_findings"),
         )
     except Exception as exc:  # noqa: BLE001 - same reasoning as the other nodes
         # Up to three model calls sit behind this. None of them failing should

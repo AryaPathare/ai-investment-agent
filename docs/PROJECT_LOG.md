@@ -2239,3 +2239,184 @@ old calls pass the 24-hour mark, and a rejected call adds nothing to it. Which
 also means the refusal is not merely the honest instrument, it is a FREE one:
 starting the real run costs nothing when there is no room for it, and the error
 states Limit, Used and Requested exactly. There was never a reason to probe.
+
+## Session 10 — 2026-08-25
+
+The closing session. Three verifications were owed; two came back clean, the
+third is built and half-measured. The session's own instrument turned out to be
+the finding twice - a provenance block written for a future run, and a
+checkpoint database built for resuming one.
+
+### 67. Narrows versus blocks, verified - and the set is now too easy
+
+`--repeat 3`, 36 calls, **12/12 with every case agreeing with itself three
+times.** `hard_restriction_excludes_one_kind_of_bank` - the case that returned
+`valid` on one run and `needs_clarification` on the next, which is what sent
+entry 65 looking for a missing rule - now lands the same way three times
+running. Clarification held at 3/3. Nothing else started wobbling, which was the
+actual risk: the rule was added to a prompt that four other cases depend on.
+
+The rubric written with these cases says 8-10 correct is a good hard set and 12
+means it is too easy. It scored 11 yesterday and the note then was "one case
+away from not being hard enough". **That case was the defect, and fixing it
+spent the margin.** The set is no longer measuring anything; it is confirming.
+Whoever next touches Agent 1 has to write harder cases before the run means
+anything, and the honest reading of 12/12 is not "Agent 1 is finished" but "this
+instrument has run out of range".
+
+Worth keeping: `--repeat 3` is what made this readable. A single pass returning
+12/12 would have been the same number with none of the confidence, because one
+non-deterministic case puts about +/-1 of noise on a single-shot score.
+
+### 68. The queries got longer and the news ran out
+
+Verifying entry 61 needed one `company_runner` case. It returned **1 theme, 1
+article, 0 mentions, 0 candidates** - and 0 candidates for a reason that had
+nothing to do with the exposure rule being verified. Agent 3 was never given
+anything to grade.
+
+The provenance block from entry 49 - added because a future run would need it,
+and with no way to prove that at the time - answered it immediately:
+
+    SunPower solar panel manufacturing expansion            found 0
+    Vestas wind turbine supply chain expansion              found 1
+    Orsted green hydrogen production facility investment    found 0
+    NextEra Energy renewable portfolio expansion contracts  found 0
+    Enphase Energy battery storage contracts                found 0
+
+Every query names a specific company and then ANDs four or five more terms onto
+it. TheNewsAPI is plain space-separated AND with no `OR`, and three ANDed terms
+usually returns nothing - which is documented, in this repo, as a known limit.
+Five returns nothing at all. The single article that came back is an off-topic
+climate-policy long-read that names no company.
+
+**This is entry 58's defect wearing the opposite coat.** That fix taught Agent 2
+that a useful article contains a COMPANY, because its queries had been returning
+ministries and policy announcements. The model appears to have read that as
+"name companies in the query", which is the one place naming them cannot help:
+the company name is a term the article must also match, so each name makes the
+query narrower rather than better targeted.
+
+Not fixed here, because fixing a prompt and measuring an unrelated prompt in the
+same run leaves neither one measured. Recorded as the next defect with its
+evidence attached.
+
+**The instrument is the finding.** Six sessions of retrieval failures were
+diagnosed by inference - article variance, query variance, provider quirks - and
+this one was diagnosed by reading what was actually asked. The provenance block
+cost an afternoon and paid for itself the first time a run came back empty.
+
+### 69. Grade a buyer as a buyer, verified - against the exact inputs that failed
+
+The exposure ceiling from entry 61 could not be verified by the eval, for the
+reason above. It was verified instead by replaying Agent 3 over the
+ResearchFindings frozen in the `cli-163fffe8` checkpoint - the exact 8 articles
+that produced the grades being complained about.
+
+    before                       after
+    GOOG   partial               incidental_mention  "buys storage, not producing"
+    AMZN   partial               incidental_mention  "finances storage, buyer"
+    META   -                     incidental_mention  "buys solar electricity, not storage"
+    PBK    direct                direct              "acquires solar assets"
+
+The rationales quote the rule's own test back - which way the money flows -
+rather than reaching the right answer by some other route. PBK survives, and it
+is a renewable utility by the sector the provider reports, not by the model's
+opinion of it.
+
+**The brief emptied, exactly as predicted: 3 candidates to 1.** That was written
+down in advance as the real risk, and it happened, and it is still the right
+outcome. Two of the three candidates were a mega-cap advertising business and a
+mega-cap retailer, in front of a beginner who asked about renewable energy. One
+honest candidate is a thinner brief than three and a better one. The thinness
+has a separate and known cause - only about 3 of 10 examined companies are
+investable, because renewable news is dominated by private and foreign firms -
+and it is not repairable in Agent 3's prompt.
+
+**Replaying against frozen inputs beat re-running the eval, for the third time.**
+It cost one stage instead of two, it removed retrieval variance from a
+measurement that had nothing to do with retrieval, and it compared against a
+recorded result rather than a remembered one. The checkpoint database was built
+so a person could resume an interrupted run; it turns out to be the best
+regression instrument in the project, because it is the only place a real run's
+intermediate state is kept.
+
+### 70. Agent 5 cited everything it was ever given
+
+Entry 62 re-diagnosed the 1-of-8 citation rate as a plumbing fault rather than a
+lazy model. The fix is now built: `decide()` takes `ResearchFindings`, and
+`_evidence_for` returns the articles a risk cited PLUS the candidate's own
+`evidence_article_ids`, deduplicated, bear case first. Four tests, two of which
+go red when the widening is reverted - broken on purpose first, per entry 51.
+
+What the frozen `cli-163fffe8` state says, at zero quota:
+
+    GOOG   citable 0 -> 1     recorded run cited 0 of 3 conditions
+    AMZN   citable 1 -> 2     recorded run cited 1 of 2 conditions
+    PBK    citable 0 -> 2     recorded run cited 0 of 3 conditions
+                              total citable articles 1 -> 5
+
+**The recorded citation count equals the citable count on every row.** Agent 5
+cited every article it was ever handed, three times out of three. The 1-of-8
+figure was never a measurement of the model's behaviour; it was a measurement of
+what reached it. This is now shown from the run's own data rather than argued
+from the code.
+
+**Built and NOT measured.** The live half - what the model does with five
+articles instead of one - hit the ceiling mid-run at `Limit 200000, Used 197710,
+Requested 3985`. Starting the run was still the right move: the refusal cost
+nothing and stated the number exactly, which is entry 66's lesson applied.
+
+And the free half surfaced the thing the live run has to check. PBK's two new
+articles are *"PowerBank Acquires New York Solar Portfolio"* and *"PowerBank
+Receives Final Environmental Permit"* - both issuer announcements, and both
+exactly what the press-release filter of entry 47 was extended to keep AWAY from
+the risk critic, because it found no risk in any of them. They are legitimate
+theme evidence, which is why that filter was scoped to the critic alone. But an
+exit condition asks what would mean the case has BROKEN, and a permit being
+granted is not that. **The hazard is now specific rather than theoretical: the
+citation rate can rise while the conditions get worse.** Count the rate, then
+READ the conditions. If they read as thesis restatements wearing a citation, the
+answer is a prompt rule about what a theme article can and cannot ground - not
+removing the plumbing, which is correct.
+
+### 71. Closing entry: what is being accepted, and why that is not ignoring it
+
+The project is being called done. Two structural weaknesses stay open, on the
+same terms as the scoring limits in `agents/screening.py` and the off-topic
+matches of entry 47: **measured, understood, and left deliberately.**
+
+**Agent 2 records almost no dissenting evidence.** Most themes cite one article,
+and one article cannot disagree with itself. This is not a prompt fault and no
+prompt fixes it - it is the shape of a three-article-per-request news budget. It
+is worked around rather than solved: Agent 4 does its own adversarial retrieval,
+so the dissent enters the pipeline one stage later than it should. The
+workaround is load-bearing. If Agent 4's bear queries ever stop returning
+anything, this comes back immediately and there is nothing behind it.
+
+**Agent 4's source filter cannot cover its long tail.** Audited against 224
+cached responses: 272 articles, 130 sources, and **86 of those 130 contributed
+exactly one article.** Widening the list from 2.6% to 15.1% coverage was worth
+doing because every name added was actually observed. Going further is not, and
+the reason is arithmetic rather than effort: a list of names cannot cover a
+distribution whose mode is one. The two instruments that would work on the tail
+were both tried and both failed on real data - provider categories put a private
+equity acquisition in the same bucket as everything uncategorised, and
+query-term matching cannot tell a lithium battery deal from a battery storage
+company. What replaced the list is not a better list: it is the press-release
+filter, which tests article SHAPE rather than publisher, and the journalism veto
+that protects real bad news from it.
+
+Both of these share a property worth naming at the end of a project. **They are
+the two weaknesses a prompt cannot reach.** Every other defect in this log - the
+operating margin of 168, the queries that named ministries, the buyer graded as
+a producer, the citations that were never supplied - was ultimately a sentence
+someone could write or a value Python could check. These two are properties of
+the data available, and the honest response to those is to state them where a
+reader will find them, rather than keep adding names to a list and calling it
+progress.
+
+The lesson the whole log keeps returning to, stated once more because it applies
+to the closing decision as much as to any fix in it: **unit tests prove the code
+does what it says; only the evals show whether what it says is right.** 752
+tests pass. That was never the question.

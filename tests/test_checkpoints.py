@@ -72,7 +72,9 @@ def agents(monkeypatch):
         monkeypatch.setattr(workflow, "critique_companies", lambda f, **k: RiskFindings())
         monkeypatch.setattr(
             workflow, "decide",
-            lambda c, r, p: Decision(no_recommendation_reason="nothing cleared the bar"),
+            lambda c, r, p, research=None: Decision(
+                no_recommendation_reason="nothing cleared the bar"
+            ),
         )
 
     return _install
