@@ -133,6 +133,34 @@ signs.
 Policy still matters, so at most ONE of your queries should be about regulation
 or government action. The rest should be aimed at what companies are doing.
 
+NAME THE ACTIVITY, NEVER A COMPANY
+
+Write "solar panel manufacturing expansion", NOT "SunPower solar panel
+manufacturing expansion". The rule above is about the KIND of event you search
+for, not about naming the firm involved, and naming one is strictly worse for
+two separate reasons.
+
+The search is plain AND. Every word you add is another word the article must
+ALSO contain, so a company name does not aim the search - it shrinks it. Rare
+words cost the most: "battery" appears in thousands of articles and "Enphase" in
+a handful, so a single proper noun can empty a result set that five ordinary
+words would have filled. Measured on 2026-08-25, five queries that each named a
+company returned ONE article between them, and four returned nothing at all:
+
+    SunPower solar panel manufacturing expansion            found 0
+    NextEra Energy renewable portfolio expansion contracts  found 0
+    Enphase Energy battery storage contracts                found 0
+
+And naming a company presupposes the answer. You would only search for SunPower
+if you had already decided SunPower mattered - but you do not know yet which
+companies are in the news, and finding that out is the entire reason articles
+are retrieved BEFORE anything is concluded. A query naming a company can only
+confirm a guess you should not be making at this stage.
+
+KEEP EACH QUERY SHORT
+
+Four or five words, every one of them load-bearing. Six is usually too many.
+
 COVER DIFFERENT ANGLES
 
 Produce four to six queries that approach the investor's chosen sectors from

@@ -49,6 +49,24 @@ URL_CHECK_TIMEOUT = 10
 DEAD_STATUSES = {404, 410}
 
 
+def _proper_nouns(query: str) -> list[str]:
+    """Capitalised words in a query, which are almost always company names.
+
+    A good query is ordinary lowercase nouns - "solar panel manufacturing
+    expansion" - so ANY capitalised token is worth counting. All-caps tokens are
+    excluded because acronyms are legitimate: "GLP-1 drug manufacturing capacity"
+    is one of the prompt's own good examples.
+
+    A heuristic, and reported as a soft signal for that reason. It cannot know
+    that "Waaree" is a company and "Nova" is part of Nova Scotia. What it is
+    good for is comparison across prompt changes, which is what a soft signal is.
+    """
+    return [
+        word for word in query.split()
+        if word[:1].isupper() and not word.isupper()
+    ]
+
+
 def _theme_text(theme) -> str:
     """Everything the model wrote about a theme, lowercased, for term matching."""
     return " ".join(
@@ -110,6 +128,15 @@ def score(case: ResearchCase, findings: ResearchFindings, url_report: dict | Non
     # --- soft: is the evidence one-sided? -----------------------------------
     stances = Counter(e.stance for t in themes for e in t.evidence)
 
+    # --- soft: query shape, which decides whether ANYTHING comes back -------
+    # An AND-only provider means every added word narrows the search, so a long
+    # query or a company name empties it. Five queries that each named a company
+    # once returned one article between them - see entry 68.
+    queries = list(findings.queries_used)
+    word_counts = [len(q.split()) for q in queries]
+    long_queries = [q for q in queries if len(q.split()) > 5]
+    named_queries = {q: _proper_nouns(q) for q in queries if _proper_nouns(q)}
+
     # --- soft: does anything relate to what they asked about? ---------------
     on_topic = [
         t.name
@@ -137,6 +164,12 @@ def score(case: ResearchCase, findings: ResearchFindings, url_report: dict | Non
         "confidences": dict(Counter(t.confidence for t in themes)),
         "timeframes": dict(Counter(t.timeframe for t in themes)),
         "on_topic_themes": len(on_topic),
+        "queries": queries,
+        "avg_query_words": (
+            round(sum(word_counts) / len(word_counts), 1) if word_counts else 0.0
+        ),
+        "long_queries": long_queries,
+        "queries_naming_companies": named_queries,
         "found_nothing": findings.found_nothing,
         "theme_names": [t.name for t in themes],
         "notes": findings.notes,
@@ -175,6 +208,12 @@ def print_case(row: dict) -> None:
     if row["at_theme_cap"]:
         print(f"      NOTE at the theme cap; {len(row['single_source_themes'])} "
               f"single-source, {len(row['low_confidence_themes'])} low-confidence")
+    if row["long_queries"] or row["queries_naming_companies"]:
+        print(f"      NOTE query shape: avg {row['avg_query_words']} words, "
+              f"{len(row['long_queries'])} over five, "
+              f"{len(row['queries_naming_companies'])} naming a company")
+        for query in row["queries_naming_companies"]:
+            print(f"        names a company: {query}")
     if row["found_nothing"]:
         print(f"      returned nothing: {row['notes']}")
 
@@ -198,6 +237,17 @@ def summarise(rows: list[dict]) -> dict:
         ),
         "cases_returning_nothing": sum(1 for r in scored if r["found_nothing"]),
         "on_topic_themes": sum(r["on_topic_themes"] for r in scored),
+        "queries_total": sum(len(r["queries"]) for r in scored),
+        "long_queries": sum(len(r["long_queries"]) for r in scored),
+        "queries_naming_companies": sum(
+            len(r["queries_naming_companies"]) for r in scored
+        ),
+        "avg_query_words": (
+            round(
+                sum(r["avg_query_words"] * len(r["queries"]) for r in scored)
+                / sum(len(r["queries"]) for r in scored), 1
+            ) if sum(len(r["queries"]) for r in scored) else 0.0
+        ),
     }
 
 
@@ -219,6 +269,10 @@ def print_summary(s: dict) -> None:
     print(f"    single-source themes     {s['single_source_themes']}/{s['themes_total']}")
     print(f"    cases citing dissent     {s['cases_with_dissenting_evidence']}/{s['cases']}")
     print(f"    cases returning nothing  {s['cases_returning_nothing']}/{s['cases']}")
+    print(f"    avg words per query      {s['avg_query_words']}")
+    print(f"    queries over five words  {s['long_queries']}/{s['queries_total']}")
+    print(f"    queries naming a company {s['queries_naming_companies']}/{s['queries_total']}"
+          "   (heuristic; should be 0)")
     print("=" * 72)
 
 
