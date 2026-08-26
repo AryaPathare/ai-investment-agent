@@ -1,0 +1,557 @@
+{
+  "_comment": "A real recorded run, shipped so the pipeline can be seen working with no API keys and no network. Produced by cli-173b47fe on 2026-08-26. Rendered by `python -m cli --demo`.",
+  "profile": {
+    "age": 30,
+    "investment_experience": "intermediate",
+    "risk_tolerance": "high",
+    "investment_amount": 25000.0,
+    "investment_window": "within 3 months",
+    "holding_period": "3-5 years",
+    "sectors_of_interest": [
+      "semiconductors",
+      "artificial intelligence"
+    ],
+    "restrictions": []
+  },
+  "decision": {
+    "recommendations": [
+      {
+        "ticker": "AMD",
+        "name": "Advanced Micro Devices, Inc.",
+        "thesis": "AMD's high-performance CPUs and GPUs are positioned to capture the AI server market, as its logic chips are integral to the AI infrastructure that powers data centers. The company's strong revenue growth and operating margin demonstrate its ability to monetize the AI server supply chain, making it a compelling play for investors seeking exposure to AI hardware.",
+        "exit_conditions": [
+          {
+            "condition": "revenue_growth turns negative",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          },
+          {
+            "condition": "debt_to_equity rises above 3.0",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          },
+          {
+            "condition": "the article [A1] reports that AMD's AI server revenue growth slows to below 10%",
+            "article_ids": [
+              "91a617f0-0144-44aa-8e09-f01d23cc2544"
+            ],
+            "metric": null
+          }
+        ],
+        "screen_score": 0.6446,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "AI Server Supply Chain Rally"
+        ],
+        "evidence_article_ids": [
+          "91a617f0-0144-44aa-8e09-f01d23cc2544"
+        ],
+        "known_risks": []
+      },
+      {
+        "ticker": "MRVL",
+        "name": "Marvell Technology, Inc.",
+        "thesis": "Marvell’s AI chip business is set to grow through Google’s equity‑backed procurement, giving the company a predictable revenue stream and capital to scale its advanced logic and memory solutions. The deal aligns Marvell’s growth with Google’s AI expansion, providing a competitive edge over peers such as Broadcom. With strong margins and a diversified portfolio, Marvell remains a compelling long‑term play for a high‑risk, 3‑5 year investor.",
+        "exit_conditions": [
+          {
+            "condition": "Google cancels its equity‑backed AI chip procurement deal with Marvell.",
+            "article_ids": [
+              "57fefc48-4f2b-4ed6-afef-f2f95bd6947c"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "Marvell’s AI revenue growth turns negative.",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          },
+          {
+            "condition": "Marvell’s debt_to_equity rises above 3.0.",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          }
+        ],
+        "screen_score": 0.5888,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Google‑Marvell Equity Deal"
+        ],
+        "evidence_article_ids": [
+          "57fefc48-4f2b-4ed6-afef-f2f95bd6947c"
+        ],
+        "known_risks": [
+          "Marvell’s AI revenue is only a fraction of Broadcom’s, indicating limited scale and potential competitive disadvantage."
+        ]
+      },
+      {
+        "ticker": "0981.HK",
+        "name": "SMIC",
+        "thesis": "SMIC is uniquely positioned to capture the surge in AI chip demand by expanding its mature-node capacity, enabling it to supply high-volume, low-cost chips to leading AI hardware makers. Its current 93.7% utilization and strong operating margin demonstrate the ability to scale efficiently, making it a compelling play for investors seeking exposure to the AI buildout. The company’s high leverage and negative free cash flow mean it is a high-risk, high-growth story best suited to a 3‑5‑year holding period.",
+        "exit_conditions": [
+          {
+            "condition": "SMIC's capacity utilization falls below 90%",
+            "article_ids": [
+              "78133eef-1b06-4fd6-846d-7ddc18af1d13"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "gross_margin falls below 0.15",
+            "article_ids": [],
+            "metric": "gross_margin"
+          }
+        ],
+        "screen_score": 0.5565,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "SMIC Capacity Expansion"
+        ],
+        "evidence_article_ids": [
+          "78133eef-1b06-4fd6-846d-7ddc18af1d13"
+        ],
+        "known_risks": [
+          "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business."
+        ]
+      }
+    ],
+    "excluded": [
+      {
+        "ticker": "INTC",
+        "name": "Intel Corporation",
+        "reason": "not_critiqued",
+        "detail": "outside the 5-candidate critique cap for this run"
+      },
+      {
+        "ticker": "NVDA",
+        "name": "NVIDIA Corporation",
+        "reason": "outside_top_three",
+        "detail": "ranked 4 of 5 eligible (weakened, score 0.997)"
+      },
+      {
+        "ticker": "SMCI",
+        "name": "Super Micro Computer, Inc.",
+        "reason": "outside_top_three",
+        "detail": "ranked 5 of 5 eligible (weakened, score 0.589)"
+      }
+    ],
+    "no_recommendation_reason": null,
+    "conditions_discarded": 0,
+    "notes": "Recommended 3 of 6 candidates considered; the rest are recorded with the reason each was not."
+  },
+  "research_findings": {
+    "themes": [
+      {
+        "name": "AI Server Supply Chain Rally",
+        "why_it_matters": "The AI server boom is driving demand for logic chips, aligning with the investor’s AI focus and 3‑5 year horizon.",
+        "industries": [
+          "semiconductors",
+          "artificial intelligence"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "91a617f0-0144-44aa-8e09-f01d23cc2544",
+            "stance": "supports",
+            "relevance": "AMD, Intel, NVIDIA stocks rally after strong AI earnings."
+          }
+        ]
+      },
+      {
+        "name": "NVIDIA Photonics Launch",
+        "why_it_matters": "High‑speed networking is critical for AI workloads; NVIDIA’s new platform could boost demand for its chips.",
+        "industries": [
+          "semiconductors",
+          "artificial intelligence"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "30704cc8-5158-4705-bd16-5c4a4e9929e3",
+            "stance": "supports",
+            "relevance": "NVIDIA Spectrum‑X Ethernet Photonics enters full production with lower power."
+          }
+        ]
+      },
+      {
+        "name": "Velaura AI Funding Boom",
+        "why_it_matters": "Early‑stage AI chip designer with a high valuation signals strong market interest and potential upside.",
+        "industries": [
+          "semiconductors",
+          "artificial intelligence"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "b65fcfaa-754b-4497-a7b8-fe0f3c5c75f3",
+            "stance": "supports",
+            "relevance": "Velaura AI raised $110M, valued over $1B."
+          }
+        ]
+      },
+      {
+        "name": "Google‑Marvell Equity Deal",
+        "why_it_matters": "Corporate investment in AI chip supply chain may lift Marvell and related ecosystem companies.",
+        "industries": [
+          "semiconductors",
+          "artificial intelligence"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "57fefc48-4f2b-4ed6-afef-f2f95bd6947c",
+            "stance": "supports",
+            "relevance": "Google could gain $12.2B in Marvell stock via AI chip partnership."
+          }
+        ]
+      },
+      {
+        "name": "SMIC Capacity Expansion",
+        "why_it_matters": "Growing demand for AI chips in China could benefit suppliers and the broader semiconductor ecosystem.",
+        "industries": [
+          "semiconductors",
+          "artificial intelligence"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "78133eef-1b06-4fd6-846d-7ddc18af1d13",
+            "stance": "supports",
+            "relevance": "SMIC plans capacity expansion amid high demand for mature‑node AI chips."
+          }
+        ]
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "91a617f0-0144-44aa-8e09-f01d23cc2544",
+        "title": "AMD, Intel and NVIDIA All Rally as Super Micro’s Blowout Numbers Reignite the AI Trade",
+        "description": "Three of the biggest names in logic chips closed higher on August 12, following a strong earnings report deep in the AI server supply chain. Advanced Micro Devi...",
+        "snippet": "Three of the biggest names in logic chips closed higher on August 12, following a strong earnings report deep in the AI server supply chain. Advanced Micro Devi...",
+        "url": "https://www.insidermonkey.com/blog/amd-intel-and-nvidia-all-rally-as-super-micros-blowout-numbers-reignite-the-ai-trade-1810704/",
+        "source": "insidermonkey.com",
+        "published_at": "2026-08-15T11:07:38Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "30704cc8-5158-4705-bd16-5c4a4e9929e3",
+        "title": "NVIDIA Spectrum-X Ethernet Photonics Enters Full Production With 4x Fewer Lasers and a Five-Vendor CPO Supply Chain",
+        "description": "NVIDIA Spectrum-X Ethernet Photonics is in full production: 4x fewer lasers, 5x lower power, and a named five-vendor CPO supply chain.",
+        "snippet": "NVIDIA has moved Spectrum-X Ethernet Photonics, its co-packaged optics (CPO) Ethernet switch platform, into full production. The company puts the gains at 4x fe...",
+        "url": "https://www.storagereview.com/news/nvidia-spectrum-x-ethernet-photonics-enters-full-production-with-4x-fewer-lasers-and-a-five-vendor-cpo-supply-chain",
+        "source": "storagereview.com",
+        "published_at": "2026-08-15T18:31:20Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "78133eef-1b06-4fd6-846d-7ddc18af1d13",
+        "title": "Chinese firm sees 93.7% capacity use as high demand drives chip shortages",
+        "description": "Chinese firm SMIC plans to expand its capacities in its factories, as customer demand for “mature-node chips” increases.",
+        "snippet": "Demand is high for mature-node chips for AI processors, and China’s Semiconductor Manufacturing International Corporation (SMIC) intends to raise the bar, acc...",
+        "url": "https://interestingengineering.com/ai-robotics/chinese-firm-smic-capacity-utilization-chip",
+        "source": "interestingengineering.com",
+        "published_at": "2026-08-16T23:08:13Z",
+        "categories": [
+          "tech",
+          "science"
+        ]
+      },
+      {
+        "uuid": "b65fcfaa-754b-4497-a7b8-fe0f3c5c75f3",
+        "title": "Chip designer Velaura AI valued at more than $1 billion in funding round",
+        "description": "VELAURA-AI-FUNDING:Chip designer Velaura AI valued at more than $1 billion in funding round",
+        "snippet": "Aug 18 (Reuters) - Velaura AI on Tuesday said it raised $110 million in a Series A funding round that valued the chip designing startup at more than $1 billion,...",
+        "url": "https://www.livemint.com/companies/chip-designer-velaura-ai-valued-at-more-than-1-billion-in-funding-round-11787078017188.html",
+        "source": "livemint.com",
+        "published_at": "2026-08-18T18:33:36Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "57fefc48-4f2b-4ed6-afef-f2f95bd6947c",
+        "title": "Google Could Gain $12.2 Billion in Marvell Stock From Its AI Chip Spending",
+        "description": "Google can buy up to $12.2 billion in Marvell stock through a new AI chip deal that ties future orders to equity, not a simple purchase agreement.",
+        "snippet": "Google just turned a routine chip order into a potential $12.2 billion bet on its own supplier. The deal was announced alongside an expanded AI chip partnership...",
+        "url": "https://memeburn.com/google-could-gain-12-2-billion-in-marvell-stock-from-its-ai-chip-spending/",
+        "source": "memeburn.com",
+        "published_at": "2026-08-23T15:58:22Z",
+        "categories": []
+      }
+    ],
+    "queries_used": [
+      "semiconductor supply chain expansion",
+      "chip manufacturing capacity expansion",
+      "AI chip design contracts",
+      "AI accelerator production launch",
+      "AI startup funding round",
+      "AI software licensing deals"
+    ],
+    "articles_retrieved": 17,
+    "notes": null
+  },
+  "risk_findings": {
+    "critiques": [
+      {
+        "ticker": "NVDA",
+        "name": "NVIDIA Corporation",
+        "risks": [
+          {
+            "ticker": "NVDA",
+            "risk_type": "regulatory",
+            "severity": "material",
+            "claim": "NVIDIA employee charged with illegally exporting high‑end AI servers to China, exposing the company to regulatory penalties and potential export restrictions.",
+            "article_ids": [
+              "72665d5a-2121-4fc1-96c8-bae65d36cdf5"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "NVDA",
+            "risk_type": "financial",
+            "severity": "material",
+            "claim": "Rising memory costs have driven up Nvidia's AI server manufacturing costs, compressing margins and reducing profitability.",
+            "article_ids": [
+              "e86855b3-5379-4c2e-85d2-a8c21e58c4b0"
+            ],
+            "metric": null,
+            "metric_value": null
+          }
+        ],
+        "queries_used": [
+          "\"NVIDIA\" lawsuit",
+          "\"NVIDIA\" Server"
+        ],
+        "articles_reviewed": 4,
+        "press_releases_withheld": 0,
+        "sources_withheld": [
+          "financefeeds.com",
+          "zerohedge.com"
+        ],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "AMD",
+        "name": "Advanced Micro Devices, Inc.",
+        "risks": [],
+        "queries_used": [
+          "\"Advanced Micro Devices,\" lawsuit",
+          "\"Advanced Micro Devices,\" Server"
+        ],
+        "articles_reviewed": 4,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "SMCI",
+        "name": "Super Micro Computer, Inc.",
+        "risks": [
+          {
+            "ticker": "SMCI",
+            "risk_type": "regulatory",
+            "severity": "material",
+            "claim": "ITC complaint over DDR5 patents could restrict Super Micro's ability to sell DDR5-based AI servers, increasing legal costs and limiting product availability.",
+            "article_ids": [
+              "9c668e05-5c1a-4ff9-8b25-9295327057e4"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "SMCI",
+            "risk_type": "regulatory",
+            "severity": "material",
+            "claim": "Employees indicted for illegally routing AI servers to China could lead to sanctions, fines, and export restrictions, damaging Super Micro's reputation and operations.",
+            "article_ids": [
+              "677de17b-5f46-47d9-8271-53c33f9043e3",
+              "54b31f74-ac78-40a2-8795-c07aff141913"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "SMCI",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business.",
+            "article_ids": [],
+            "metric": "free_cash_flow_is_negative",
+            "metric_value": -1.0
+          },
+          {
+            "ticker": "SMCI",
+            "risk_type": "competitive",
+            "severity": "minor",
+            "claim": "Gross margin is thin, which usually means the product competes on price and has little room to absorb cost increases.",
+            "article_ids": [],
+            "metric": "gross_margin",
+            "metric_value": 0.108219996
+          }
+        ],
+        "queries_used": [
+          "\"Super Micro Computer,\" lawsuit",
+          "\"Super Micro Computer,\" Server"
+        ],
+        "articles_reviewed": 3,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "MRVL",
+        "name": "Marvell Technology, Inc.",
+        "risks": [
+          {
+            "ticker": "MRVL",
+            "risk_type": "competitive",
+            "severity": "material",
+            "claim": "Marvell’s AI revenue is only a fraction of Broadcom’s, indicating limited scale and potential competitive disadvantage.",
+            "article_ids": [
+              "6c95e537-08c3-4272-9159-18679f06ab5c"
+            ],
+            "metric": null,
+            "metric_value": null
+          }
+        ],
+        "queries_used": [
+          "\"Marvell Technology,\" lawsuit",
+          "\"Marvell Technology,\" Marvell"
+        ],
+        "articles_reviewed": 3,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "0981.HK",
+        "name": "SMIC",
+        "risks": [
+          {
+            "ticker": "0981.HK",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business.",
+            "article_ids": [],
+            "metric": "free_cash_flow_is_negative",
+            "metric_value": -1.0
+          }
+        ],
+        "queries_used": [
+          "\"SMIC\" lawsuit",
+          "\"SMIC\" Capacity"
+        ],
+        "articles_reviewed": 2,
+        "press_releases_withheld": 0,
+        "sources_withheld": [
+          "airedale.futurecdn.net"
+        ],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "INTC",
+        "name": "Intel Corporation",
+        "risks": [],
+        "queries_used": [],
+        "articles_reviewed": 0,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": "outside the 5-candidate critique cap for this run"
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "72665d5a-2121-4fc1-96c8-bae65d36cdf5",
+        "title": "Taiwan charges 9 over AI server exports to China, including Nvidia, Super Micro staff",
+        "description": "Taiwanese prosecutors have charged nine people, including one from Nvidia and two from Super Micro, for illegally exporting high-end AI servers to China",
+        "snippet": "Taiwanese prosecutors have charged nine people, including one from Nvidia and two from Super Micro, for illegally exporting high-end AI servers to China\n\nFILE -...",
+        "url": "https://abcnews.com/International/wireStory/taiwan-charges-9-illegal-ai-server-exports-china-135914730",
+        "source": "abcnews.go.com",
+        "published_at": "2026-08-24T19:59:24Z",
+        "categories": [
+          "general"
+        ]
+      },
+      {
+        "uuid": "e86855b3-5379-4c2e-85d2-a8c21e58c4b0",
+        "title": "Samsung, SK Hynix stand to benefit as as Nvidia AI server costs surge",
+        "description": "Samsung and SK Hynix gain leverage in the AI supply chain as Nvidia server costs rise significantly, impacting major tech firms.",
+        "snippet": "Samsung Electronics and SK hynix gained further \"bargaining power\" in the artificial intelligence supply chain as rising memory costs fed into prices for Nvidia...",
+        "url": "https://www.thehindubusinessline.com/info-tech/samsung-sk-hynix-stand-to-benefit-as-as-nvidia-ai-server-costs-surge/article71387755.ece",
+        "source": "thehindubusinessline.com",
+        "published_at": "2026-08-25T07:44:48Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "9c668e05-5c1a-4ff9-8b25-9295327057e4",
+        "title": "Super Micro Computer Pulls Back 4%, Dell Falls 3% as DDR5 Patent Fight Hits AI Server Makers",
+        "description": "A fresh DDR5 patent complaint at the International Trade Commission just wiped out a chunk of Super Micro Computer's massive weekly rally, yet the memory maker ...",
+        "snippet": "Quick Read\n\nSMCI fell 4% and DELL dropped 3% after Netlist filed an ITC complaint over DDR5 patents, though SMCI remains up 28% for the week.\n\nMicron rallied 4%...",
+        "url": "https://finance.yahoo.com/markets/stocks/articles/super-micro-computer-pulls-back-153721452.html",
+        "source": "finance.yahoo.com",
+        "published_at": "2026-08-17T15:37:21Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "677de17b-5f46-47d9-8271-53c33f9043e3",
+        "title": "Super Micro Sinks 7% as Taiwan Indicts Employees Over Illegal AI Server Exports to China, Dell Slips",
+        "description": "Taiwanese prosecutors just indicted employees tied to an AI server smuggling ring stretching from Taiwan to China through three transit countries, and one major...",
+        "snippet": "Quick Read\n\nSMCI sank 7% after Taiwan indicted nine people, including two local unit employees, for illegally routing 74 AI servers to China via falsified docum...",
+        "url": "https://finance.yahoo.com/technology/ai/articles/super-micro-sinks-7-taiwan-144106910.html",
+        "source": "finance.yahoo.com",
+        "published_at": "2026-08-24T14:41:06Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "54b31f74-ac78-40a2-8795-c07aff141913",
+        "title": "Taiwan Indicts Nine Over Alleged Nvidia AI Server Smuggling to China",
+        "description": "Taiwan indicted nine people, including Nvidia and Super Micro staff, over an alleged scheme that diverted restricted AI servers to customers in China.",
+        "snippet": "Taiwan has exposed another alleged route into China’s restricted AI supply chain, indicting nine people accused of helping divert Nvidia-powered servers.\n\nPro...",
+        "url": "https://www.techrepublic.com/article/news-taiwan-nvidia-supermicro-ai-server-smuggling-china-apac/",
+        "source": "techrepublic.com",
+        "published_at": "2026-08-25T15:52:18Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "6c95e537-08c3-4272-9159-18679f06ab5c",
+        "title": "The Big Difference Between Broadcom and Marvell Technology",
+        "description": "Broadcom and Marvell both reported blowout AI numbers, but they are playing completely different games inside the same semiconductor supercycle, and choosing be...",
+        "snippet": "Quick Read\n\nBroadcom (AVGO) generated $10.8 billion in Q2 AI revenue, which is four times Marvell's (MRVL) entire quarter, yet it trades at a cheaper 20x forwar...",
+        "url": "https://finance.yahoo.com/markets/stocks/articles/big-difference-between-broadcom-marvell-130518896.html",
+        "source": "finance.yahoo.com",
+        "published_at": "2026-08-24T13:05:18Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      }
+    ],
+    "articles_retrieved": 16,
+    "risks_discarded": 0,
+    "notes": "Critiqued the 5 highest-ranked of 6 candidates; the rest are recorded as skipped."
+  }
+}

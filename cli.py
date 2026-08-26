@@ -727,6 +727,71 @@ def resume(store, thread_id: str) -> int:
 # --- Entry point -------------------------------------------------------------
 
 
+# Deliberately NOT under examples/, which is documented as saved profiles for
+# --profile and is walked by a test that loads every file there as one. A
+# recording is a different kind of thing and belongs in its own place.
+DEMO_PATH = Path(__file__).parent / "demo" / "recorded_run.json"
+
+
+def run_demo(path: Path | str = DEMO_PATH) -> int:
+    """Print a recorded run, so the pipeline can be seen with no keys at all.
+
+    The first thing anyone does with a repository is try to run it, and this one
+    needs three API keys before it can produce a single line of output. That is
+    a long way to walk on trust. This prints a REAL run - the same renderer,
+    the same models, the same grounded exit conditions - from a recording that
+    ships with the code, with no network call and nothing to sign up for.
+
+    It is deliberately a recording rather than a fake. Every article, ticker and
+    threshold below was produced by the live pipeline; only the API calls are
+    absent. A hand-written fixture could say anything, and would rot silently
+    the first time the schemas changed - this one cannot, because it is loaded
+    through the same Pydantic models the graph writes.
+    """
+    path = Path(path)
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        print(f"\nThe demo recording is missing: {path}")
+        print("It ships with the repository; re-clone or check it out again.")
+        return 1
+
+    # Imported here rather than at module scope: only this path needs them, and
+    # keeping the import local documents that the demo touches no agent code.
+    from models.research import ResearchFindings
+    from models.risk import RiskFindings
+
+    state = {
+        "decision": Decision.model_validate(payload["decision"]),
+        "research_findings": ResearchFindings.model_validate(
+            payload["research_findings"]
+        ),
+        "risk_findings": RiskFindings.model_validate(payload["risk_findings"]),
+    }
+
+    user = UserInput.model_validate(payload["profile"])
+
+    _banner("A RECORDED RUN")
+    print()
+    print(_wrap(
+        "This is real output from a real run, replayed from a recording that "
+        "ships with the repository. No API key, no network call and no quota "
+        "were used to print it.",
+        indent="  ",
+    ))
+    print()
+    print("  The person this was researched for:")
+    print(f"  {describe_profile(user)}")
+    print()
+    print(_wrap(
+        "To run the pipeline for yourself you will need a free Groq key - see "
+        "the README. Then: python -m cli --profile examples/semiconductors_high_risk.json",
+        indent="  ",
+    ))
+
+    return print_outcome(state)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m cli",
@@ -755,6 +820,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Continue a saved run instead of starting a new one.",
     )
     parser.add_argument(
+        "--demo",
+        action="store_true",
+        help="Print a recorded run. Needs no API key and makes no network call.",
+    )
+    parser.add_argument(
         "--list",
         action="store_true",
         dest="list_runs",
@@ -768,6 +838,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    if args.demo and (args.resume or args.profile or args.list_runs):
+        parser.error("--demo prints a recording; it takes no other options.")
     if args.resume and args.profile:
         parser.error("--resume continues a saved run; it takes no --profile.")
     if args.resume and args.list_runs:
@@ -778,6 +850,12 @@ def main(argv: list[str] | None = None) -> int:
     print("=" * WIDTH)
     print(" AI INVESTMENT RESEARCH AGENT")
     print("=" * WIDTH)
+
+    # Before the store is opened, deliberately. The demo must not construct the
+    # graph, because building it imports every agent, and the point of this path
+    # is that it works on a machine with no configuration at all.
+    if args.demo:
+        return run_demo()
 
     try:
         # The database is opened for every path, including --list, and closed

@@ -2632,3 +2632,52 @@ research found" means to every stage after it.
 twelve articles and costs nothing, because five cited articles still name eight
 companies. In renewables it throws away six and empties the brief. A defect that
 only bites when the pool is thin is invisible in exactly the runs that go well.
+
+## Session 12 — 2026-08-26
+
+Turning a project that works into one a stranger can run.
+
+### 76. Three API keys before the first line of output
+
+The repository asks for a Groq key, a TheNewsAPI key and an FMP key before it
+can print anything at all. Every measurement in this log was taken on a machine
+that already had them, so the cost of that was invisible from here: **the first
+thing anyone does with a repository is try to run it, and this one asked them to
+sign up for three services on trust first.**
+
+`python -m cli --demo` now prints a real recorded run - the same renderer, the
+same models, the same grounded exit conditions - with no key, no network call
+and no quota. Verified by moving `.env` aside and clearing every provider
+variable from the environment: exit 0, full brief.
+
+**A recording, deliberately, rather than a fixture.** A hand-written example
+could say anything, and it would rot the moment a schema gained a required
+field - silently, because the demo would keep printing until somebody read it
+closely. This one is loaded through the same Pydantic models the graph writes,
+so a schema change breaks a test instead of the front page. That claim was
+checked the way entry 51 says to: adding a required field to `Decision` turns
+four tests red, including the one whose entire job is to notice.
+
+Two smaller things the work turned up.
+
+**It does not live in `examples/`.** The obvious home was wrong - that directory
+is documented as saved profiles for `--profile`, and a test walks every file in
+it and loads each as a `UserInput`. That test failed immediately and was right
+to: a recording is a different kind of thing. It lives in `demo/`. Worth
+recording because the test caught a category error in about four seconds, which
+is what a test over a *directory* buys that a test over a *file* does not.
+
+**The demo must never build the graph.** It returns before the checkpoint store
+is opened, because opening it constructs the graph and imports every agent - and
+an agent reading settings at import time would break the demo in precisely the
+situation it exists for. There is a test that fails if the demo ever reaches
+`open_store`.
+
+The remaining first-run friction was documentation rather than code. The setup
+instructions were PowerShell-only, so a reader on macOS had to translate before
+starting, on a project whose CI proves it runs on Linux. No Python version was
+stated anywhere, though CI has only ever run 3.14 and every dependency is
+pinned exactly. And the headline example pointed at renewables - the thin
+sector, which can legitimately recommend nothing, and which a stranger would
+reasonably read as broken. It now points at semiconductors, with renewables kept
+as the second example and labelled as the narrower one.

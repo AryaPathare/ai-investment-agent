@@ -38,13 +38,30 @@ A condition grounded in neither is discarded, and the discards are counted.
 
 ## Run it
 
+**See it work without signing up for anything:**
+
 ```powershell
-python -m cli                                              # answer eight questions
-python -m cli --profile examples/beginner_renewables.json  # skip the questions
-python -m cli --list                                       # saved runs
-python -m cli --resume <id>                                # continue a stopped one
-python -m cli --save-profile mine.json                     # keep the answers
+python -m cli --demo
 ```
+
+That prints a real recorded run - the same renderer, the same grounded exit
+conditions - with no API key and no network call. It is the fastest way to see
+what this produces.
+
+To run the pipeline for real:
+
+```powershell
+python -m cli                                                 # answer eight questions
+python -m cli --profile examples/semiconductors_high_risk.json
+python -m cli --profile examples/beginner_renewables.json     # a narrower sector
+python -m cli --list                                          # saved runs
+python -m cli --resume <id>                                   # continue a stopped one
+python -m cli --save-profile mine.json                        # keep the answers
+```
+
+Sector choice matters more than it looks. Semiconductors are covered densely
+enough to produce a full brief; renewables are dominated by private and foreign
+firms, so that profile can legitimately come back recommending **nothing**.
 
 A run takes a few minutes and about a dozen model calls, printing each stage as
 it lands. Every step is checkpointed to SQLite, so closing the terminal at a
@@ -59,14 +76,34 @@ paused.
 
 ## Setup
 
+Python **3.14** is what CI runs on Linux and Windows, and dependencies are
+pinned exactly. Older versions are untested rather than known-broken.
+
 ```powershell
+# Windows / PowerShell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-
 Copy-Item .env.example .env      # then add your Groq API key
+```
+
+```bash
+# macOS / Linux
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env             # then add your Groq API key
+```
+
+Then check it:
+
+```
 python -m scripts.check_setup    # verifies config, settings and the model
 ```
+
+**Neither `python -m cli --demo` nor `python -m pytest` needs a key**, so you
+can see the output and run all 766 tests before deciding whether to sign up for
+anything.
 
 A free [Groq](https://console.groq.com/keys) key is required.
 [TheNewsAPI](https://www.thenewsapi.com) and
@@ -82,7 +119,7 @@ layer.
 ## Commands
 
 ```powershell
-python -m pytest                        # 752 unit tests, seconds, no network
+python -m pytest                        # 766 unit tests, seconds, no network
 python -m evals.runner                  # Agent 1: 30 labelled cases
 python -m evals.runner --tag hard --repeat 3
 python -m evals.research_runner         # Agent 2
@@ -137,6 +174,7 @@ workflow.py        The LangGraph graph: nodes, edges, routing.
 models/            Pydantic schemas — the contracts between stages.
 agents/            One module per agent. Prompt + orchestration.
 evals/             Labelled cases and the scoring runners, one per agent.
+demo/              A recorded run, so --demo works with no key.
 tests/             Unit tests.
 docs/              Design notes and the project log.
 ```

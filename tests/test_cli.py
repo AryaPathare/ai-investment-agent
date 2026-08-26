@@ -780,3 +780,76 @@ def test_a_long_url_is_printed_whole(articles):
 
     rendered = cli._grounds(condition, {"research_findings": ResearchFindings(articles=[article])})
     assert long_url in rendered, "the URL must survive intact on one line"
+
+
+# --- the recorded demo -------------------------------------------------------
+#
+# The first thing anyone does with a repository is try to run it, and this one
+# needs three API keys before it prints a line. `--demo` renders a REAL recorded
+# run with none of them. The tests that matter are the two that stop it becoming
+# a lie: that it stays loadable as the schemas move, and that it needs no config.
+
+
+def test_the_shipped_recording_still_loads_through_the_current_models():
+    """The guard against silent rot.
+
+    A hand-written fixture can say anything and goes stale the moment a model
+    gains a required field - and nothing would notice, because the demo would
+    keep printing until someone read it closely. Validating the shipped file
+    through the same Pydantic models the graph writes means a schema change
+    breaks this test rather than the front page of the repository.
+    """
+    code = cli.run_demo()
+
+    assert code == 0
+
+
+def test_the_demo_prints_a_real_brief(capsys):
+    cli.run_demo()
+    out = capsys.readouterr().out
+
+    assert "RECOMMENDATION(S)" in out
+    assert "AMD" in out
+    # The grounded exit conditions are the point of the whole project; a demo
+    # that printed a thesis and no grounds would sell the wrong thing.
+    assert "WHAT WOULD MEAN THIS HAS STOPPED BEING A GOOD IDEA" in out
+    assert "grounds:" in out
+
+
+def test_the_demo_says_it_is_a_recording(capsys):
+    """It must never read as a live run. Someone showing this to another person
+    should not have to add the caveat out loud."""
+    cli.run_demo()
+    out = capsys.readouterr().out
+
+    assert "A RECORDED RUN" in out
+    assert "No API key" in out
+
+
+def test_a_missing_recording_explains_itself(tmp_path, capsys):
+    code = cli.run_demo(tmp_path / "gone.json")
+
+    assert code == 1
+    assert "missing" in capsys.readouterr().out
+
+
+def test_the_demo_refuses_to_be_combined_with_a_real_run():
+    """--demo reads a file and --profile runs the pipeline; silently ignoring
+    one of them would be the worst of the three options."""
+    with pytest.raises(SystemExit):
+        cli.main(["--demo", "--profile", "examples/beginner_renewables.json"])
+
+
+def test_the_demo_never_builds_the_graph(monkeypatch):
+    """It has to work on a machine with no configuration at all.
+
+    Building the graph imports every agent, and an agent that read settings at
+    import time would make the demo fail in exactly the situation it exists for:
+    a stranger who has cloned the repository and not signed up for anything.
+    """
+    def explode(*args, **kwargs):
+        raise AssertionError("the demo opened the checkpoint store")
+
+    monkeypatch.setattr(cli.checkpoints, "open_store", explode)
+
+    assert cli.main(["--demo"]) == 0
