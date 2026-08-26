@@ -32,6 +32,12 @@ MIT licensed — see [LICENSE](LICENSE).
 | CLI | Ask the questions, run the graph, print the brief | **Built** |
 | Checkpoints | Save every step, so a stopped run can be resumed | **Built** |
 
+**[`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) is the interesting half of this
+repository.** 72 entries recording what broke, what the first diagnosis was, and
+why it was usually wrong — including an agent that shipped with 351 passing
+tests and a model that was never called at all. The code shows what was built;
+the log shows how it was found out.
+
 ---
 
 ## Run it
@@ -281,27 +287,44 @@ LANGSMITH_PROJECT=ai-investment-agent
 
 ## Known limitations
 
-Ordered by how much each would change an answer a reader actually sees.
+Ordered by how much each would change an answer a reader actually sees. Every
+one of these was measured rather than guessed at; where something was fixed,
+`docs/PROJECT_LOG.md` records what the fix cost and what it revealed.
 
-- **Agent 3 grades data-centre operators as *direct* exposure to renewables.**
-  The renewables profile is recommended **Google and Amazon**, because both buy
-  battery storage for their data centres. True, and a very loose link: a
-  beginner asking about renewable energy gets two mega-cap advertising and
-  retail businesses. This is the one weakness currently putting a
-  wrong-looking company in front of a person.
-- **Agent 5 barely reads the articles.** 1 of 8 exit conditions cites one; the
-  rest are metric thresholds, which are the cheap answer and read identically
-  for any company in any sector. The prompt now demands at least one
-  article-cited condition, which moved it from 0/9 — progress, not a solution.
-- **The source filter cannot cover its long tail.** Audited against 272 cached
-  articles from 130 sources: 86 of those sources contributed exactly one
-  article. Naming bad publishers handles the recurring offenders and can never
-  be complete.
+- **Agent 2 writes search queries too specific to return anything.** Observed
+  2026-08-25: five queries, each naming a company and then ANDing four or five
+  more terms onto it, four of which returned zero articles.
+
+      SunPower solar panel manufacturing expansion            found 0
+      Vestas wind turbine supply chain expansion              found 1
+      NextEra Energy renewable portfolio expansion contracts  found 0
+      Enphase Energy battery storage contracts                found 0
+
+  TheNewsAPI is space-separated AND with no `OR`, so every added term narrows
+  the search. This is an earlier fix overshooting — teaching the agent that a
+  useful article names a company was read as "name companies in the query" —
+  and it is the one open defect in the project. **A live run on the renewables
+  profile can currently come back with an empty brief because of it.**
+- **The renewables brief is thin, and honestly so.** Of roughly ten companies
+  examined for that profile, about three are investable — renewable-energy news
+  is dominated by private and foreign firms. Now that loose exposure is graded
+  out (below), a reader can get a one-company brief. That is the correct
+  output, but it is a thin one, and no prompt fixes it.
 - **Agent 2 rarely records dissenting evidence.** Across the baseline, 0 of 5
   profiles produced a single `weakens` or `complicates` stance. Structural
   rather than a prompt problem — most themes cite one article, and one article
   cannot disagree with itself. Worked around by giving Agent 4 its own
-  adversarial retrieval, so this returns only if that stops working.
+  adversarial retrieval, which makes that workaround load-bearing: if those
+  bear queries stop returning anything, this comes back with nothing behind it.
+  **Accepted deliberately.**
+- **The source filter cannot cover its long tail.** Audited against 272 cached
+  articles from 130 sources: 86 of those sources contributed exactly one
+  article. A list of publisher names cannot cover a distribution whose mode is
+  one, and both alternatives were tried and failed on real data — provider
+  categories put a private-equity acquisition in the same bucket as everything
+  uncategorised, and query-term matching cannot tell a lithium battery deal
+  from a battery-storage company. What carries the weight instead is a filter
+  on article *shape* rather than publisher. **Accepted deliberately.**
 - **Most Agent 2 themes cite one source** (13 of 18 in the baseline), and it
   reaches the five-theme cap on well-covered sectors.
 - **Ranking saturates, and financial companies are capped.** A company beyond
@@ -320,14 +343,28 @@ Ordered by how much each would change an answer a reader actually sees.
 Distinct from the above: these are not known to be wrong, they are simply
 untested against the live pipeline.
 
-- **The CLI has never been run end to end against real agents.** Every path is
-  covered by tests with stubbed agents and the rendering was checked against
-  realistic fixtures, but no real profile has gone through it.
-- **The 12 hard Agent 1 eval cases have never been scored by the real model.**
-  They are validated against a deliberately naive string-matching stand-in,
-  which proves they separate string matching from judgment — it does not prove
-  the labels are right.
-- **Agent 3's eval has not run since the operating-margin fix.** The effect was
-  verified offline across eleven companies; the eval itself is still owed.
 - **Agent 5's exclusion path has never run.** No live run has yet produced a
-  disqualification, so the code that handles one has unit tests only.
+  disqualification, so the code that handles one has unit tests only. This is
+  the last untested path in the pipeline.
+- **The 12 hard Agent 1 cases no longer discriminate.** They score 12/12, and
+  the rubric written alongside them says 8–10 is a good hard set and 12 means
+  it is too easy. Fixing the defect the set was built to catch spent its
+  margin. The score is no longer evidence about Agent 1 until harder cases
+  exist.
+
+### Fixed, and how it was found
+
+Three things that were on this list are not any more. Each is worth reading in
+`docs/PROJECT_LOG.md`, because in every case the first diagnosis was wrong:
+
+- **Agent 3 grading data-centre operators as *direct* exposure** — Google and
+  Amazon were recommended for a renewables profile because both buy battery
+  storage. Now graded `incidental_mention` and dropped, on the test of which
+  way the money flows.
+- **Agent 5 barely reading the articles** — 1 of 8 exit conditions cited one,
+  which was read for weeks as the model taking the cheap option. It was not: it
+  had never been given the articles. Cited equalled citable on every candidate.
+  On identical inputs the rate is now 3 of 7, and what the new conditions
+  displaced was boilerplate.
+- **A live end-to-end CLI run, and the Agent 1 and Agent 3 evals** — all three
+  were owed and all three have now run against the real model.
