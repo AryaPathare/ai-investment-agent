@@ -142,10 +142,11 @@ python -m cli                           # run the pipeline and print the brief
 python -m cli --list                    # saved runs, and which can be resumed
 python -m cli --resume <id>             # continue a run that stopped
 python -m scripts.check_setup           # environment health check
-python -m pytest                        # unit tests (702, a few seconds, no network)
+python -m pytest                        # unit tests (752, a few seconds, no network)
 
 python -m evals.runner                  # Agent 1: accuracy on 30 labelled cases
 python -m evals.runner --tag hard       # only the 12 hard cases (cheaper to iterate)
+python -m evals.runner --tag hard --repeat 3   # same cases, three times each
 python -m evals.runner --tag regression # only the must-never-break cases
 
 python -m evals.research_runner         # Agent 2: process quality on 5 profiles
@@ -156,8 +157,14 @@ python -m evals.risk_runner            # Agent 4: process quality, runs 2 -> 3 -
 python -m evals.decision_runner        # Agent 5: process quality, runs 2 -> 3 -> 4 -> 5
 ```
 
-Agent 2's evals are paced ~60s apart on purpose: one research run costs about
-6,100 of Groq's free-tier 8,000 tokens-per-minute, so back-to-back runs fail.
+Agent 2's evals are paced ~60s apart on purpose: a single research run consumes
+most of Groq's free-tier 8,000 tokens-per-minute, so back-to-back runs fail.
+
+The **daily** ceiling is the binding constraint, though, and it is a rolling
+24-hour window rather than a midnight reset. One profile through Agents 2 and 3
+costs **25-30k tokens** — measured, after an earlier documented figure of ~6k
+produced an estimate of "30% spent" when it was 99% and killed a verification
+run. Measure these, never extrapolate them.
 
 ### Tests vs evals
 
@@ -184,10 +191,11 @@ config.py          All external configuration. The only place secrets are read.
 workflow.py        The LangGraph graph: nodes, edges, routing.
 models/            Pydantic schemas — the contracts between stages.
 agents/            One module per agent. Prompt + orchestration.
-evals/             Labelled cases and the scoring runner.
+evals/             Labelled cases and the scoring runners, one per agent.
 examples/          Saved profiles for `--profile`.
-scripts/           Operational helpers (health check).
+scripts/           Operational helpers (health check, log renderer).
 tests/             Unit tests.
+docs/              PROJECT_LOG.md and its rendered HTML.
 ```
 
 ---
@@ -262,6 +270,14 @@ when four of twelve articles never reached the model. Both are also deliberately
 cautious in the same direction — a press release slipping through costs a
 mediocre input, while removing "Regulator announces probe" defeats the agent, so
 anything ambiguous is kept.
+
+**An exit condition must be checkable, or it does not ship.** Every condition
+Agent 5 writes has to cite an article it was actually shown or name a measured
+metric; anything grounded in neither is discarded, and the discards are counted.
+The counting matters more than the discarding — "monitor the competitive
+landscape" reads like prudence and means nothing, and a brief full of metric
+thresholds reads identically for any company in any sector. The count is what
+makes that visible.
 
 **Rejections are recorded, never discarded.** `drop_summary` says where every
 examined company went. "3 candidates from 30 mentions" is either good filtering
