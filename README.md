@@ -148,17 +148,18 @@ docs/              Design notes and the project log.
 The short version — [`docs/DESIGN.md`](docs/DESIGN.md) has all of them with
 their evidence.
 
-- **Agent 2 writes search queries too specific to return anything.** The one
-  open defect: an earlier fix overshot, and a live run can now come back with an
-  empty brief.
+- **Agent 3 only reads the articles Agent 2 chose to cite.** The one open
+  defect. Retrieval is throttled by a filter one stage earlier — 17 articles
+  retrieved became 5 examined — which costs nothing in a rich sector and empties
+  the brief in a thin one.
 - **Briefs can be thin.** Roughly three of ten examined companies are
   investable on a renewables theme — most of that news is about private and
   foreign firms. A one-company brief is the honest output, not a broken one.
 - **Agent 2 rarely records dissenting evidence**, and **the source filter can't
   cover its long tail** (86 of 130 observed sources contributed exactly one
   article). Both structural, both measured, both accepted deliberately.
-- **Agent 5's exclusion path has never run** against real data. It has unit
-  tests only.
+- **Two of the four exclusion reasons have never fired** against real data —
+  `restriction_violation` and `disqualified_by_risk`. The other two now have.
 
 ---
 

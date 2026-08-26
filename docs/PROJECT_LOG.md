@@ -2493,3 +2493,142 @@ The frozen state is deliberately stale - holding the inputs constant is what
 makes this a measurement of Agent 5 rather than of the pipeline. Read together,
 the two fixes agree: Agent 3 stops the data-centre buyers from arriving, and
 Agent 5 does better with whatever does.
+
+## Session 11 — 2026-08-26
+
+The last defect, two live runs, and a structural problem that only became
+visible once the defect in front of it was gone.
+
+### 73. The mechanism the prompt never stated
+
+Entry 68 recorded Agent 2 writing queries like *"NextEra Energy renewable
+portfolio expansion contracts"* — a company name plus four ANDed terms, against
+a provider that is AND-only. Five such queries returned one article between
+them.
+
+Reading the prompt with that in hand, the interesting thing is that its own
+examples were already right. *"solar panel manufacturing capacity expansion"*,
+*"grid scale battery storage contracts"* — not a company name among them. The
+section had been written to fix a different failure (queries about ministries
+and national targets) and its heading said **THE ARTICLES MUST NAME COMPANIES**.
+
+**The rule was about the kind of EVENT to search for. The model read it as an
+instruction to name the firm.** That is a fair reading of the heading, and
+nothing anywhere in the prompt contradicted it, because the prompt never said
+what the search actually does. It described good queries and bad queries and
+left the mechanism out.
+
+So the fix is the mechanism, stated plainly: every word you add is another word
+the article must ALSO contain, and rare words cost the most — "battery" appears
+in thousands of articles and "Enphase" in a handful, so one proper noun empties
+a result set that five ordinary words would have filled.
+
+There is a second argument and it is the better one. **Naming a company
+presupposes the answer.** You would only search for SunPower if you had already
+decided SunPower mattered — and which companies are in the news is precisely
+what this stage exists to find out. A query naming a company can only confirm a
+guess that should not have been made yet. That is the same reasoning as
+`Search first, then synthesise`, which was already a design rule, applied one
+level down to the queries themselves.
+
+Verified on the case that was failing:
+
+    before   1 article retrieved, 1 theme, 0 candidates
+    after    14 retrieved, 5 themes, 5 cited, all on topic, 0 hard failures
+             average query 4.8 words, none over five, none naming a company
+
+**The runner now measures this instead of leaving it to be found by hand.**
+Three soft signals — average words per query, queries over five words, queries
+naming a company — so the next occurrence is reported rather than diagnosed
+from cache provenance by someone who happened to look. The company-name check
+is capitalisation matching and is labelled a heuristic, because it cannot know
+that "Waaree" is a company and "Nova" is part of Nova Scotia. Excluding all-caps
+tokens keeps `GLP-1` and `US` out of it.
+
+These are the first tests any eval runner has had. That is worth noting on its
+own: five runners have been making measurements this project acted on for ten
+sessions, and nothing checked that they measured what they claimed. The new
+guard was broken deliberately before being trusted — three tests go red when
+the capitalisation check is stubbed out.
+
+### 74. Two live runs: the refusal, and the brief
+
+Both profiles run end to end on the current code.
+
+**`cli-f7bbd302` — renewable energy, 142s, and it recommended NOTHING.**
+
+    9 retrieved -> 3 cited -> 3 themes -> 4 companies examined -> 0 candidates
+    dropped: 3 incidental_mention, 1 no_ticker_found
+
+The queries were the right shape, so this is not entry 73 coming back. The four
+companies named anywhere in the cited articles were Alphabet, Amazon, Meta and a
+blog. All three real ones are data-centre buyers, and entry 69's ceiling
+correctly graded them incidental.
+
+**This is the system working.** "Nothing cleared the bar" is a first-class
+outcome with its own banner and a stated reason, and it is now demonstrated on
+real data rather than asserted. It is also, for anyone showing this to another
+person, a thin thing to put on a screen.
+
+**`cli-173b47fe` — semiconductors, 3 recommendations.**
+
+    17 retrieved -> 5 cited -> 5 themes -> 8 examined -> 6 candidates
+    3 recommended, 3 excluded, 0 conditions discarded
+
+Three things were confirmed here that had only been measured on frozen state:
+
+- **Entry 73 holds in a different sector.** Six queries, every one of them four
+  words, none naming a company.
+- **Entry 72's citation fix holds on fresh live data.** 3 of 8 exit conditions
+  cite an article, against 3 of 7 on the replay. The measurement was taken on a
+  deliberately stale frozen state, so reproducing it on a run whose articles,
+  companies and sector are all different is the confirmation that was owed.
+- **`Decision.excluded` is populated for the first time on real data** — INTC
+  as `not_critiqued`, NVDA and SMCI as `outside_top_three`. Six candidates is
+  the first run to produce more than the pipeline recommends, so the machinery
+  that records what was considered and rejected had never had anything to
+  record.
+
+  **Be precise about what this does and does not settle.** Two of the four
+  exclusion reasons have now fired. The two that matter most —
+  `restriction_violation` and `disqualified_by_risk` — still have not. The
+  limitation is narrower than it was, not gone.
+
+### 75. Agent 3 only ever sees the articles Agent 2 chose to cite
+
+The empty renewables run is the interesting one, because what stopped it is not
+what stopped the last one.
+
+    renewables      9 retrieved -> 3 cited     6 articles discarded
+    semiconductors  17 retrieved -> 5 cited    12 articles discarded
+
+`ResearchFindings.articles` keeps only the articles a theme CITED, and
+`analyse_companies` reads that list. So company extraction is not working from
+what was retrieved — it is working from the residue of a different decision,
+made one stage earlier for a different purpose.
+
+**This is entry 62's defect in a new place**, and it has the same shape:
+`RiskFindings.articles` kept only articles a risk had cited, which starved
+Agent 5 of anything to cite. Here `ResearchFindings.articles` keeps only
+articles a theme cited, which starves Agent 3 of companies to find. Both are a
+downstream stage fed the leftovers of an upstream filter that was never designed
+to feed it.
+
+It is worse than it looks, because of a limitation already on the list and
+previously thought minor. **Most themes cite exactly one article** — 13 of 18 in
+the baseline, 5 of 5 in the run above. Combined with a five-theme cap, that caps
+the article pool reaching Agent 3 at about five, no matter how many were
+retrieved. Seventeen articles became five. The recorded cost of single-source
+themes was "thin evidence"; the real cost is that it throttles the company
+pipeline.
+
+Not fixed today, for the reason entry 68 gives: fixing one thing and measuring
+another in the same run leaves neither measured. And it needs a decision rather
+than an edit — whether Agent 3 should read every retrieved article, or whether
+uncited articles should be a separate lower-priority pool, changes what "the
+research found" means to every stage after it.
+
+**Two runs were needed to see it.** In semiconductors the filter throws away
+twelve articles and costs nothing, because five cited articles still name eight
+companies. In renewables it throws away six and empties the brief. A defect that
+only bites when the pool is thin is invisible in exactly the runs that go well.

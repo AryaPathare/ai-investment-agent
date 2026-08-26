@@ -1,23 +1,23 @@
 # Start here
 
-Last worked: **2026-08-25**. **The pipeline is complete, demonstrable, durable,
+Last worked: **2026-08-26**. **The pipeline is complete, demonstrable, durable,
 and published.** All five agents are built and verified against their own evals,
 `python -m cli` runs the whole thing end to end, a run that stops can be resumed,
 and CI proves the suite passes on machines that have never seen the project.
 
-**Session 10 closed the project, and every verification it owed is done.**
-2.2c, 2.5 and 2.6 are all built, run and measured; the closing entry is written
-and entry 72 records the last measurement, which landed after it.
+**Session 10 closed the project; session 11 fixed its last defect and found the
+next one.** 2.2c, 2.5 and 2.6 are verified. 2.8 is fixed and verified. Two live
+runs exist on the current code, one showing a full brief and one showing the
+refusal path.
 
-**Nothing is outstanding except one defect found on the way** - 2.8, Agent 2
-writing queries too long to return anything. It is a prompt overshoot with its
-evidence attached, and it is the only reason a fresh live run on the renewables
-profile may come back empty. Everything else is either done or recorded as
-deliberately accepted.
+**The open defect is 2.9**, and unlike everything before it, it needs a DESIGN
+DECISION rather than a prompt edit: Agent 3 only reads the articles Agent 2
+chose to cite, so retrieval is throttled by a filter one stage earlier. See
+section 2.9 and entry 75.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **72**
+- `docs/PROJECT_LOG.md` is current through entry **75**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -32,8 +32,8 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **752 passed, 1 skipped** in a few seconds. (748 until session 10 added
-four tests for 2.6. Not 707 - that was the COLLECTED count. Do not add `-q`:
+Expect **760 passed, 1 skipped** in a few seconds. (752 until session 11 added
+eight tests for the research runner. Not 707 - that was the COLLECTED count. Do not add `-q`:
 pytest.ini already sets it, and `-qq` suppresses the summary line, which is how
 the wrong number survived.)
 
@@ -210,29 +210,45 @@ Written as a converter rather than a dependency because nothing in the
 toolchain does markdown - no pandoc, no weasyprint - and installing one for a
 file built twice a year is the worse trade.
 
-### 2.8 Agent 2 writes queries too long to return anything - **NEW, NOT FIXED**
+### 2.8 Agent 2's over-long queries - **DONE 2026-08-26**
 
-`company_runner --limit 1` returned 1 theme, 1 article, 0 candidates. The
-provenance block said why immediately:
+The prompt described good and bad queries and never said what the search
+actually does. Added the mechanism - every added word is another word the
+article must also contain, and a proper noun is a rare word - plus the better
+argument, that naming a company presupposes the answer this stage exists to find
+out.
 
-    SunPower solar panel manufacturing expansion            found 0
-    Vestas wind turbine supply chain expansion              found 1
-    Orsted green hydrogen production facility investment    found 0
-    NextEra Energy renewable portfolio expansion contracts  found 0
-    Enphase Energy battery storage contracts                found 0
+    before   1 article retrieved, 1 theme, 0 candidates
+    after    14 retrieved, 5 themes, all on topic, 0 hard failures
+             avg query 4.8 words, none over five, none naming a company
 
-Every query names a company and ANDs four or five more terms onto it.
-TheNewsAPI is space-separated AND with no `OR`; three ANDed terms usually
-returns nothing and five returns nothing at all.
+Confirmed again on a different sector the same day: six queries, all four words.
+The runner now reports the three signals itself, and has its first tests.
+Entry 73.
 
-**This is 2.4's fix overshooting.** Teaching Agent 2 that a useful article
-contains a COMPANY was read as "name companies in the query" - the one place a
-name cannot help, because it becomes another term the article must match.
+### 2.9 Agent 3 only reads the articles Agent 2 CITED - **OPEN, needs a decision**
 
-The fix is a prompt rule about query LENGTH and shape, and the eval to prove it
-is `python -m evals.research_runner` (or `company_runner`, which shows the
-downstream effect). **Fix this before trusting any company or decision eval on
-this profile.** Entry 68.
+    renewables      9 retrieved -> 3 cited     6 discarded
+    semiconductors  17 retrieved -> 5 cited   12 discarded
+
+`ResearchFindings.articles` keeps only cited articles and `analyse_companies`
+reads that list, so company extraction works from the residue of a decision made
+one stage earlier for a different purpose. **The same shape as entry 62**, where
+`RiskFindings.articles` starved Agent 5 of anything to cite.
+
+It is throttled harder than it looks: most themes cite exactly one article (13
+of 18 in the baseline, 5 of 5 on both live runs) and there is a five-theme cap,
+so the pool reaching Agent 3 is capped near five however many were retrieved.
+The known cost of single-source themes was "thin evidence"; the real cost is
+that it caps the company pipeline.
+
+**Why this is not just an edit.** Whether Agent 3 should read every retrieved
+article, or whether uncited articles become a separate lower-priority pool,
+changes what "the research found" means to every stage downstream. Decide that
+before touching code.
+
+**It only bites when the pool is thin**, which is why two runs were needed to
+see it - in semiconductors, discarding twelve articles cost nothing.
 
 ## 3. Then the known weaknesses
 
@@ -351,15 +367,14 @@ observed. Narrow it in ONE place for both agents if it ever fires falsely.
 
 Worth knowing before trusting a clean eval run.
 
-- **Agent 5's exclusion path has never run.** Every run produced three or fewer
-  candidates and no disqualifications, so nothing has been excluded for real.
-  Unit tests only. The frozen `cli-163fffe8` state selects 3 and excludes 0, so
-  it cannot be exercised there either. **This is the last untested path in the
-  pipeline.**
-- **Agent 2's queries are known-bad** (2.8), so no eval that depends on
-  retrieval should be read as clean until that is fixed. The 2026-08-25
-  `company_runner` run returned 0 candidates for this reason and NOT because of
-  anything it was testing.
+- **Two of the four exclusion reasons have never fired.** `cli-173b47fe`
+  populated `Decision.excluded` for the first time on real data - six
+  candidates, three recommended - but only with `outside_top_three` and
+  `not_critiqued`. **`restriction_violation` and `disqualified_by_risk` are the
+  two that matter and both still have unit tests only.**
+- **A thin-sector brief can legitimately be empty**, and 2.9 makes that more
+  likely than the pool alone would. Do not read an empty renewables run as a
+  regression without checking retrieved-versus-cited first.
 - **The 12 hard Agent 1 cases score 12/12 and are therefore too easy.** By the
   rubric written with them that is the definition. The number is no longer
   evidence about Agent 1.

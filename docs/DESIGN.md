@@ -100,20 +100,15 @@ Ordered by how much each would change an answer a reader actually sees. Every
 one of these was measured rather than guessed at; where something was fixed,
 `docs/PROJECT_LOG.md` records what the fix cost and what it revealed.
 
-- **Agent 2 writes search queries too specific to return anything.** Observed
-  2026-08-25: five queries, each naming a company and then ANDing four or five
-  more terms onto it, four of which returned zero articles.
-
-      SunPower solar panel manufacturing expansion            found 0
-      Vestas wind turbine supply chain expansion              found 1
-      NextEra Energy renewable portfolio expansion contracts  found 0
-      Enphase Energy battery storage contracts                found 0
-
-  TheNewsAPI is space-separated AND with no `OR`, so every added term narrows
-  the search. This is an earlier fix overshooting — teaching the agent that a
-  useful article names a company was read as "name companies in the query" —
-  and it is the one open defect in the project. **A live run on the renewables
-  profile can currently come back with an empty brief because of it.**
+- **Agent 3 only reads the articles Agent 2 chose to cite.**
+  `ResearchFindings.articles` keeps the articles a *theme* cited, and company
+  extraction reads that list — so retrieval feeds the residue of a decision made
+  one stage earlier for a different purpose. Two live runs on 2026-08-26: 9
+  retrieved became 3, and 17 became 5. Most themes cite exactly one article and
+  there is a five-theme cap, so the pool reaching Agent 3 is capped near five
+  however many were retrieved. In a rich sector this costs nothing; in a thin
+  one it empties the brief. **The one open defect**, and it needs a design
+  decision rather than an edit.
 - **The renewables brief is thin, and honestly so.** Of roughly ten companies
   examined for that profile, about three are investable — renewable-energy news
   is dominated by private and foreign firms. Now that loose exposure is graded
@@ -152,9 +147,12 @@ one of these was measured rather than guessed at; where something was fixed,
 Distinct from the above: these are not known to be wrong, they are simply
 untested against the live pipeline.
 
-- **Agent 5's exclusion path has never run.** No live run has yet produced a
-  disqualification, so the code that handles one has unit tests only. This is
-  the last untested path in the pipeline.
+- **Two of the four exclusion reasons have never fired.** A live run on
+  2026-08-26 populated `Decision.excluded` for the first time — six candidates,
+  three recommended — but only with `outside_top_three` and `not_critiqued`.
+  Nothing has yet been excluded for `restriction_violation` or
+  `disqualified_by_risk`, which are the two that matter, and those still have
+  unit tests only.
 - **The 12 hard Agent 1 cases no longer discriminate.** They score 12/12, and
   the rubric written alongside them says 8–10 is a good hard set and 12 means
   it is too easy. Fixing the defect the set was built to catch spent its
