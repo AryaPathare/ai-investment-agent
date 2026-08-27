@@ -34,6 +34,7 @@ from models.companies import (
     CurrencyAmounts,
     DroppedCompany,
     Fundamentals,
+    MarketPrice,
 )
 from models.decision import (
     Decision,
@@ -356,6 +357,7 @@ CHECKPOINTED_TYPES = [
     Fundamentals,
     ComparableMetrics,
     CurrencyAmounts,
+    MarketPrice,
     # Agent 4's output and its nested types. `verdict` and
     # `was_critiqued` are properties, so a dict here means Agent 5 and
     # the CLI both break on the first one they read.

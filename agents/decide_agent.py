@@ -76,9 +76,21 @@ def _brief_llm():
     ``json_schema`` for the reason recorded in the risk agent: under tool
     calling this model sometimes names the tool ``functions.<Schema>`` and the
     client rejects the whole response with nothing left to salvage.
+
+    RETRIED, which it was not until a live run died here. The provider returns
+    an intermittent 400 with an EMPTY ``failed_generation`` - the model produced
+    nothing at all, rather than something wrong. Agents 2 and 3 already retry
+    for exactly this and record it as intermittent.
+
+    It matters most at this stage. Agent 5 runs last, so an unretried blip
+    throws away the research, the company analysis and the risk critique that
+    were already paid for - about 30k of a 200k daily budget - to save one
+    retry of a single call.
     """
-    return get_llm(max_tokens=BRIEF_MAX_TOKENS).with_structured_output(
-        CompanyBrief, method="json_schema"
+    return (
+        get_llm(max_tokens=BRIEF_MAX_TOKENS)
+        .with_structured_output(CompanyBrief, method="json_schema")
+        .with_retry(stop_after_attempt=3)
     )
 
 
@@ -424,6 +436,7 @@ def decide(
             thesis=brief.thesis,
             exit_conditions=conditions,
             screen_score=candidate.screen_score,
+            price=candidate.fundamentals.price,
             verdict=critique.verdict,
             exposure=candidate.exposure,
             themes=list(candidate.themes),

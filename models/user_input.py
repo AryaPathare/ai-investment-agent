@@ -24,6 +24,19 @@ class UserInput(BaseModel):
 
     investment_amount: float = Field(gt=0)
 
+    # OPTIONAL on purpose. A required field with a default would stamp a
+    # currency onto every profile saved before this existed, and the first thing
+    # that produces is a share count divided by a price in the wrong money.
+    # Absent means "not stated", and the brief then shows prices without ever
+    # converting an amount it cannot place.
+    investment_currency: Literal["USD", "GBP", "EUR", "INR"] | None = Field(
+        default=None,
+        description=(
+            "Currency the investment amount is in. Most companies this finds "
+            "trade in USD."
+        ),
+    )
+
     investment_window: str
 
     holding_period: str

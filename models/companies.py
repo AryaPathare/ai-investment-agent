@@ -23,7 +23,7 @@ THREE IDEAS SHAPE THIS FILE, ALL OF THEM LEARNED BY PROBING THE LIVE APIS.
    broken resolver. Without it, both look identical.
 """
 
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
@@ -189,11 +189,50 @@ class CurrencyAmounts(BaseModel):
     free_cash_flow: float | None = None
 
 
+class MarketPrice(BaseModel):
+    """What one share costs, and when that was true.
+
+    Separate from ``CurrencyAmounts`` because it is a different KIND of number.
+    The amounts there come off a financial statement covering a period; this is
+    a quote from a moment, and it is stale almost immediately.
+
+    ``as_of`` is not decoration. Runs are resumable and one ships as a recording,
+    so a brief can be read days after the price was fetched. A price with no
+    date attached, printed next to a share count, invites someone to act on a
+    number that has moved.
+
+    ``currency`` is the SHARE's currency, which is not always the currency the
+    accounts are reported in - yfinance carries both, and they differ often
+    enough to matter. GBp is pence, not pounds.
+    """
+
+    amount: float = Field(gt=0, description="Price of one share, in `currency`.")
+    currency: str = Field(description="ISO-ish code as reported, e.g. USD, HKD, GBp.")
+    as_of: datetime = Field(description="When this price was fetched.")
+
+    @property
+    def in_major_units(self) -> tuple[float, str]:
+        """The price in whole currency units, and the code for them.
+
+        GBp is pence: a 250.0 GBp quote is 2.50 GBP. Left unconverted, a share
+        count divides an amount in pounds by a price in pence and comes out 100x
+        too small. The same trap the debt-to-equity fix records, in the one
+        place a reader would act on the result.
+        """
+        if self.currency == "GBp":
+            return self.amount / 100, "GBP"
+        return self.amount, self.currency
+
+
 class Fundamentals(BaseModel):
     """Financial health for one company, from one provider."""
 
     comparable: ComparableMetrics
     amounts: CurrencyAmounts
+    price: MarketPrice | None = Field(
+        default=None,
+        description="Latest share price, when the provider reported one.",
+    )
     source: DataSource
     as_of: date | None = Field(
         default=None, description="Period end date of the reported figures."

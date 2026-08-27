@@ -43,6 +43,7 @@ runners already persist results for analysis; this prints for a reader.
 """
 
 import argparse
+from datetime import date, datetime, timedelta
 import json
 import re
 import sys
@@ -148,11 +149,20 @@ def _ask_float(question: str) -> float:
 
 
 def _ask_choice(question: str, options: tuple[str, ...]) -> str:
+    """Ask for one of a fixed set, matching however the person capitalises it.
+
+    Case-insensitive on the way IN and canonical on the way out, because the
+    options are not all the same shape: risk levels are lowercase words and
+    currency codes are uppercase. Lowercasing the reply and comparing directly
+    worked only while every option happened to be lowercase - "USD" could never
+    match, and the prompt looped forever on a correct answer.
+    """
     joined = "/".join(options)
+    canonical = {option.lower(): option for option in options}
     while True:
-        raw = _read(f"  {question} ({joined}): ").lower()
-        if raw in options:
-            return raw
+        raw = _read(f"  {question} ({joined}): ").strip().lower()
+        if raw in canonical:
+            return canonical[raw]
         print(f"     Please answer one of: {joined}")
 
 
@@ -175,12 +185,26 @@ def _ask_list(question: str) -> list[str]:
 # offering the old three.
 EXPERIENCE = get_args(UserInput.model_fields["investment_experience"].annotation)
 RISK = get_args(UserInput.model_fields["risk_tolerance"].annotation)
+# The annotation is `Literal[...] | None`, so the codes sit one level in. USD
+# leads because 39 of the 48 companies in the cache trade in it, and the share
+# count is only shown when the investor's currency matches the share's.
+CURRENCIES = get_args(
+    get_args(UserInput.model_fields["investment_currency"].annotation)[0]
+)
 
 QUESTIONS: list[tuple[str, object]] = [
     ("age", lambda: _ask_int("Your age")),
     ("investment_experience", lambda: _ask_choice("Investment experience", EXPERIENCE)),
     ("risk_tolerance", lambda: _ask_choice("Risk tolerance", RISK)),
     ("investment_amount", lambda: _ask_float("Amount you want to invest")),
+    (
+        "investment_currency",
+        lambda: _ask_choice(
+            "Currency of that amount\n"
+            "     (most companies this finds trade in USD)",
+            CURRENCIES,
+        ),
+    ),
     ("investment_window", lambda: _ask_text("When do you need the money back")),
     ("holding_period", lambda: _ask_text("How long do you expect to hold")),
     # The single highest-signal answer in the whole run: Agent 2 turns this
@@ -571,6 +595,133 @@ def _grounds(condition, state: dict, indent: str = "           ") -> str:
     return "\n".join(block)
 
 
+def _as_datetime(value):
+    """Accept either a datetime or an ISO string, or give up quietly.
+
+    LangGraph stores a checkpoint's timestamp as an ISO STRING while the demo
+    recording and MarketPrice both carry real datetimes. The notice is a
+    courtesy, so an unparseable value returns None and the caller stays silent
+    rather than failing a whole run over a date it could not format.
+    """
+    if value is None or hasattr(value, "strftime"):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def print_as_of_notice(when, what: str) -> None:
+    """Say, before anything else, that these numbers are from a past moment.
+
+    A resumed run and the shipped recording both replay state that was true
+    when it was fetched. Share prices move daily, and the brief now prints one
+    next to a share count - so a reader arriving at an old run needs to know
+    that BEFORE they read a number, not in a footnote after it.
+    """
+    when = _as_datetime(when)
+    if when is None:
+        return
+    print()
+    print(_wrap(
+        f"{what} on {when:%d %b %Y}. Share prices below are from that day and "
+        "will have moved since.",
+        indent="  ",
+    ))
+
+
+# How far ahead to point the reader. Deliberately NOT derived from the stated
+# holding period, for two reasons. It is free text - "3-5 years", "a while",
+# "until I need it" - so parsing it is guesswork. And even parsed it is the
+# wrong number: someone holding for five years should not first check in five
+# years, because the conditions above are things that could happen next quarter.
+# Three months is roughly one earnings cycle, which is when the metric-based
+# conditions could actually move.
+REVIEW_AFTER_DAYS = 91
+
+
+def _next_review(today: date | None = None) -> date:
+    return (today or date.today()) + timedelta(days=REVIEW_AFTER_DAYS)
+
+
+def _affordable_shares(rec, user) -> str | None:
+    """"Your amount would buy about N shares", when that can be said honestly.
+
+    Three conditions, and all of them have to hold:
+
+    * there is a price at all;
+    * the investor said what currency their amount is in - it is optional, and
+      absent means we cannot place the number;
+    * that currency MATCHES the currency the share trades in.
+
+    No conversion is done, deliberately. An FX rate is another number fetched at
+    another moment and going stale at its own pace, and this is the one figure
+    in the whole brief a beginner might act on directly. Dividing pounds by a
+    dollar price would be wrong by a quarter and would look perfectly reasonable
+    on the page. When the currencies differ the price is still shown and this
+    line is simply absent, which is the honest outcome rather than a degraded
+    one.
+    """
+    price = getattr(rec, "price", None)
+    currency = getattr(user, "investment_currency", None)
+    if price is None or currency is None:
+        return None
+
+    amount, code = price.in_major_units
+    if code != currency:
+        return None
+
+    shares = int(user.investment_amount // amount)
+    if shares < 1:
+        return (
+            f"One share costs more than your {currency} "
+            f"{user.investment_amount:,.0f}."
+        )
+    return (
+        f"Your {currency} {user.investment_amount:,.0f} would buy about "
+        f"{shares:,} share{'' if shares == 1 else 's'} at that price."
+    )
+
+
+def print_next_steps(decision: Decision, state: dict) -> None:
+    """Turn the brief into something a reader can actually act on.
+
+    Prices, what the stated amount would buy, and a date to look again. No
+    forecast and no allocation: nothing here predicts a price or suggests how
+    much to put anywhere, because nothing in this pipeline models either.
+    """
+    user = state.get("user_input")
+    priced = [r for r in decision.recommendations if getattr(r, "price", None)]
+    if not priced and not decision.recommendations:
+        return
+
+    _banner("WHAT TO DO NEXT", char="-")
+    print()
+
+    for rec in decision.recommendations:
+        price = getattr(rec, "price", None)
+        if price is None:
+            print(f"  {rec.ticker}: no price was available from the data provider.")
+            continue
+        amount, code = price.in_major_units
+        print(f"  {rec.ticker}  {code} {amount:,.2f} per share"
+              f"   (as of {price.as_of:%d %b %Y})")
+        affordable = _affordable_shares(rec, user) if user else None
+        if affordable:
+            print(_wrap(affordable, indent="        "))
+        elif getattr(user, "investment_currency", None):
+            print(f"        Priced in {code}, and you gave your amount in "
+                  f"{user.investment_currency}, so this is not converted.")
+
+    print()
+    print(_wrap(
+        f"Look at this again on {_next_review():%d %b %Y}, about three months "
+        "from now - roughly one set of results. What to check is listed under "
+        "each company above.",
+        indent="  ",
+    ))
+
+
 def print_recommendation(index: int, rec, state: dict) -> None:
     """One company, written for someone who has not invested before.
 
@@ -652,6 +803,9 @@ def print_decision(decision: Decision, state: dict) -> None:
             # is the number agents/screening.py says cannot be read as a grade.
             if item.detail and item.reason in _DETAIL_WORTH_SHOWING:
                 print(_wrap(_plain(item.detail), indent="      "))
+
+    if not decision.recommended_nothing:
+        print_next_steps(decision, state)
 
     # Observability, kept small and at the bottom. A conditions_discarded count
     # that climbs means the model is writing conditions grounded in nothing,
@@ -773,6 +927,7 @@ def resume(store, thread_id: str) -> int:
         # refusing, because "it already finished" is not a useful reply to
         # somebody who wants to see the result again.
         print(f"\nRun {thread_id!r} already finished. Showing what it produced.")
+        print_as_of_notice(saved.updated_at, "This run was made")
         return print_outcome(store.graph.get_state(store.config(thread_id)).values)
 
     print(f"\nResuming {thread_id!r} - {STATUS_TEXT[saved.status]}.")
@@ -837,15 +992,19 @@ def run_demo(path: Path | str = DEMO_PATH) -> int:
     from models.research import ResearchFindings
     from models.risk import RiskFindings
 
+    user = UserInput.model_validate(payload["profile"])
+
+    # user_input belongs in the state, not just in the header above: the
+    # next-steps section reads the amount and its currency from it to say what
+    # the money would buy. Left out, the demo silently loses that line.
     state = {
+        "user_input": user,
         "decision": Decision.model_validate(payload["decision"]),
         "research_findings": ResearchFindings.model_validate(
             payload["research_findings"]
         ),
         "risk_findings": RiskFindings.model_validate(payload["risk_findings"]),
     }
-
-    user = UserInput.model_validate(payload["profile"])
 
     _banner("A RECORDED RUN")
     print()
@@ -855,6 +1014,9 @@ def run_demo(path: Path | str = DEMO_PATH) -> int:
         "were used to print it.",
         indent="  ",
     ))
+    recorded = payload.get("recorded_on")
+    if recorded:
+        print_as_of_notice(datetime.fromisoformat(recorded), "It was recorded")
     print()
     print("  The person this was researched for:")
     print(f"  {describe_profile(user)}")

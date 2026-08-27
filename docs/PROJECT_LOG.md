@@ -2875,3 +2875,96 @@ Seven tests changed, all of them asserting on presentation, and one caught a
 real mistake mid-edit rather than merely following it - the excluded-company
 detail above. **A test that pins the wording is worth having precisely because
 rewording is when things get quietly dropped.**
+
+### 80. Something a beginner can act on, without pretending to know a price
+
+The brief ended and left the reader stranded. The request was for prices, a
+number of shares, and "buy today, sell by this date". Two of those three went
+in; the third did not, and the reason is worth stating precisely because it is
+not the obvious one.
+
+**A sell date would be the only number in the output citing nothing.** There is
+no valuation model here, no price target, no expected return - five agents read
+news and financial statements. Every other figure traces to an article that was
+retrieved or a metric that was measured, and inventing this one would break the
+rule the whole architecture exists to enforce. The licensing argument is real
+but secondary; the system simply does not know.
+
+**And the sell signal already existed.** The exit conditions ARE the answer to
+"when do I sell" - event-based rather than date-based, which is more honest and
+harder to be wrong about. What was missing is that nobody told the reader to go
+and check them. So instead of a sell date: a review date, three months out.
+
+Three months is fixed, deliberately, and NOT taken from the stated holding
+period. That field is free text - "3-5 years", "a while", "until I need it" - so
+parsing it is guesswork, and even parsed it is the wrong number: someone holding
+for five years should not first look again in five years, because the conditions
+listed are things that could happen next quarter.
+
+**The price was already being downloaded and thrown away.** Measured across the
+48 yfinance responses cached on disk: `regularMarketPrice` and `previousClose`
+in all 48, `currentPrice` in 47. The project had been fetching it for eleven
+sessions and discarding it. FMP's four calls carry no price, so rather than
+spend a fifth request against a 250-a-day budget, FMP-sourced companies get
+their fundamentals from FMP and their price from yfinance. Mixing sources inside
+one object is fine BECAUSE they are different kinds of measurement - a statement
+covers a period, a quote is a moment, and they were never going to share a
+timestamp.
+
+**The share count is the figure a beginner would actually act on, so it is the
+one with the most conditions on it.** It appears only when there is a price, the
+investor said what currency their amount is in, and that currency matches the
+share's. No conversion is done: an FX rate is another number fetched at another
+moment, going stale at its own pace, and dividing pounds by a dollar price is
+wrong by a quarter while looking entirely reasonable on the page.
+
+That has a cost, measured before choosing it rather than discovered after: 39 of
+the 48 cached companies trade in USD, so a reader who says GBP will usually see
+a price and no share count. **The alternative was a number that is sometimes
+quietly wrong, and a missing line is easier to add later than a wrong figure is
+to take back.**
+
+`investment_currency` is OPTIONAL for the same reason. A required field with a
+default would stamp "USD" onto every profile saved before it existed, and the
+first thing that produces is a share count divided by a price in the wrong
+money. Absent means "not stated", and not stated means the line is skipped.
+
+Two things the work found on its own.
+
+**The checkpointer guard fired, exactly as session 5 designed it to.** Adding
+`MarketPrice` turned the type-registration test red before it had reached any
+agent. An unregistered Pydantic type round-trips as a plain dict and fails later,
+elsewhere, on the first property access - which is how Agents 4 and 5 shipped
+broken once. The test that catches it is now confirmed twice.
+
+**`_ask_choice` could never have matched a currency code.** It lowercased the
+reply and compared it to the options, which worked only while every option
+happened to be lowercase. "USD" would have looped forever on a correct answer.
+Eleven sessions of risk levels and experience levels hid it, because all of them
+are lowercase words. It now matches case-insensitively and returns the canonical
+value.
+
+### 81. The last agent had no retry, and it cost a whole run
+
+The live run for the new recording died at stage five:
+
+    Decision failed: BadRequestError: 400 json_validate_failed
+    'failed_generation': ''
+
+Empty. The model returned nothing at all, rather than something wrong - the
+intermittent 400 that Agents 2 and 3 both already retry for, and describe in
+comments as intermittent. `_brief_llm` had no `.with_retry`.
+
+**It is worst precisely here.** Agent 5 runs last, so one blip threw away the
+research, the company analysis and the risk critique already paid for - about
+30k of a 200k daily budget - rather than retrying a single call. The three
+agents that do retry are the three where a failure is cheap.
+
+The run was recovered without re-running any of it, by replaying `decide()` over
+the checkpointed state: one model call instead of twelve. That is the fourth
+time the checkpoint database has served as a recovery instrument rather than a
+resume feature, and it is worth noting that the CLI itself could not have done
+it - `decide_node` catches the exception and records it in state, so the graph
+finishes cleanly and `--resume` sees a completed run with an error rather than
+something to continue. **Ending cleanly and being recoverable are not the same
+property**, and this is the first case where the difference cost something.

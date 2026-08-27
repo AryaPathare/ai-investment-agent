@@ -20,8 +20,9 @@ MIT licensed — see [LICENSE](LICENSE).
 
 ## What it produces
 
-Each recommendation states a thesis, then the conditions that would break it —
-and what grounds each one:
+Each recommendation states a thesis, the conditions that would break it and
+what grounds each one, then what to do next — the share price, what your amount
+would buy, and a date to look again:
 
 ```
      WHAT WOULD MEAN THIS HAS STOPPED BEING A GOOD IDEA
@@ -33,6 +34,18 @@ and what grounds each one:
 ```
 
 A condition grounded in neither is discarded, and the discards are counted.
+
+```
+  MRVL  USD 241.38 per share   (as of 27 Aug 2026)
+        Your USD 25,000 would buy about 103 shares at that price.
+
+  Look at this again on 25 Nov 2026, about three months from now.
+```
+
+**No forecast and no allocation.** It never predicts a price, names a sell date
+or says how much to put anywhere, because nothing in the pipeline models any of
+those. The share count appears only when your stated currency matches the one
+the share trades in — no exchange rate is invented.
 
 ---
 
@@ -79,7 +92,7 @@ is the fastest way to see what the project actually produces.
 python -m pytest
 ```
 
-766 tests in a few seconds, no network and no credentials. If both of these work,
+793 tests in a few seconds, no network and no credentials. If both of these work,
 your install is good.
 
 ### 3. Add an API key
@@ -170,7 +183,7 @@ profile on a different day finds different companies.
 ## Tests and evals
 
 ```powershell
-python -m pytest                        # 766 unit tests, seconds, no network, no key
+python -m pytest                        # 793 unit tests, seconds, no network, no key
 ```
 
 The evals make **real API calls** and are how the agents were actually

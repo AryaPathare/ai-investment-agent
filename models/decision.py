@@ -34,6 +34,7 @@ an answer that can be recomputed rather than a number a model preferred.
 
 from typing import Literal
 
+from models.companies import MarketPrice
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from models.risk import CandidateVerdict
@@ -152,6 +153,10 @@ class Recommendation(BaseModel):
     # reader can trace any of it back and Agent 5 cannot quietly disagree with
     # the stages that produced it.
     screen_score: float
+    # Display only, and carried here so the CLI does not have to reach back into
+    # Agent 3's output to print it. Optional because a provider may report none,
+    # and a brief with no price is better than a brief with a guessed one.
+    price: MarketPrice | None = None
     verdict: CandidateVerdict
     exposure: str
     themes: list[str] = Field(default_factory=list)

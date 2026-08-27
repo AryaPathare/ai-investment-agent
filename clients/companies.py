@@ -39,13 +39,19 @@ import re
 import time
 import warnings
 from dataclasses import dataclass, replace
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import requests
 
 from config import PROJECT_ROOT, get_settings
-from models.companies import ComparableMetrics, CurrencyAmounts, DataSource, Fundamentals
+from models.companies import (
+    ComparableMetrics,
+    CurrencyAmounts,
+    DataSource,
+    Fundamentals,
+    MarketPrice,
+)
 
 warnings.filterwarnings("ignore", module="yfinance")
 
@@ -557,6 +563,36 @@ def _sane_margin(value: float | None) -> float | None:
     return None if value is not None and value > 1.0 else value
 
 
+def _market_price(info: dict) -> MarketPrice | None:
+    """The share price from a yfinance ``info`` payload, if it carries one.
+
+    Three fields tried in order. Measured across the 48 yfinance responses on
+    disk: ``regularMarketPrice`` and ``previousClose`` appear in all 48,
+    ``currentPrice`` in 47. Preferring the freshest and falling back means the
+    one company missing it still gets a price rather than a blank.
+
+    The currency is ``currency``, NOT ``financialCurrency``. Those are different
+    fields for different things - what the share trades in versus what the
+    accounts are reported in - and the file already records that they disagree
+    often enough to matter. A price labelled with the statement currency would
+    be a wrong label on a right number, which is the harder kind to notice.
+    """
+    for field in ("currentPrice", "regularMarketPrice", "previousClose"):
+        amount = info.get(field)
+        # A price of 0 is not a price, and MarketPrice rejects it anyway.
+        if amount is None or amount <= 0:
+            continue
+        currency = info.get("currency")
+        if not currency:
+            return None
+        return MarketPrice(
+            amount=amount,
+            currency=currency,
+            as_of=datetime.now(timezone.utc),
+        )
+    return None
+
+
 def _fetch_yfinance(ticker: str, use_cache: bool) -> Fundamentals:
     """One call. ``info`` carries every metric we need."""
     info = _ticker_info(ticker, use_cache)
@@ -575,6 +611,7 @@ def _fetch_yfinance(ticker: str, use_cache: bool) -> Fundamentals:
             operating_margin=_sane_margin(_unreported_if_zero(info.get("operatingMargins"))),
             debt_to_equity=debt_to_equity,
         ),
+        price=_market_price(info),
         amounts=CurrencyAmounts(
             # THE CURRENCY FIX. yfinance carries two currencies: "currency" is
             # what the SHARE trades in, "financialCurrency" is what the
@@ -596,6 +633,38 @@ def _fetch_yfinance(ticker: str, use_cache: bool) -> Fundamentals:
     )
 
 
+def _with_price(fundamentals: Fundamentals, ticker: str, use_cache: bool) -> Fundamentals:
+    """Fill in a share price for fundamentals that arrived without one.
+
+    FMP's four calls - ratios, growth, cash flow, income - carry no market
+    price, and a fifth endpoint would spend a request against a 250-a-day budget
+    for a number yfinance already returns inside a payload this file fetches
+    anyway. So the fundamentals come from FMP and the price from yfinance.
+
+    That mixes sources within one object, which is worth being explicit about:
+    it is fine BECAUSE they are different kinds of measurement. The statement
+    figures cover a reported period and are compared between companies; a price
+    is a quote from a moment and is only ever displayed. They were never going
+    to agree on a timestamp whichever provider supplied them.
+
+    A failure here is not an error. The company keeps its fundamentals and the
+    brief simply shows no price, which is the same outcome as a provider that
+    reports none.
+    """
+    if fundamentals.price is not None:
+        return fundamentals
+
+    try:
+        info = _ticker_info(ticker, use_cache)
+    except CompanyDataError:
+        return fundamentals
+
+    price = _market_price(info)
+    if price is None:
+        return fundamentals
+    return fundamentals.model_copy(update={"price": price})
+
+
 # --- Public interface --------------------------------------------------------
 
 
@@ -613,7 +682,8 @@ def fetch_fundamentals(
         return _fetch_yfinance(company.ticker, use_cache)
 
     try:
-        return _fetch_fmp(company.ticker, use_cache)
+        return _with_price(_fetch_fmp(company.ticker, use_cache),
+                           company.ticker, use_cache)
     except CompanyDataError:
         # FMP's free tier does not cover every US symbol - not merely every
         # non-US one. Verified on live calls: AMD, NVDA, MSFT, INTC and PFE

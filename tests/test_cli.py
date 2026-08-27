@@ -14,6 +14,7 @@ Everything is stubbed. No network, no model, no real keys.
 """
 
 import json
+from datetime import date, datetime, timezone
 
 import pytest
 
@@ -54,6 +55,7 @@ PROFILE_ANSWERS = [
     "intermediate",
     "moderate",
     "5000",
+    "USD",
     "within 3 months",
     "5+ years",
     "renewable energy, grid storage",
@@ -814,8 +816,11 @@ def test_the_demo_prints_a_real_brief(capsys):
     cli.run_demo()
     out = capsys.readouterr().out
 
-    assert "COMPANIES WORTH A LOOK" in out
-    assert "AMD" in out
+    assert "WORTH A LOOK" in out
+    # Whichever company the recording happens to hold, the brief must carry the
+    # things that make it worth showing: a price, and a date to look again.
+    assert "per share" in out
+    assert "Look at this again on" in out
     # The grounded exit conditions are the point of the whole project; a demo
     # that printed a thesis and no grounds would sell the wrong thing.
     assert "What would mean the idea has stopped working" in out
@@ -859,3 +864,85 @@ def test_the_demo_never_builds_the_graph(monkeypatch):
     monkeypatch.setattr(cli.checkpoints, "open_store", explode)
 
     assert cli.main(["--demo"]) == 0
+
+
+# --- Prices, and what an amount would buy -------------------------------------
+#
+# The one figure in the brief a beginner might act on directly, so the rules
+# about when it is NOT shown matter more than the arithmetic.
+
+
+def _priced(currency="USD", amount=100.0, **kw):
+    from models.companies import MarketPrice
+    rec = _recommendation(**kw)
+    rec.price = MarketPrice(
+        amount=amount, currency=currency,
+        as_of=datetime(2026, 8, 26, tzinfo=timezone.utc),
+    )
+    return rec
+
+
+def _investor(currency="USD", amount=5000.0):
+    return UserInput(
+        age=30, investment_experience="beginner", risk_tolerance="moderate",
+        investment_amount=amount, investment_currency=currency,
+        investment_window="within 3 months", holding_period="3-5 years",
+        sectors_of_interest=["technology"], restrictions=[],
+    )
+
+
+def test_a_matching_currency_says_what_the_amount_would_buy():
+    line = cli._affordable_shares(_priced("USD", 100.0), _investor("USD", 5000.0))
+
+    assert "50 shares" in line
+
+
+def test_a_different_currency_says_nothing_rather_than_converting():
+    """No FX. Dividing pounds by a dollar price is wrong by a quarter and looks
+    entirely reasonable on the page."""
+    assert cli._affordable_shares(_priced("USD", 100.0), _investor("GBP")) is None
+
+
+def test_no_stated_currency_says_nothing():
+    """investment_currency is optional, and absent means the amount cannot be
+    placed. Profiles saved before the question existed land here."""
+    investor = _investor()
+    investor.investment_currency = None
+
+    assert cli._affordable_shares(_priced("USD"), investor) is None
+
+
+def test_a_share_costing_more_than_the_whole_amount_says_so():
+    line = cli._affordable_shares(_priced("USD", 9000.0), _investor("USD", 5000.0))
+
+    assert "costs more than" in line
+
+
+def test_pence_are_converted_before_dividing():
+    """GBp is pence. A 250.0 GBp quote is GBP 2.50, and dividing an amount in
+    pounds by 250 would report a hundredth of the shares it should."""
+    line = cli._affordable_shares(_priced("GBp", 250.0), _investor("GBP", 1000.0))
+
+    assert "400 shares" in line
+
+
+def test_the_review_date_is_three_months_out_not_the_holding_period():
+    """Deliberately not derived from holding_period: it is free text, and
+    someone holding for five years should not first check back in five years."""
+    assert cli._next_review(date(2026, 8, 26)) == date(2026, 11, 25)
+
+
+def test_a_replayed_run_says_its_prices_are_old(capsys):
+    cli.print_as_of_notice(datetime(2026, 8, 26, tzinfo=timezone.utc), "It was recorded")
+    out = capsys.readouterr().out
+
+    assert "26 Aug 2026" in out
+    assert "will have moved since" in out
+
+
+def test_an_unparseable_timestamp_is_passed_over_quietly(capsys):
+    """The notice is a courtesy. Failing a whole run over a date it could not
+    format would be a poor trade."""
+    cli.print_as_of_notice("not a date", "It was recorded")
+
+    assert capsys.readouterr().out == ""
