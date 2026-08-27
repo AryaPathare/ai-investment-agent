@@ -44,8 +44,8 @@ A condition grounded in neither is discarded, and the discards are counted.
 
 **No forecast and no allocation.** It never predicts a price, names a sell date
 or says how much to put anywhere, because nothing in the pipeline models any of
-those. The share count appears only when your stated currency matches the one
-the share trades in — no exchange rate is invented.
+those. Prices in another currency are converted at the day's rate and the count
+is floored, so it never says you can afford a share you cannot.
 
 ---
 
@@ -92,7 +92,7 @@ is the fastest way to see what the project actually produces.
 python -m pytest
 ```
 
-806 tests in a few seconds, no network and no credentials. If both of these work,
+811 tests in a few seconds, no network and no credentials. If both of these work,
 your install is good.
 
 ### 3. Add an API key
@@ -188,7 +188,7 @@ profile on a different day finds different companies.
 ## Tests and evals
 
 ```powershell
-python -m pytest                        # 806 unit tests, seconds, no network, no key
+python -m pytest                        # 811 unit tests, seconds, no network, no key
 ```
 
 The evals make **real API calls** and are how the agents were actually

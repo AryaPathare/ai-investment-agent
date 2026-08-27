@@ -3062,3 +3062,81 @@ The comment already sitting above that question said it: *"'technology' and
 'grid storage' produce very different research, and people do not know that the
 specific answer is the better one unless they are shown."* It had been true for
 eleven sessions and the interface had never acted on it.
+
+### 84. The default that was right and the outcome that was wrong
+
+Entry 80 refused to convert currencies. A share count appeared only when the
+investor's currency matched the share's, and the reasoning was deliberate: an
+exchange rate is another number fetched at another moment, going stale at its
+own pace, sitting under the one figure in the brief a beginner might act on
+directly. Dividing pounds by a dollar price is wrong by a quarter and looks
+entirely reasonable on the page.
+
+The cost was measured before that was chosen, not discovered after: 39 of the 48
+cached companies traded in USD, so a reader who said GBP would usually see a
+price and no count. The judgement was that a missing line is easier to add later
+than a wrong figure is to take back.
+
+**The case that broke it was not the one that had been measured.** A run whose
+investor said USD - the majority currency, the safe answer - was recommended a
+Shenzhen listing priced in CNY and a Vietnamese one in VND:
+
+    300750.SZ  CNY 373.00     Priced in CNY, and you gave your amount in USD,
+                              so this is not converted.
+    VHM.VN     VND 73,800.00  Priced in VND, and you gave your amount in USD,
+                              so this is not converted.
+
+Every line, on a run with nothing wrong with it. **Choosing the majority
+currency cannot help when the pipeline's whole job is to find companies
+anywhere**, and the cache that made USD look safe was a record of what had been
+searched for, not of what the market contains. The measurement was real and the
+inference from it was too narrow.
+
+Converting now, through yfinance's FX pairs - the same fetch and the same cache
+as every company, no new provider and no new key. Two choices inside it:
+
+**The arithmetic runs in Agent 5, not the CLI.** The display layer must never
+touch the network, because `--demo` and a resumed run both print without one.
+Computing it next to the price it derives from also stops the two drifting
+apart, which is exactly the pairing the reader is being asked to trust.
+
+**Floor, never round.** Telling someone they can afford a share they cannot is
+the one direction of error that matters here. And a computed ZERO is now printed
+as "one share costs more than your USD 10,000" rather than passed over in
+silence - it is an answer, and it is unguessable from a price in a currency the
+reader does not use.
+
+**A test that could not fail, caught the same way as ever.** The floor guard
+used 700 divided by 300, which rounds and floors to the same three, so it passed
+with the logic deliberately broken. It uses 700 and 200 now. Entry 51's lesson,
+fourth outing: break a new guard on purpose or it is decoration.
+
+### 85. Two forty-word sentences and five pieces of finance-speak
+
+The third complaint from the same run was that the brief is hard to read, and
+the thesis it produced makes the case on its own:
+
+    CATL is the world's largest lithium-ion battery manufacturer, positioned to
+    capture the rapid growth in energy storage demand driven by electric
+    vehicles and grid-scale storage. Its diversified product portfolio,
+    including advanced lithium-ion and emerging sodium-ion chemistries, gives it
+    a competitive edge over rivals, making it a solid short-term play for a
+    low-risk, 3-month investor.
+
+Two sentences, both over forty words, and *positioned to capture*, *diversified
+product portfolio*, *competitive edge over rivals*, *short-term play*. Every one
+of those is a phrase that sounds like information and carries none.
+
+The prompt now asks for one idea per sentence under about twenty words, with the
+worked rewrite alongside so the instruction is demonstrated rather than
+asserted. It bans eight phrases by name, requires the company's product to be
+described in the words an outsider would use, and requires any financial measure
+to be explained in the same breath.
+
+**The failure was never that the thought was too complex.** It is three thoughts
+joined by commas, which is what a model produces when nothing tells it who is
+reading. Entry 79 rewrote the frame this text sits in - the headings, the
+labels, the machine names - and left the text itself alone. Half a job, and it
+took a person reading a real brief to say so.
+
+Unverified: it is a prompt change and the next live run is the measurement.

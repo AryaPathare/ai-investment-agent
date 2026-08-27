@@ -842,5 +842,30 @@ json_schema    the reply arrives as CONTENT -&gt; LANGCHAIN's parser rejects
 <p>the comparison spelled out. The menu teaches the narrowing at the moment the choice is made, which is the only moment the person is thinking about it.</p>
 <p>Numbers, names and free text all work and can be mixed: <code>1, grid storage</code> is a good answer. <strong>Typed text is kept exactly as written</strong>, never corrected towards a menu entry, because someone who typed "grid storage" has given something better than anything on the list. A number outside the range is passed through as text rather than dropped or guessed at - dropping loses the answer, guessing invents one, and Agent 1 is the stage that exists to judge it.</p>
 <p>The comment already sitting above that question said it: *"'technology' and 'grid storage' produce very different research, and people do not know that the specific answer is the better one unless they are shown."* It had been true for eleven sessions and the interface had never acted on it.</p>
+<h3 id="84-the-default-that-was-right-and-the-outcome-that-was-wrong">84. The default that was right and the outcome that was wrong</h3>
+<p>Entry 80 refused to convert currencies. A share count appeared only when the investor's currency matched the share's, and the reasoning was deliberate: an exchange rate is another number fetched at another moment, going stale at its own pace, sitting under the one figure in the brief a beginner might act on directly. Dividing pounds by a dollar price is wrong by a quarter and looks entirely reasonable on the page.</p>
+<p>The cost was measured before that was chosen, not discovered after: 39 of the 48 cached companies traded in USD, so a reader who said GBP would usually see a price and no count. The judgement was that a missing line is easier to add later than a wrong figure is to take back.</p>
+<p><strong>The case that broke it was not the one that had been measured.</strong> A run whose investor said USD - the majority currency, the safe answer - was recommended a Shenzhen listing priced in CNY and a Vietnamese one in VND:</p>
+<pre><code>300750.SZ  CNY 373.00     Priced in CNY, and you gave your amount in USD,
+                          so this is not converted.
+VHM.VN     VND 73,800.00  Priced in VND, and you gave your amount in USD,
+                          so this is not converted.</code></pre>
+<p>Every line, on a run with nothing wrong with it. <strong>Choosing the majority currency cannot help when the pipeline's whole job is to find companies anywhere</strong>, and the cache that made USD look safe was a record of what had been searched for, not of what the market contains. The measurement was real and the inference from it was too narrow.</p>
+<p>Converting now, through yfinance's FX pairs - the same fetch and the same cache as every company, no new provider and no new key. Two choices inside it:</p>
+<p><strong>The arithmetic runs in Agent 5, not the CLI.</strong> The display layer must never touch the network, because <code>--demo</code> and a resumed run both print without one. Computing it next to the price it derives from also stops the two drifting apart, which is exactly the pairing the reader is being asked to trust.</p>
+<p><strong>Floor, never round.</strong> Telling someone they can afford a share they cannot is the one direction of error that matters here. And a computed ZERO is now printed as "one share costs more than your USD 10,000" rather than passed over in silence - it is an answer, and it is unguessable from a price in a currency the reader does not use.</p>
+<p><strong>A test that could not fail, caught the same way as ever.</strong> The floor guard used 700 divided by 300, which rounds and floors to the same three, so it passed with the logic deliberately broken. It uses 700 and 200 now. Entry 51's lesson, fourth outing: break a new guard on purpose or it is decoration.</p>
+<h3 id="85-two-forty-word-sentences-and-five-pieces-of-finance-speak">85. Two forty-word sentences and five pieces of finance-speak</h3>
+<p>The third complaint from the same run was that the brief is hard to read, and the thesis it produced makes the case on its own:</p>
+<pre><code>CATL is the world's largest lithium-ion battery manufacturer, positioned to
+capture the rapid growth in energy storage demand driven by electric
+vehicles and grid-scale storage. Its diversified product portfolio,
+including advanced lithium-ion and emerging sodium-ion chemistries, gives it
+a competitive edge over rivals, making it a solid short-term play for a
+low-risk, 3-month investor.</code></pre>
+<p>Two sentences, both over forty words, and *positioned to capture*, *diversified product portfolio*, *competitive edge over rivals*, *short-term play*. Every one of those is a phrase that sounds like information and carries none.</p>
+<p>The prompt now asks for one idea per sentence under about twenty words, with the worked rewrite alongside so the instruction is demonstrated rather than asserted. It bans eight phrases by name, requires the company's product to be described in the words an outsider would use, and requires any financial measure to be explained in the same breath.</p>
+<p><strong>The failure was never that the thought was too complex.</strong> It is three thoughts joined by commas, which is what a model produces when nothing tells it who is reading. Entry 79 rewrote the frame this text sits in - the headings, the labels, the machine names - and left the text itself alone. Half a job, and it took a person reading a real brief to say so.</p>
+<p>Unverified: it is a prompt change and the next live run is the measurement.</p>
 </body>
 </html>
