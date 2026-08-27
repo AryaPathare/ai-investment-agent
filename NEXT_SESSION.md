@@ -10,9 +10,8 @@ defect and found the next one. **Session 12 was about the person using it**:
 a zero-key demo, the brief rewritten in plain English, and share prices with
 what an amount would buy and a date to look again.
 
-**One thing is owed before anything else**: a live check of the entry 82 salvage
-fix, which is written and tested but never ran against the model. See the top of
-section 2. Everything else open is a decision rather than a repair:
+**Nothing is owed.** The entry 82 salvage fix was verified live on 2026-08-28.
+Everything still open is a decision rather than a repair:
 
 - **2.9** - Agent 3 only reads the articles Agent 2 chose to CITE, so retrieval
   is throttled one stage earlier. Section 2.9, entry 75.
@@ -54,31 +53,17 @@ python -m cli --help
 
 ## 2. THE TASK
 
-### DO THIS FIRST: verify the salvage fix (entry 82) - ~10k
+### The salvage fix (entry 82) - **VERIFIED LIVE 2026-08-28**
 
-A live run died in Agent 3 on 2026-08-27 with four correctly graded companies
-inside the exception. Fixed the same day and verified against the exception TEXT
-plus tests, but **never verified with a live call** - the daily quota ran out at
-`Limit 200000, Used 199582`.
+Replayed `analyse_companies` over `cli-9760c4a2`'s checkpointed research - the
+exact input that raised `OutputParserException` the day before. It completed:
+5 examined, 1 candidate (688032.SS, direct, CNY 73.3).
 
-The cheapest check is the failed run's own checkpoint. It needs Agent 3 onward,
-not a fresh run, so about 10k rather than 30k:
-
-```python
-from checkpoints import open_store, CheckpointStore
-from agents.company_agent import analyse_companies
-with open_store() as s:
-    v = s.graph.get_state(CheckpointStore.config("cli-9760c4a2")).values
-cf = analyse_companies(v["research_findings"])   # died here before
-```
-
-**Pass:** it returns candidates instead of raising `OutputParserException`. The
-model may well emit a bare list again - that is fine and is the point. What must
-not happen is the run dying over it.
-
-If it does raise, read the exception SHAPE before assuming the fix is wrong:
-`agents/structured.py` now reads two wordings, and a third would be a new case
-rather than a regression.
+**Caveat worth keeping.** That proves the pipeline survives the stage; it does
+NOT prove the salvage path fired, because a well-formed reply looks identical
+from outside. The salvage itself is covered by tests built from the real
+exception text. If this ever needs settling properly, the honest instrument is a
+counter on `salvage()` rather than another live run.
 
 ---
 
