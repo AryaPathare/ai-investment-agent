@@ -10,7 +10,9 @@ defect and found the next one. **Session 12 was about the person using it**:
 a zero-key demo, the brief rewritten in plain English, and share prices with
 what an amount would buy and a date to look again.
 
-**Two things are open, and both are decisions rather than repairs:**
+**One thing is owed before anything else**: a live check of the entry 82 salvage
+fix, which is written and tested but never ran against the model. See the top of
+section 2. Everything else open is a decision rather than a repair:
 
 - **2.9** - Agent 3 only reads the articles Agent 2 chose to CITE, so retrieval
   is throttled one stage earlier. Section 2.9, entry 75.
@@ -20,7 +22,7 @@ what an amount would buy and a date to look again.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **81**
+- `docs/PROJECT_LOG.md` is current through entry **82**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -35,10 +37,12 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **793 passed, 1 skipped** in a few seconds. (760 at the end of session
-11; session 12 added tests for the demo, the margin invariant and prices. Not 707 - that was the COLLECTED count. Do not add `-q`:
-pytest.ini already sets it, and `-qq` suppresses the summary line, which is how
-the wrong number survived.)
+Expect **797 passed, 1 skipped** in a few seconds. (760 at the end of session
+11; session 12 added tests for the demo, the margin invariant, prices and the
+salvage fix.)
+
+Do not add `-q`: pytest.ini already sets it, and `-qq` suppresses the summary
+line, which is how a wrong count once survived for two sessions.
 
 Then see it work, without spending quota on a real run:
 
@@ -50,37 +54,33 @@ python -m cli --help
 
 ## 2. THE TASK
 
-**Everything in this section is DONE except 2.8**, which was found on the last
-day and is the only open defect in the project.
+### DO THIS FIRST: verify the salvage fix (entry 82) - ~10k
 
-**Do not probe for headroom with a tiny call.** A one-token request fits in the
-79 tokens that were left, so it returns 200 and tells you nothing about whether
-25,000 will fit. **Just start the real run**: a refused request consumes nothing
-and its 429 states Limit, Used and Requested exactly. That is the free and
-honest instrument - entries 66 and 70, where it worked twice.
+A live run died in Agent 3 on 2026-08-27 with four correctly graded companies
+inside the exception. Fixed the same day and verified against the exception TEXT
+plus tests, but **never verified with a live call** - the daily quota ran out at
+`Limit 200000, Used 199582`.
 
-**The console buckets by CALENDAR DAY and the limit is a rolling 24 hours.** A
-session running past midnight is split across two rows, neither of which is the
-number being enforced.
-
-Session 10 ended on the ceiling at `Limit 200000, Used 197710, Requested 3985`,
-at about 14:10 local on 2026-08-25. Measured drain rate: **~6,400 tokens/hour**,
-and it is not linear - the block a big run consumed comes back 24 hours after
-that run, not gradually.
-
-**Replaying a frozen checkpoint is the cheap instrument and it keeps winning.**
-Three of the last four verifications were done by re-running ONE stage over the
-state saved in `.state/checkpoints.sqlite` rather than re-running an eval. It
-costs one stage instead of four, and it removes retrieval variance from
-measurements that have nothing to do with retrieval:
+The cheapest check is the failed run's own checkpoint. It needs Agent 3 onward,
+not a fresh run, so about 10k rather than 30k:
 
 ```python
 from checkpoints import open_store, CheckpointStore
+from agents.company_agent import analyse_companies
 with open_store() as s:
-    v = s.graph.get_state(CheckpointStore.config("cli-163fffe8")).values
-# v holds user_input, investor_profile, research_findings,
-# company_findings, risk_findings, decision - a real run's every stage
+    v = s.graph.get_state(CheckpointStore.config("cli-9760c4a2")).values
+cf = analyse_companies(v["research_findings"])   # died here before
 ```
+
+**Pass:** it returns candidates instead of raising `OutputParserException`. The
+model may well emit a bare list again - that is fine and is the point. What must
+not happen is the run dying over it.
+
+If it does raise, read the exception SHAPE before assuming the fix is wrong:
+`agents/structured.py` now reads two wordings, and a third would be a new case
+rather than a regression.
+
+---
 
 ### 2.1 Run the CLI live, end to end - **DONE 2026-08-24**
 
@@ -487,7 +487,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 793 tests, a few seconds, no network
+python -m pytest                        # 797 tests, a few seconds, no network
 
 python -m evals.runner                  # Agent 1: 30 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)
