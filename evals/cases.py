@@ -317,6 +317,41 @@ CASES: list[EvalCase] = [
     # out. A label that cannot be defended from the agent's own stated rules
     # makes the number less trustworthy, not more, and this set's whole job is
     # to be a trustworthy instrument.
+    # --- An answer that names no sector at all -------------------------------
+    # Found by a real user answering the real CLI, which is the first defect in
+    # this project to arrive that way rather than from an eval.
+
+    EvalCase(
+        name="vague_sector_is_resolved_not_asked_about",
+        why=(
+            "REGRESSION: a real user answered 'which sectors interest you?' "
+            "with a GOAL. It passed as valid and unchanged, Agent 2 read it as "
+            "permission to search everything, and six companies from three "
+            "unrelated industries reached Agent 3 and killed the run. Nothing "
+            "here CONTRADICTS anything, so it is not a clarification - there is "
+            "nothing for the user to reconcile, and asking someone to name a "
+            "sector right after they said they do not know is not help."
+        ),
+        user=_user(sectors_of_interest=["whichever will make me the most money"]),
+        expected_status="valid",
+        expect_sectors_exclude=("whichever", "money"),
+        tags=("regression", "false-positive"),
+    ),
+    EvalCase(
+        name="a_broad_sector_is_left_exactly_alone",
+        why=(
+            "The false-positive guard for the case above, and the more likely "
+            "failure of the two. 'Technology' is broad, and a model told to "
+            "replace vague answers will be tempted to sharpen it into "
+            "'semiconductors'. Broad is not vague: the user named a real "
+            "sector and it is not the agent's to improve."
+        ),
+        user=_user(sectors_of_interest=["technology"]),
+        expected_status="valid",
+        expect_sectors_include=("technology",),
+        tags=("regression", "false-positive"),
+    ),
+
     # =======================================================================
 
     # --- Conflicts a string match cannot see --------------------------------

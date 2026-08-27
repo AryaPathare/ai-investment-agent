@@ -75,6 +75,17 @@ class ProfileAssessment(BaseModel):
         ),
     )
 
+    sectors_were_vague: bool = Field(
+        default=False,
+        description=(
+            "True when the investor named no researchable sector at all - "
+            "'anything', 'whatever makes the most money', 'you decide'. Set "
+            "revised_sectors_of_interest to the concrete sectors you chose. "
+            "This is NOT for a sector that is merely broad: 'technology' is a "
+            "real sector and must be left alone."
+        ),
+    )
+
     revised_restrictions: list[str] | None = Field(
         default=None,
         description=(
@@ -90,6 +101,25 @@ class ProfileAssessment(BaseModel):
             "Leave null otherwise."
         ),
     )
+
+    @model_validator(mode="after")
+    def check_vague_sectors_carry_a_replacement(self) -> "ProfileAssessment":
+        """A claim that the sectors were vague must come with the substitute.
+
+        The same trust boundary as the check below. "The sectors were vague"
+        with nothing to research instead is not a verdict, it is a shrug - and
+        it would reach Agent 2 as the original unusable answer with a flag
+        nobody acts on.
+        """
+        if self.sectors_were_vague and not [
+            sector for sector in (self.revised_sectors_of_interest or [])
+            if sector.strip()
+        ]:
+            raise ValueError(
+                "sectors_were_vague is True but revised_sectors_of_interest "
+                "supplies nothing to research instead"
+            )
+        return self
 
     @model_validator(mode="after")
     def check_reason_matches_status(self) -> "ProfileAssessment":
@@ -212,6 +242,18 @@ def _restrictions_after_revision(
     return kept
 
 
+# How many sectors a VAGUE answer may be turned into. Only that case: a user
+# who names five real sectors gets five.
+#
+# "Anything" is an invitation to research everything, and Agent 2 accepted it
+# once - six queries across AI chips, gene therapy, EV batteries, crypto and
+# fintech, which handed Agent 3 six companies from three unrelated industries
+# and killed the run. Breadth chosen by a model on no information is not
+# coverage, it is dilution: the same request budget spread across unrelated
+# fields returns three articles about each instead of a usable pool about one.
+MAX_SECTORS_FROM_VAGUE = 2
+
+
 def build_profile(
     user_input: UserInput,
     assessment: ProfileAssessment,
@@ -226,11 +268,22 @@ def build_profile(
     A restriction is the one revision that can HARM the user, so it carries an
     extra condition: it may only be dropped if the user's own replies mention
     what it is about. See ``_restrictions_after_revision``.
+
+    Sectors carry a different condition, and only when the model reports the
+    user named none: the substitute is capped at ``MAX_SECTORS_FROM_VAGUE``, so
+    "anything" cannot become a research budget spread across six unrelated
+    industries.
     """
     data = user_input.model_dump()
 
     if assessment.revised_sectors_of_interest is not None:
-        data["sectors_of_interest"] = assessment.revised_sectors_of_interest
+        sectors = assessment.revised_sectors_of_interest
+        # The cap applies ONLY to sectors the model substituted for a vague
+        # answer. A revision that came out of a real clarification is the user's
+        # own decision and is not trimmed.
+        if assessment.sectors_were_vague:
+            sectors = sectors[:MAX_SECTORS_FROM_VAGUE]
+        data["sectors_of_interest"] = sectors
 
     if assessment.revised_restrictions is not None:
         data["restrictions"] = _restrictions_after_revision(

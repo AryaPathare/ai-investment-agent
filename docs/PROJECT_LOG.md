@@ -2681,3 +2681,75 @@ pinned exactly. And the headline example pointed at renewables - the thin
 sector, which can legitimately recommend nothing, and which a stranger would
 reasonably read as broken. It now points at semiconductors, with renewables kept
 as the second example and labelled as the narrower one.
+
+### 77. The first defect found by a user instead of an eval
+
+Someone ran `python -m cli`, answered the eight questions as themselves, and
+broke it. Ten sessions of evals had not.
+
+The answer to "which sectors interest you?" was **"whichever will make me the
+most money"**. Agent 1 marked the profile valid and passed it through
+unchanged, because nothing in it CONTRADICTS anything - and a contradiction is
+the only thing Agent 1 was built to look for. Agent 2 then read a goal as a
+brief and searched everything:
+
+    AI chip manufacturing expansion       gene therapy phase 3 trial
+    semiconductor supply chain bottleneck EV battery supply contract
+    crypto exchange regulatory crackdown  fintech payment platform funding
+
+Six queries across five industries, which handed Agent 3 six companies from
+three unrelated fields, and there the run died:
+
+    400 'Tool choice is required, but model did not call a tool'
+
+**Two defects, and the second one is the one worth reading.**
+
+**The crash.** Agent 3's exposure call used the default tool-calling path.
+Handed an unusual list-shaped task, the model answered in prose - and its answer
+was *entirely correct*:
+
+    C1 incidental SMIC is a foundry, not equipment supplier.
+    C3 direct     Ultragenyx approval directly drives revenue.
+    C5 incidental Tesla is a battery buyer, not a producer.
+
+That is the right grading, including entry 69's buyer-versus-producer rule,
+applied correctly to companies from three industries at once. Under tool calling
+the request is rejected whole, so a correct answer in the wrong envelope is
+indistinguishable from no answer at all. Three retries returned the same prose
+three times and the run died holding what it needed.
+
+**This project had already fixed this twice.** `risk_agent.py` and
+`decide_agent.py` both carry `method="json_schema"` with a comment explaining
+exactly this failure. Agent 3 was never given the same treatment, and nothing
+noticed, because no input had made it answer in prose before. **A fix applied
+where a bug was observed, rather than everywhere it could occur, is a fix that
+waits.** Verified by replaying Agent 3 on the exact articles that 400'd: it now
+completes and returns the same grades that prose contained.
+
+**The input.** The more interesting half, because no eval would have found it.
+Every profile in the eval set was written by someone who knew what the field was
+for. Real people answer the question they wish you had asked.
+
+A vague sector is not a contradiction, so clarification is the wrong instrument
+twice over: there is nothing for the user to reconcile, and asking someone to
+name a sector immediately after they said they do not know is not help. Agent 1
+now resolves it - `sectors_were_vague` plus concrete substitutes, **capped in
+Python at two**. On the real input it chose `["technology", "healthcare"]`.
+
+The cap is the part that matters. "Anything" is an invitation to research
+everything, and everything is precisely what cannot be researched: a fixed
+search budget spread across six industries returns three articles about each
+instead of a usable pool about one. Breadth chosen by a model on no information
+is not coverage, it is dilution.
+
+The guard against over-applying it went in at the same time, as a second eval
+case. A model told to replace vague answers will happily sharpen "technology"
+into "semiconductors" - but broad is not vague. The user named a real sector and
+it is not the agent's to improve.
+
+One existing test had to change, and it was right to. It asserted that a field
+expectation is dead weight unless the case sends a clarification, since nothing
+else could revise a profile. That is still true of restrictions - deliberately,
+per entry 59 - and is no longer true of sectors. The invariant did not rot; it
+was deliberately altered, and the test now distinguishes the two fields instead
+of treating every revision alike.

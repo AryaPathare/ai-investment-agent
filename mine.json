@@ -1,0 +1,14 @@
+{
+  "age": 52,
+  "investment_experience": "beginner",
+  "risk_tolerance": "high",
+  "investment_amount": 100000.0,
+  "investment_window": "2 months",
+  "holding_period": "4 months",
+  "sectors_of_interest": [
+    "whichever will make me the most money"
+  ],
+  "restrictions": [
+    "none"
+  ]
+}

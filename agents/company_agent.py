@@ -53,9 +53,12 @@ def _mention_llm():
     # empty-generation 400 is intermittent, and "no companies at all" is a
     # real answer we want the model to state, not one we want to infer from
     # a failed request.
+    #
+    # ``json_schema`` for the reason given in _exposure_llm below: under tool
+    # calling, a plain-text answer is a 400 with nothing left to salvage.
     return (
         get_llm(max_tokens=MENTION_MAX_TOKENS)
-        .with_structured_output(MentionExtraction)
+        .with_structured_output(MentionExtraction, method="json_schema")
         .with_retry(stop_after_attempt=3)
     )
 
@@ -176,10 +179,28 @@ EXPOSURE_MAX_TOKENS = 2000
 
 @lru_cache(maxsize=1)
 def _exposure_llm():
-    """Model wired to emit an ExposureAssessment."""
+    """Model wired to emit an ExposureAssessment.
+
+    ``json_schema`` rather than the default tool-calling path, for the reason
+    Agents 4 and 5 already record - and which this agent was left out of until
+    a live run proved it applies here too.
+
+    Under tool calling, a model that answers in PROSE produces a 400 with
+    nothing salvageable: the request is rejected whole, so a correct answer in
+    the wrong envelope is indistinguishable from no answer at all. Observed on
+    a real run, where the grading itself was entirely right:
+
+        C1 incidental SMIC is a foundry, not equipment supplier.
+        C3 direct     Ultragenyx approval directly drives revenue.
+        C5 incidental Tesla is a battery buyer, not a producer.
+
+    Three retries returned the same prose three times, so the run died holding
+    the answer it needed. Without the tool envelope the same reply comes back as
+    content, and ``agents/structured.py`` can salvage it.
+    """
     return (
         get_llm(max_tokens=EXPOSURE_MAX_TOKENS)
-        .with_structured_output(ExposureAssessment)
+        .with_structured_output(ExposureAssessment, method="json_schema")
         .with_retry(stop_after_attempt=3)
     )
 

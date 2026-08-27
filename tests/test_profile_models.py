@@ -232,3 +232,83 @@ def test_adding_a_restriction_needs_no_authorisation(conflicted_user):
     )
     assert "No tobacco" in profile.restrictions
     assert set(conflicted_user.restrictions) <= set(profile.restrictions)
+
+
+# --- An answer that names no sector at all ------------------------------------
+#
+# A real user answered "which sectors interest you?" with "whichever will make
+# me the most money". That is a goal, not a sector, and it is not a
+# contradiction either - there is nothing for the user to reconcile. Agent 1
+# passed it through as valid, Agent 2 read it as permission to search
+# everything, and six companies from three unrelated industries reached Agent 3.
+
+
+def test_a_vague_answer_is_replaced_by_what_the_model_chose(conflicted_user):
+    assessment = ProfileAssessment(
+        status="valid",
+        sectors_were_vague=True,
+        revised_sectors_of_interest=["technology"],
+    )
+
+    profile = build_profile(conflicted_user, assessment)
+
+    assert profile.sectors_of_interest == ["technology"]
+
+
+def test_a_vague_answer_cannot_become_a_research_programme(conflicted_user):
+    """The cap is the whole point. "Anything" invites six sectors, and six
+    sectors share one fixed search budget between them - a few articles about
+    each instead of a usable pool about one."""
+    assessment = ProfileAssessment(
+        status="valid",
+        sectors_were_vague=True,
+        revised_sectors_of_interest=[
+            "technology", "healthcare", "energy", "banking", "consumer goods",
+        ],
+    )
+
+    profile = build_profile(conflicted_user, assessment)
+
+    assert profile.sectors_of_interest == ["technology", "healthcare"]
+
+
+def test_a_clarified_revision_is_never_capped(conflicted_user):
+    """A revision that came out of a real clarification is the USER's decision.
+    Trimming it would silently discard something they had just asked for."""
+    assessment = ProfileAssessment(
+        status="valid",
+        revised_sectors_of_interest=[
+            "technology", "healthcare", "energy", "banking", "consumer goods",
+        ],
+    )
+
+    profile = build_profile(conflicted_user, assessment)
+
+    assert len(profile.sectors_of_interest) == 5
+
+
+def test_claiming_vagueness_without_a_replacement_is_rejected():
+    """"The sectors were vague" and nothing to research instead is a shrug, not
+    a verdict - and it would reach Agent 2 as the original unusable answer."""
+    with pytest.raises(ValidationError, match="supplies nothing to research"):
+        ProfileAssessment(status="valid", sectors_were_vague=True)
+
+
+@pytest.mark.parametrize("empty", [[], [""], ["   "]])
+def test_a_blank_replacement_is_not_a_replacement(empty):
+    with pytest.raises(ValidationError, match="supplies nothing to research"):
+        ProfileAssessment(
+            status="valid",
+            sectors_were_vague=True,
+            revised_sectors_of_interest=empty,
+        )
+
+
+def test_a_real_sector_is_left_alone_by_default(conflicted_user):
+    """The flag defaults off, so an ordinary assessment cannot quietly rewrite
+    what someone asked for. "Technology" is broad and is a real sector."""
+    assessment = ProfileAssessment(status="valid")
+
+    profile = build_profile(conflicted_user, assessment)
+
+    assert profile.sectors_of_interest == ["sports", "technology"]

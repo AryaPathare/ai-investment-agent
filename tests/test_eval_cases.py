@@ -203,21 +203,24 @@ def test_regressions_are_never_relabelled_as_hard():
 
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c.name)
 def test_field_expectations_only_appear_where_they_can_be_exercised(case):
-    """An expectation on a case with no clarification is dead weight: the
-    profile is copied from the input unchanged, so the check either passes
-    trivially or fails for a reason that has nothing to do with the model."""
-    has_expectations = any(
-        (
-            case.expect_sectors_include,
-            case.expect_sectors_exclude,
-            case.expect_restrictions_include,
-            case.expect_restrictions_exclude,
-        )
-    )
-    if has_expectations:
+    """An expectation that nothing could possibly change is dead weight: the
+    check either passes trivially or fails for a reason that has nothing to do
+    with the model.
+
+    RESTRICTIONS can only be revised by a clarification - that is the 2.2b
+    guard, and it is deliberate, because dropping a restriction is the one
+    revision that can harm the user.
+
+    SECTORS have a second path. When the investor names no researchable sector
+    at all, Agent 1 substitutes concrete ones with nothing to ask them about, so
+    a sector expectation IS exercisable with no clarification. That is what the
+    vague-sector cases test, and it is why this check distinguishes the two
+    fields rather than treating every revision alike.
+    """
+    if case.expect_restrictions_include or case.expect_restrictions_exclude:
         assert case.clarifications, (
-            f"{case.name} asserts on revised fields but sends no clarification, "
-            "so nothing can revise them"
+            f"{case.name} asserts on revised restrictions but sends no "
+            "clarification, and only a clarification can revise them"
         )
 
 
