@@ -58,6 +58,20 @@ T = TypeVar("T", bound=BaseModel)
 # Matches the provider's report of what the model produced before rejecting it.
 _FAILED_GENERATION = re.compile(r"'failed_generation':\s*'(.*?)'\}\}", re.DOTALL)
 
+# LangChain raises its OWN exception when the model answers in content rather
+# than through a tool call, and it does not use the provider's wording. The
+# rejected payload sits between "from completion " and ". Got:".
+#
+# This matters because the two structured-output methods fail through different
+# channels for the SAME model mistake. Under tool calling the provider rejects
+# the envelope server-side and returns a Groq 400 carrying failed_generation.
+# Under json_schema the reply comes back as content and LangChain's parser
+# rejects it locally - same bare list, same correct data, different exception,
+# and for a while only one of them could be salvaged.
+_FROM_COMPLETION = re.compile(
+    r"from completion\s+(.*?)(?:\.\s*Got:|$)", re.DOTALL
+)
+
 # Models often wrap JSON in a markdown fence even when asked not to.
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.IGNORECASE)
 
@@ -71,9 +85,15 @@ def failed_generation(exc: Exception) -> str | None:
             return error["failed_generation"]
 
     # Fall back to the string form, since not every client exposes .body.
-    match = _FAILED_GENERATION.search(str(exc))
+    text = str(exc)
+    match = _FAILED_GENERATION.search(text)
     if match:
         return match.group(1).encode().decode("unicode_escape")
+
+    # LangChain's own parse failure, which carries the payload differently.
+    match = _FROM_COMPLETION.search(text)
+    if match:
+        return match.group(1)
     return None
 
 

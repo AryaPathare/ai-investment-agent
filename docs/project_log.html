@@ -809,5 +809,22 @@ after    base 0.600 x direct 1.0 x completeness 0.5  =  0.300</code></pre>
 <p>Empty. The model returned nothing at all, rather than something wrong - the intermittent 400 that Agents 2 and 3 both already retry for, and describe in comments as intermittent. <code>_brief_llm</code> had no <code>.with_retry</code>.</p>
 <p><strong>It is worst precisely here.</strong> Agent 5 runs last, so one blip threw away the research, the company analysis and the risk critique already paid for - about 30k of a 200k daily budget - rather than retrying a single call. The three agents that do retry are the three where a failure is cheap.</p>
 <p>The run was recovered without re-running any of it, by replaying <code>decide()</code> over the checkpointed state: one model call instead of twelve. That is the fourth time the checkpoint database has served as a recovery instrument rather than a resume feature, and it is worth noting that the CLI itself could not have done it - <code>decide_node</code> catches the exception and records it in state, so the graph finishes cleanly and <code>--resume</code> sees a completed run with an error rather than something to continue. <strong>Ending cleanly and being recoverable are not the same property</strong>, and this is the first case where the difference cost something.</p>
+<h3 id="82-the-fix-that-moved-a-failure-instead-of-removing-it">82. The fix that moved a failure instead of removing it</h3>
+<p>A live run on a "grid storage" profile died in Agent 3:</p>
+<pre><code>OutputParserException: Failed to parse ExposureAssessment from completion
+[{"company_id": "C1", "exposure": "direct", "rationale": "..."}, ...]
+Input should be a valid dictionary or instance of ExposureAssessment</code></pre>
+<p>Four companies, correctly graded, inside the exception. The model returned the bare list instead of <code>{"verdicts": [...]}</code> - <strong>the exact failure <code>agents/structured.py</code> was written for</strong>, described in its own docstring as happening "under BOTH structured-output methods".</p>
+<p>And <code>assess_exposure</code> already passes <code>list_field="verdicts"</code>, which is the salvage path for precisely this shape. It did not fire.</p>
+<p><strong>Entry 77 caused it.</strong> Moving Agent 3 to <code>method="json_schema"</code> fixed the prose failure it was aimed at, and moved a DIFFERENT failure out of reach of the recovery layer. The two methods fail through different channels for the same model mistake:</p>
+<pre><code>tool calling   the PROVIDER rejects the envelope -&gt; Groq 400 carrying
+               failed_generation, which salvage() reads
+json_schema    the reply arrives as CONTENT -&gt; LANGCHAIN's parser rejects
+               it locally, and puts the payload after "from completion"</code></pre>
+<p><code>failed_generation()</code> knew only the first shape. So the same bare list that had been salvaged happily the week before now escaped as an exception nobody could read, and took the run with it.</p>
+<p>Fixed by teaching that function LangChain's wording too. Verified against the exception text from the failed run: all four verdicts recovered.</p>
+<p><strong>What this cost, and why it looked worse than it was.</strong> Three live runs failed in a row - the vague-sector crash, an empty renewables brief, and this - which from the outside reads as a project that does not work. Two of the three were genuinely new information nothing else could have produced. This one was a regression I introduced eight hours earlier, and the honest lesson is narrower than "test more":</p>
+<p><strong>A fix that changes HOW something fails must be checked against the code that handles failures.</strong> Entry 77 changed the exception a whole agent raises, and the recovery layer sitting directly underneath it was never re-read. The tests stayed green because every one of them constructs a Groq-shaped error - they were written when that was the only shape there was, and they encoded that assumption without stating it.</p>
+<p>Third time a structured-output envelope has cost a run, and the first time the salvage layer was present, correct, and simply not reachable.</p>
 </body>
 </html>

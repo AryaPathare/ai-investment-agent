@@ -1,14 +1,15 @@
 {
-  "age": 52,
+  "age": 66,
   "investment_experience": "beginner",
-  "risk_tolerance": "high",
-  "investment_amount": 100000.0,
-  "investment_window": "2 months",
-  "holding_period": "4 months",
+  "risk_tolerance": "moderate",
+  "investment_amount": 10000.0,
+  "investment_currency": "USD",
+  "investment_window": "3 months",
+  "holding_period": "3 months",
   "sectors_of_interest": [
-    "whichever will make me the most money"
+    "grid storage"
   ],
   "restrictions": [
-    "none"
+    "no"
   ]
 }

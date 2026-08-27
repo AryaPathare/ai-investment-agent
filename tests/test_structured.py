@@ -15,6 +15,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from agents.structured import failed_generation, invoke_structured, salvage
+from models.companies import ExposureAssessment
 
 
 class Item(BaseModel):
@@ -169,3 +170,54 @@ def test_the_wrapper_is_never_preferred_over_its_own_arguments():
     got = salvage(exc, Envelope, "items")
 
     assert len(got.items) == 2, "the wrapper was validated instead of its arguments"
+
+
+# --- LangChain's own parse failure -------------------------------------------
+#
+# The same model mistake reaches this module through two different channels
+# depending on which structured-output method is in use. Under tool calling the
+# PROVIDER rejects the envelope and returns a Groq 400 carrying
+# failed_generation. Under json_schema the reply comes back as content and
+# LANGCHAIN rejects it locally, with the payload after "from completion".
+#
+# Agent 3 moved to json_schema and started losing whole runs to a bare list it
+# had been salvaging happily the week before.
+
+
+PARSE_FAILURE = (
+    'Failed to parse ExposureAssessment from completion '
+    '[{"company_id": "C1", "exposure": "direct", "rationale": "Builds them."}, '
+    '{"company_id": "C2", "exposure": "incidental", "rationale": "Buys them."}]. '
+    'Got: 1 validation error for ExposureAssessment'
+)
+
+
+def test_a_langchain_parse_error_yields_its_payload():
+    assert failed_generation(Exception(PARSE_FAILURE)).strip().startswith("[")
+
+
+def test_a_bare_list_from_a_parse_error_is_salvaged():
+    """The run that found this had four correctly graded companies inside an
+    exception, and threw all of them away over the wrapper."""
+    recovered = salvage(Exception(PARSE_FAILURE), ExposureAssessment, "verdicts")
+
+    assert [v.company_id for v in recovered.verdicts] == ["C1", "C2"]
+    assert [v.exposure for v in recovered.verdicts] == ["direct", "incidental"]
+
+
+def test_a_parse_error_with_nothing_parseable_still_gives_up():
+    """Salvage must never invent. No JSON in the message means re-raise."""
+    exc = Exception("Failed to parse Thing from completion not json at all. Got: x")
+
+    assert salvage(exc, ExposureAssessment, "verdicts") is None
+
+
+def test_the_provider_shape_still_wins_when_both_could_match():
+    """A Groq error carries the payload verbatim; the message text is a
+    fallback. Checking failed_generation first keeps the exact bytes."""
+    exc = Exception(
+        "Failed to parse X from completion [{\"company_id\": \"WRONG\"}]. Got: e "
+        "{'error': {'failed_generation': '[{\"company_id\": \"RIGHT\"}]'}}"
+    )
+
+    assert "RIGHT" in failed_generation(exc)

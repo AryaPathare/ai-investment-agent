@@ -2968,3 +2968,53 @@ it - `decide_node` catches the exception and records it in state, so the graph
 finishes cleanly and `--resume` sees a completed run with an error rather than
 something to continue. **Ending cleanly and being recoverable are not the same
 property**, and this is the first case where the difference cost something.
+
+### 82. The fix that moved a failure instead of removing it
+
+A live run on a "grid storage" profile died in Agent 3:
+
+    OutputParserException: Failed to parse ExposureAssessment from completion
+    [{"company_id": "C1", "exposure": "direct", "rationale": "..."}, ...]
+    Input should be a valid dictionary or instance of ExposureAssessment
+
+Four companies, correctly graded, inside the exception. The model returned the
+bare list instead of `{"verdicts": [...]}` - **the exact failure
+`agents/structured.py` was written for**, described in its own docstring as
+happening "under BOTH structured-output methods".
+
+And `assess_exposure` already passes `list_field="verdicts"`, which is the
+salvage path for precisely this shape. It did not fire.
+
+**Entry 77 caused it.** Moving Agent 3 to `method="json_schema"` fixed the prose
+failure it was aimed at, and moved a DIFFERENT failure out of reach of the
+recovery layer. The two methods fail through different channels for the same
+model mistake:
+
+    tool calling   the PROVIDER rejects the envelope -> Groq 400 carrying
+                   failed_generation, which salvage() reads
+    json_schema    the reply arrives as CONTENT -> LANGCHAIN's parser rejects
+                   it locally, and puts the payload after "from completion"
+
+`failed_generation()` knew only the first shape. So the same bare list that had
+been salvaged happily the week before now escaped as an exception nobody could
+read, and took the run with it.
+
+Fixed by teaching that function LangChain's wording too. Verified against the
+exception text from the failed run: all four verdicts recovered.
+
+**What this cost, and why it looked worse than it was.** Three live runs failed
+in a row - the vague-sector crash, an empty renewables brief, and this - which
+from the outside reads as a project that does not work. Two of the three were
+genuinely new information nothing else could have produced. This one was a
+regression I introduced eight hours earlier, and the honest lesson is narrower
+than "test more":
+
+**A fix that changes HOW something fails must be checked against the code that
+handles failures.** Entry 77 changed the exception a whole agent raises, and the
+recovery layer sitting directly underneath it was never re-read. The tests
+stayed green because every one of them constructs a Groq-shaped error - they
+were written when that was the only shape there was, and they encoded that
+assumption without stating it.
+
+Third time a structured-output envelope has cost a run, and the first time the
+salvage layer was present, correct, and simply not reachable.
