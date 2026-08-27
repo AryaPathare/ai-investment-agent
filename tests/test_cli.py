@@ -946,3 +946,69 @@ def test_an_unparseable_timestamp_is_passed_over_quietly(capsys):
     cli.print_as_of_notice("not a date", "It was recorded")
 
     assert capsys.readouterr().out == ""
+
+
+# --- Choosing what to research ------------------------------------------------
+#
+# The highest-signal answer in the run, and the one a beginner is least equipped
+# to give. The menu exists so nobody faces a blank prompt; the examples beside
+# each entry exist so the menu does not make everyone broader, which would be
+# worse than the blank. Narrower researches better: "semiconductors" produced
+# this project's best brief and "renewable energy" produced an empty one.
+
+
+def test_a_number_becomes_the_providers_own_sector_name(answers):
+    """Resolved to the wording the company data provider reports, so a sector
+    picked here is the same string Agent 3 later sees on a resolved company."""
+    answers("1")
+
+    assert cli._ask_sectors() == ["Technology"]
+
+
+def test_several_numbers_are_all_resolved(answers):
+    answers("1, 5")
+
+    assert cli._ask_sectors() == ["Technology", "Utilities"]
+
+
+def test_typed_text_is_kept_exactly_as_written(answers):
+    """Not corrected towards a menu entry. Someone who writes "grid storage"
+    has given something better than any option on the list."""
+    answers("grid storage")
+
+    assert cli._ask_sectors() == ["grid storage"]
+
+
+def test_numbers_and_words_can_be_mixed(answers):
+    answers("1, grid storage")
+
+    assert cli._ask_sectors() == ["Technology", "grid storage"]
+
+
+@pytest.mark.parametrize("out_of_range", ["0", "12", "99"])
+def test_a_number_outside_the_menu_is_treated_as_text(answers, out_of_range):
+    """Silently dropping it would lose the answer; guessing which sector was
+    meant would invent one. Passing it through lets Agent 1 see it."""
+    answers(out_of_range)
+
+    assert cli._ask_sectors() == [out_of_range]
+
+
+def test_the_menu_is_printed_with_a_narrower_example_each(answers, capsys):
+    answers("1")
+    cli._ask_sectors()
+    out = capsys.readouterr().out
+
+    for name, example in cli.SECTORS:
+        assert name in out
+        assert example in out
+
+
+def test_every_sector_offered_is_one_the_provider_reports():
+    """These are Yahoo's names - "Consumer Cyclical", "Financial Services" - and
+    not GICS's, because matching the provider means no translation later."""
+    names = {name for name, _ in cli.SECTORS}
+
+    assert {"Technology", "Healthcare", "Consumer Cyclical",
+            "Financial Services", "Utilities"} <= names
+    assert len(cli.SECTORS) == 11

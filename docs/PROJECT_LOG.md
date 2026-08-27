@@ -3018,3 +3018,47 @@ assumption without stating it.
 
 Third time a structured-output envelope has cost a run, and the first time the
 salvage layer was present, correct, and simply not reachable.
+
+### 83. A menu that does not make everyone broader
+
+The sector question offered three examples and a blank line. For the audience
+this was built for - somebody who does not know where to begin - that is the
+hardest prompt in the run, and it is also the highest-signal answer in it: Agent
+2 turns it straight into search queries.
+
+So it now lists the eleven sectors the market is conventionally divided into.
+The wording is the DATA PROVIDER's - "Consumer Cyclical", "Financial Services",
+Yahoo's names rather than GICS's - so a sector picked here is the same string
+Agent 3 later reads off a resolved company, with nothing to translate.
+
+**The obvious version of this change would have made the system worse**, and
+that is the part worth recording. This project's own evidence says narrow beats
+broad, and by a wide margin:
+
+    "semiconductors"      Lam Research and Applied Materials, both direct,
+                          both with an article-cited exit condition
+    "grid storage"        one candidate, priced, on theme
+    "renewable energy"    an empty brief - correctly, but empty
+    "whichever will make
+     me the most money"   five industries at once, and a dead run
+
+A bare menu of eleven broad sectors invites everyone to pick from the broad end,
+which is the end that researches badly. The list would have solved the blank
+page and quietly degraded every run made from it.
+
+So each entry carries a narrower example - `Utilities  e.g. solar, grid storage`
+- and the prompt underneath says outright that narrower researches better, with
+the comparison spelled out. The menu teaches the narrowing at the moment the
+choice is made, which is the only moment the person is thinking about it.
+
+Numbers, names and free text all work and can be mixed: `1, grid storage` is a
+good answer. **Typed text is kept exactly as written**, never corrected towards
+a menu entry, because someone who typed "grid storage" has given something
+better than anything on the list. A number outside the range is passed through
+as text rather than dropped or guessed at - dropping loses the answer, guessing
+invents one, and Agent 1 is the stage that exists to judge it.
+
+The comment already sitting above that question said it: *"'technology' and
+'grid storage' produce very different research, and people do not know that the
+specific answer is the better one unless they are shown."* It had been true for
+eleven sessions and the interface had never acted on it.

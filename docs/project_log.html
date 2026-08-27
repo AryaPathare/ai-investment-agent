@@ -826,5 +826,21 @@ json_schema    the reply arrives as CONTENT -&gt; LANGCHAIN's parser rejects
 <p><strong>What this cost, and why it looked worse than it was.</strong> Three live runs failed in a row - the vague-sector crash, an empty renewables brief, and this - which from the outside reads as a project that does not work. Two of the three were genuinely new information nothing else could have produced. This one was a regression I introduced eight hours earlier, and the honest lesson is narrower than "test more":</p>
 <p><strong>A fix that changes HOW something fails must be checked against the code that handles failures.</strong> Entry 77 changed the exception a whole agent raises, and the recovery layer sitting directly underneath it was never re-read. The tests stayed green because every one of them constructs a Groq-shaped error - they were written when that was the only shape there was, and they encoded that assumption without stating it.</p>
 <p>Third time a structured-output envelope has cost a run, and the first time the salvage layer was present, correct, and simply not reachable.</p>
+<h3 id="83-a-menu-that-does-not-make-everyone-broader">83. A menu that does not make everyone broader</h3>
+<p>The sector question offered three examples and a blank line. For the audience this was built for - somebody who does not know where to begin - that is the hardest prompt in the run, and it is also the highest-signal answer in it: Agent 2 turns it straight into search queries.</p>
+<p>So it now lists the eleven sectors the market is conventionally divided into. The wording is the DATA PROVIDER's - "Consumer Cyclical", "Financial Services", Yahoo's names rather than GICS's - so a sector picked here is the same string Agent 3 later reads off a resolved company, with nothing to translate.</p>
+<p><strong>The obvious version of this change would have made the system worse</strong>, and that is the part worth recording. This project's own evidence says narrow beats broad, and by a wide margin:</p>
+<pre><code>"semiconductors"      Lam Research and Applied Materials, both direct,
+                      both with an article-cited exit condition
+"grid storage"        one candidate, priced, on theme
+"renewable energy"    an empty brief - correctly, but empty
+"whichever will make
+ me the most money"   five industries at once, and a dead run</code></pre>
+<p>A bare menu of eleven broad sectors invites everyone to pick from the broad end, which is the end that researches badly. The list would have solved the blank page and quietly degraded every run made from it.</p>
+<p>So each entry carries a narrower example - <code>Utilities  e.g. solar, grid storage</code></p>
+<ul><li>and the prompt underneath says outright that narrower researches better, with</li></ul>
+<p>the comparison spelled out. The menu teaches the narrowing at the moment the choice is made, which is the only moment the person is thinking about it.</p>
+<p>Numbers, names and free text all work and can be mixed: <code>1, grid storage</code> is a good answer. <strong>Typed text is kept exactly as written</strong>, never corrected towards a menu entry, because someone who typed "grid storage" has given something better than anything on the list. A number outside the range is passed through as text rather than dropped or guessed at - dropping loses the answer, guessing invents one, and Agent 1 is the stage that exists to judge it.</p>
+<p>The comment already sitting above that question said it: *"'technology' and 'grid storage' produce very different research, and people do not know that the specific answer is the better one unless they are shown."* It had been true for eleven sessions and the interface had never acted on it.</p>
 </body>
 </html>

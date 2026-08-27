@@ -180,6 +180,74 @@ def _ask_list(question: str) -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+# The eleven sectors the market is conventionally divided into, in the wording
+# the company data provider itself reports - "Consumer Cyclical" and "Financial
+# Services" are Yahoo's names, not GICS's. Taking the provider's vocabulary
+# means a sector the user picks here is the same string Agent 3 later sees on a
+# resolved company, rather than something that has to be translated.
+#
+# EACH ONE CARRIES A NARROWER EXAMPLE, and that is the point of the list rather
+# than decoration. This answer is the highest-signal input in the whole run -
+# Agent 2 turns it straight into search queries - and narrower researches
+# better: "semiconductors" produced this project's best brief, "renewable
+# energy" produced an empty one. A bare menu of eleven broad sectors would push
+# every beginner to the broad end, which is the opposite of what helps them. The
+# examples teach the narrowing at the moment the choice is made.
+SECTORS: tuple[tuple[str, str], ...] = (
+    ("Technology", "semiconductors, cloud software"),
+    ("Healthcare", "biotechnology, medical devices"),
+    ("Financial Services", "regional banks, payments"),
+    ("Energy", "oil services, refining"),
+    ("Utilities", "solar, grid storage"),
+    ("Industrials", "aerospace, electrical equipment"),
+    ("Consumer Cyclical", "carmakers, online retail"),
+    ("Consumer Defensive", "food producers, household goods"),
+    ("Communication Services", "streaming, telecoms"),
+    ("Basic Materials", "lithium mining, chemicals"),
+    ("Real Estate", "data-centre REITs, logistics"),
+)
+
+
+def _ask_sectors() -> list[str]:
+    """Ask what to research, showing the market's sectors as a starting point.
+
+    A beginner faced with a blank prompt and three examples does not know what
+    is allowed, which is the problem this solves. But the menu is a starting
+    point rather than a set of options: anything typed is accepted, because the
+    best answers to this question are narrower than any sector name.
+
+    Numbers, names and free text all work, and can be mixed - "1, grid storage"
+    is a perfectly good answer. Numbers are resolved to the provider's own
+    wording; anything else is passed through exactly as typed, since a person
+    who writes "grid storage" has given something better than the menu offers.
+    """
+    width = max(len(name) for name, _ in SECTORS)
+    print()
+    print("  Which parts of the market interest you?")
+    print()
+    for index, (name, example) in enumerate(SECTORS, start=1):
+        print(f"    {index:2d}  {name.ljust(width)}   e.g. {example}")
+    print()
+    print("  Pick numbers, or type something of your own.")
+    print("  Narrower researches better - 'grid storage' beats 'utilities'.")
+
+    raw = _read("  Your answer, comma separated: ")
+
+    chosen: list[str] = []
+    for item in raw.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        if item.isdigit() and 1 <= int(item) <= len(SECTORS):
+            chosen.append(SECTORS[int(item) - 1][0])
+        else:
+            # Typed rather than picked, and left exactly as written. Correcting
+            # it towards a menu entry would discard the specificity that makes
+            # a typed answer the better one.
+            chosen.append(item)
+    return chosen
+
+
 # The allowed words come from UserInput's own Literal types rather than being
 # retyped here, so adding a risk level in one place cannot leave the CLI
 # offering the old three.
@@ -208,16 +276,10 @@ QUESTIONS: list[tuple[str, object]] = [
     ("investment_window", lambda: _ask_text("When do you need the money back")),
     ("holding_period", lambda: _ask_text("How long do you expect to hold")),
     # The single highest-signal answer in the whole run: Agent 2 turns this
-    # straight into search queries. The examples matter - "technology" and
-    # "grid storage" produce very different research, and people do not know
-    # that the specific answer is the better one unless they are shown.
-    (
-        "sectors_of_interest",
-        lambda: _ask_list(
-            "Sectors or fields to research, comma separated\n"
-            "     (e.g. renewable energy, semiconductors, grid storage)"
-        ),
-    ),
+    # straight into search queries, so it gets a menu of its own rather than a
+    # one-line prompt. See SECTORS: the list exists to stop a beginner facing a
+    # blank, and its examples exist to stop the menu making everyone broader.
+    ("sectors_of_interest", _ask_sectors),
     (
         "restrictions",
         lambda: _ask_list(

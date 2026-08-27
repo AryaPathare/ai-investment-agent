@@ -92,7 +92,7 @@ is the fastest way to see what the project actually produces.
 python -m pytest
 ```
 
-793 tests in a few seconds, no network and no credentials. If both of these work,
+806 tests in a few seconds, no network and no credentials. If both of these work,
 your install is good.
 
 ### 3. Add an API key
@@ -141,6 +141,11 @@ Or answer eight questions yourself:
 python -m cli                             # then --save-profile mine.json to keep them
 ```
 
+It asks eight questions. The sector question lists the eleven sectors the market
+is divided into, with a narrower example beside each — pick a number, or type
+something of your own. **Narrower researches better**: "grid storage" produces a
+sharper brief than "utilities".
+
 A run takes **two to three minutes** and about a dozen model calls, printing
 each stage as it lands. One run costs roughly 25–30k of Groq's daily 200k, so
 you get about six or seven a day on the free tier.
@@ -183,7 +188,7 @@ profile on a different day finds different companies.
 ## Tests and evals
 
 ```powershell
-python -m pytest                        # 793 unit tests, seconds, no network, no key
+python -m pytest                        # 806 unit tests, seconds, no network, no key
 ```
 
 The evals make **real API calls** and are how the agents were actually
