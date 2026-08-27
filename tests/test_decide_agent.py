@@ -219,7 +219,7 @@ def test_excluded_candidates_are_reported_alongside_recommendations(writer):
 
     assert [r.ticker for r in got.recommendations] == ["GOOD"]
     assert got.exclusion_summary == {"not_critiqued": 1}
-    assert "1 of 2 candidates considered" in got.notes
+    assert "2 companies were looked at closely" in got.notes
 
 
 # --- A condition that has already happened -----------------------------------

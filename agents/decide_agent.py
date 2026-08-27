@@ -434,9 +434,9 @@ def decide(
     notes = None
     if chosen.excluded:
         notes = (
-            f"Recommended {len(recommendations)} of "
-            f"{len(recommendations) + len(chosen.excluded)} candidates "
-            "considered; the rest are recorded with the reason each was not."
+            f"{len(recommendations) + len(chosen.excluded)} companies were "
+            f"looked at closely and the best {len(recommendations)} are above. "
+            "The rest are listed with the reason each one was not chosen."
         )
 
     return Decision(

@@ -200,7 +200,9 @@ def test_every_shipped_example_profile_loads():
 
 def test_a_metric_condition_names_the_metric():
     condition = ExitCondition(condition="debt_to_equity rises above 3", metric="debt_to_equity")
-    assert cli._grounds(condition, {}).strip() == "grounds: metric debt_to_equity"
+    assert cli._grounds(condition, {}).strip() == (
+        "Check: the company's reported debt-to-equity"
+    )
 
 
 def test_a_citation_lines_up_under_itself():
@@ -212,7 +214,7 @@ def test_a_citation_lines_up_under_itself():
     lines = cli._grounds(condition, {"risk_findings": RiskFindings(articles=[article])})
     indents = {len(ln) - len(ln.lstrip()) for ln in lines.split("\n")[1:]}
     assert len(indents) == 1, "continuation lines must share one indent"
-    assert indents.pop() == lines.index("grounds:") + len("grounds: ")
+    assert indents.pop() == lines.index("Check:") + len("Check: ")
 
 
 def test_a_cited_bear_case_article_is_shown_with_its_source():
@@ -240,7 +242,7 @@ def test_an_unresolvable_citation_says_so_rather_than_printing_a_hex_string():
     """Silence here would look identical to a citation that worked."""
     condition = ExitCondition(condition="something happens", article_ids=["deadbeefcafe"])
     grounds = cli._grounds(condition, {"risk_findings": RiskFindings()})
-    assert "source not retained" in grounds
+    assert "was not kept" in grounds
 
 
 # --- Printing the decision ---------------------------------------------------
@@ -274,8 +276,8 @@ def test_a_recommendation_prints_its_thesis_and_its_way_out(capsys, articles):
 
     assert "WAAREE" in out
     assert "solar modules" in out
-    assert "debt_to_equity rises above 3.0" in out
-    assert "metric debt_to_equity" in out
+    assert "debt-to-equity rises above 3.0" in out
+    assert "Check: the company's reported debt-to-equity" in out
     # The citation is resolved to something a reader could go and open.
     assert "Solar financing secured in Italy" in out
     assert "Concentrated in one customer" in out
@@ -307,9 +309,13 @@ def test_every_excluded_company_is_named_with_its_reason(capsys):
     cli.print_decision(decision, {})
     out = capsys.readouterr().out
 
-    assert "ADANI" in out and "disqualified_by_risk" in out
+    # The enum names are for code to branch on. A reader gets the reason in
+    # words, and the stored detail only where it describes the COMPANY.
+    assert "ADANI" in out and "disqualified_by_risk" not in out
+    assert "A serious problem we found ruled it out." in out
     assert "governance risk" in out
-    assert "TSLA" in out and "outside_top_three" in out
+    assert "TSLA" in out and "outside_top_three" not in out
+    assert "Ranked just outside the top three." in out
 
 
 def test_discarded_conditions_are_reported(capsys):
@@ -317,7 +323,7 @@ def test_discarded_conditions_are_reported(capsys):
     and the prose above would still read perfectly well."""
     decision = Decision(recommendations=[_recommendation()], conditions_discarded=4)
     cli.print_decision(decision, {})
-    assert "4 exit condition(s) discarded" in capsys.readouterr().out
+    assert "4 thing(s) to watch for were left out" in capsys.readouterr().out
 
 
 def test_the_output_says_it_is_not_advice(capsys):
@@ -808,12 +814,12 @@ def test_the_demo_prints_a_real_brief(capsys):
     cli.run_demo()
     out = capsys.readouterr().out
 
-    assert "RECOMMENDATION(S)" in out
+    assert "COMPANIES WORTH A LOOK" in out
     assert "AMD" in out
     # The grounded exit conditions are the point of the whole project; a demo
     # that printed a thesis and no grounds would sell the wrong thing.
-    assert "WHAT WOULD MEAN THIS HAS STOPPED BEING A GOOD IDEA" in out
-    assert "grounds:" in out
+    assert "What would mean the idea has stopped working" in out
+    assert "Check:" in out
 
 
 def test_the_demo_says_it_is_a_recording(capsys):

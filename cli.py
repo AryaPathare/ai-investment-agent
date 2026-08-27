@@ -44,6 +44,7 @@ runners already persist results for analysis; this prints for a reader.
 
 import argparse
 import json
+import re
 import sys
 import textwrap
 import time
@@ -97,7 +98,7 @@ def _wrap(text: str, indent: str = "     ") -> str:
     )
 
 
-def _bullet(text: str, indent: str = "       ", marker: str = "- ") -> str:
+def _bullet(text: str, indent: str = "       ", marker: str = "• ") -> str:
     """A list item whose continuation lines hang under the text, not the dash.
 
     Without this a two-line exit condition wraps back to the margin and reads
@@ -466,7 +467,64 @@ def _find_article(article_id: str, state: dict):
     return None
 
 
-def _grounds(condition, state: dict, indent: str = "         ") -> str:
+# The machine names for the four metrics, and what to call them to a person.
+# The model writes conditions containing the raw field name because that is what
+# it was given and what Python validates against; the reader gets English.
+_METRIC_WORDS = {
+    "revenue_growth": "revenue growth",
+    "operating_margin": "operating margin",
+    "gross_margin": "gross margin",
+    "debt_to_equity": "debt-to-equity",
+    "net_income_is_negative": "net income",
+    "free_cash_flow_is_negative": "free cash flow",
+}
+
+# What the risk critic concluded, said in words rather than as a status.
+_VERDICT_WORDS = {
+    "survives": "We argued against this one and it held up.",
+    "weakened": "We argued against this one and it mostly held up.",
+    "disqualified": "We argued against this one and it did not hold up.",
+}
+
+# Why a company was considered and then not recommended. The stored values are
+# enum names for code to branch on; nobody should have to read one.
+_EXCLUSION_WORDS = {
+    "outside_top_three": "Ranked just outside the top three.",
+    "not_critiqued": "Only a few companies are examined closely each run, and "
+                     "this one fell outside that.",
+    "restriction_violation": "It runs into something you said you wanted to avoid.",
+    "disqualified_by_risk": "A serious problem we found ruled it out.",
+}
+
+
+# Exclusions whose stored detail describes the COMPANY rather than the run's
+# bookkeeping, and is therefore worth a reader's attention.
+_DETAIL_WORTH_SHOWING = {"disqualified_by_risk", "restriction_violation"}
+
+
+def _plain(text: str) -> str:
+    """Make model-written text fit for a reader.
+
+    Two substitutions, both of internal plumbing the model was legitimately
+    given and had no way to know was not for publication.
+
+    Field names, because a condition is validated against `debt_to_equity` and
+    so that is what the model writes back.
+
+    Citation labels, because articles are numbered [A1], [A2] in the prompt so
+    the model can refer to one reliably - a 36-character uuid it cannot copy.
+    Python maps the label back to the real article, and the source is then
+    printed underneath in full. By the time a person reads it, "[A1]" names
+    nothing on their screen.
+    """
+    for machine, human in _METRIC_WORDS.items():
+        text = text.replace(machine, human)
+
+    text = re.sub(r"\s*\[A\d+\]", "", text)
+    return re.sub(r"\s{2,}", " ", text).strip()
+
+
+def _grounds(condition, state: dict, indent: str = "           ") -> str:
     """Say what a reader could go and check to see whether a condition has hit.
 
     Returned as a block already indented, because a source runs to three lines -
@@ -477,27 +535,28 @@ def _grounds(condition, state: dict, indent: str = "         ") -> str:
     as a bare uuid: "the source was not retained" is information, and a hex
     string on its own is not.
     """
-    lead = f"{indent}grounds: "
+    lead = f"{indent}Check: "
     cont = " " * len(lead)
 
     if condition.metric:
-        return f"{lead}metric {condition.metric}"
+        metric = _METRIC_WORDS.get(condition.metric, condition.metric)
+        return f"{lead}the company's reported {metric}"
 
     lines: list[str] = []
     for article_id in condition.article_ids:
         article = _find_article(article_id, state)
         if article is None:
-            lines.append(f"article {article_id[:8]} (source not retained)")
+            lines.append(f"the source for this was not kept ({article_id[:8]})")
             continue
         lines.append(f'"{article.title}"')
-        lines.append(f"{article.source}, {article.published_at:%Y-%m-%d}")
+        lines.append(f"{article.source}, {article.published_at:%d %b %Y}")
         # Appended AFTER wrapping, below: textwrap breaks a long URL mid-token,
         # which makes it uncopyable - and a link the reader cannot follow
         # defeats the only reason this block exists.
         lines.append(("url", article.url))
 
     if not lines:
-        lines = ["nothing checkable"]
+        lines = ["nothing you could go and look up"]
 
     block = []
     for index, line in enumerate(lines):
@@ -513,27 +572,38 @@ def _grounds(condition, state: dict, indent: str = "         ") -> str:
 
 
 def print_recommendation(index: int, rec, state: dict) -> None:
+    """One company, written for someone who has not invested before.
+
+    The screen score is deliberately NOT printed. It is a ranking number, and
+    `agents/screening.py` records why its absolute value cannot be read as a
+    grade: it saturates at the top and caps financial companies at 0.50. A
+    reader shown "0.64" will take it for 64% of something. The position in this
+    list is the part of that number that means anything, and the list already
+    shows it.
+    """
     print()
-    print(f" {index}. {rec.ticker} - {rec.name}")
-    print(f"     screen score {rec.screen_score:.2f}  |  risk verdict: {rec.verdict}")
+    print(f" {index}. {rec.name} ({rec.ticker})")
     if rec.themes:
-        print(_wrap(f"themes: {', '.join(rec.themes)}", indent="     "))
+        print(_wrap(f"Came up because of: {', '.join(rec.themes)}", indent="     "))
+    verdict = _VERDICT_WORDS.get(rec.verdict)
+    if verdict:
+        print(f"     {verdict}")
 
     print()
-    print("     WHY")
-    print(_wrap(rec.thesis, indent="       "))
+    print("     Why it might be worth a look")
+    print(_wrap(_plain(rec.thesis), indent="       "))
 
     print()
-    print("     WHAT WOULD MEAN THIS HAS STOPPED BEING A GOOD IDEA")
+    print("     What would mean the idea has stopped working")
     for condition in rec.exit_conditions:
-        print(_bullet(condition.condition))
+        print(_bullet(_plain(condition.condition)))
         print(_grounds(condition, state))
 
     if rec.known_risks:
         print()
-        print("     RISKS IT STILL CARRIES")
+        print("     Worth knowing")
         for risk in rec.known_risks:
-            print(_bullet(risk))
+            print(_bullet(_plain(risk)))
 
 
 def print_decision(decision: Decision, state: dict) -> None:
@@ -547,36 +617,41 @@ def print_decision(decision: Decision, state: dict) -> None:
         print()
         print(
             _wrap(
-                "This is a real answer, not a failure. The pipeline ran and "
-                "concluded that nothing cleared the bar.",
+                "This is a real answer, not a failure. Everything ran, and "
+                "nothing it found was good enough to put in front of you.",
                 indent="  ",
             )
         )
         print()
-        print("  WHY")
+        print("  Why")
         print(
-            _wrap(decision.no_recommendation_reason or "no reason recorded", indent="    ")
+            _wrap(_plain(decision.no_recommendation_reason or "no reason recorded"),
+                  indent="    ")
         )
     else:
-        _banner(f"{len(decision.recommendations)} RECOMMENDATION(S)")
+        count = len(decision.recommendations)
+        _banner(f"{count} {'COMPANY' if count == 1 else 'COMPANIES'} WORTH A LOOK")
         for index, rec in enumerate(decision.recommendations, start=1):
             print_recommendation(index, rec, state)
 
     if decision.excluded:
-        _banner("CONSIDERED AND NOT RECOMMENDED", char="-")
+        _banner("ALSO CONSIDERED, BUT NOT RECOMMENDED", char="-")
         print()
         # Every candidate is accounted for here on purpose: a company that
         # simply vanished between the ranking and the output would be the one
-        # failure a reader could never detect.
+        # failure a reader could never detect. The stored reason is an enum for
+        # code to branch on, so it is translated rather than printed raw.
         for item in decision.excluded:
-            print(f"  {item.ticker} - {item.name}")
-            print(f"      reason: {item.reason}")
-            if item.detail:
-                print(_wrap(item.detail, indent="        "))
-        summary = ", ".join(
-            f"{n} {why}" for why, n in decision.exclusion_summary.items()
-        )
-        print(f"\n  ({summary})")
+            print(f"  {item.name} ({item.ticker})")
+            print(_wrap(_EXCLUSION_WORDS.get(item.reason, item.reason),
+                        indent="      "))
+            # The detail is worth showing for the two reasons that say
+            # something ABOUT THE COMPANY - a risk that ruled it out, a limit it
+            # ran into. For the ranking reasons it is internal bookkeeping
+            # ("ranked 4 of 5 eligible (weakened, score 0.997)"), and that score
+            # is the number agents/screening.py says cannot be read as a grade.
+            if item.detail and item.reason in _DETAIL_WORTH_SHOWING:
+                print(_wrap(_plain(item.detail), indent="      "))
 
     # Observability, kept small and at the bottom. A conditions_discarded count
     # that climbs means the model is writing conditions grounded in nothing,
@@ -584,7 +659,8 @@ def print_decision(decision: Decision, state: dict) -> None:
     footnotes = []
     if decision.conditions_discarded:
         footnotes.append(
-            f"{decision.conditions_discarded} exit condition(s) discarded as ungrounded"
+            f"{decision.conditions_discarded} thing(s) to watch for were left "
+            "out, because nothing was given that you could go and check."
         )
     if decision.notes:
         footnotes.append(decision.notes)
@@ -598,8 +674,8 @@ def print_decision(decision: Decision, state: dict) -> None:
     print("=" * WIDTH)
     print(
         _wrap(
-            "Research, not advice. This system does not size positions or tell "
-            "anyone what to buy.",
+            "This is research, not advice. It does not tell you what to buy, "
+            "or how much.",
             indent=" ",
         )
     )

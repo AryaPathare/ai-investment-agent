@@ -2819,3 +2819,59 @@ biotech and correctly near the bottom, and REGENXBIO's leading position rested
 on a number that could not be true. `ScoreBreakdown` was built so a surprising
 ranking would be debuggable rather than mysterious. This is the first time
 anyone asked it to do that, and it worked.
+
+### 79. Written for the person it was built for
+
+The output was hard to read, which matters more here than in most projects: the
+whole premise is someone who does not know where to begin. The brief was written
+in the vocabulary of the system that produced it.
+
+Everything below is the display layer only. No agent, prompt or score changed.
+
+**Machine names reaching a person.** A condition is validated against a field
+called `debt_to_equity`, so that is what the model writes back, and that is what
+a beginner was reading. Same for the exclusion reasons - `outside_top_three`,
+`not_critiqued` are enum values for code to branch on, and nobody should have to
+read one. Both are translated at the edge.
+
+**Citation labels.** Articles are numbered `[A1]`, `[A2]` in the prompt so the
+model can refer to one reliably - a 36-character uuid it cannot copy. Python
+maps the label back and prints the real source underneath. But the model also
+writes the label into its prose, and by the time a person reads *"the article
+[A1] reports that..."* it names nothing on their screen. Stripped.
+
+**The score is gone from the brief.** This is the change with a real argument
+behind it. `screen score 0.64` invites a reader to take it for 64% of something,
+and entry 78 is the proof that even a careful reader cannot use it - the question
+that started that investigation was "0.50, 0.29 and 0.16 - is that good or bad?"
+The honest answer is that the number is only valid for ORDERING, which is
+`agents/screening.py`'s own recorded position: it saturates at the top and caps
+financial companies at 0.50. The list already shows the ordering. Printing the
+number as well adds nothing a reader can use and one thing they can misread.
+
+It is still in the JSON, still in the evals, still in `ScoreBreakdown`. Removed
+from the one place it is read by someone who has no way to interpret it.
+
+**What was deliberately KEPT.** `grounds: metric X` under every metric-derived
+condition looks like clutter and is the opposite. Entry 62's whole point is that
+a brief where four of five conditions rest on generic thresholds is thin, and
+seeing it repeated down the page is how a reader notices. It now reads *"Check:
+the company's reported revenue growth"* - plainer, and still visibly the same
+sentence four times when the brief is weak. **Legibility is not the same as
+hiding the ugly part.**
+
+The same reasoning restored something removed a moment earlier. Dropping
+`ExcludedCompany.detail` cost a genuine explanation - *"A critical governance
+risk broke the thesis"* - so the detail now shows for the two reasons that
+describe the COMPANY, and stays hidden for the ranking reasons where it is
+internal bookkeeping carrying that same misleading score.
+
+Section headings went to sentence case, `WHAT WOULD MEAN THIS HAS STOPPED BEING
+A GOOD IDEA` became `What would mean the idea has stopped working`, dates read
+`15 Aug 2026`, and the footer says it does not tell you what to buy or how much
+rather than that it does not "size positions".
+
+Seven tests changed, all of them asserting on presentation, and one caught a
+real mistake mid-edit rather than merely following it - the excluded-company
+detail above. **A test that pins the wording is worth having precisely because
+rewording is when things get quietly dropped.**
