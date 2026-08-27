@@ -1,15 +1,15 @@
 {
-  "age": 66,
-  "investment_experience": "beginner",
+  "age": 21,
+  "investment_experience": "intermediate",
   "risk_tolerance": "moderate",
   "investment_amount": 10000.0,
   "investment_currency": "USD",
-  "investment_window": "3 months",
-  "holding_period": "3 months",
+  "investment_window": "4 month",
+  "holding_period": "4 months",
   "sectors_of_interest": [
-    "grid storage"
+    "semiconductors"
   ],
   "restrictions": [
-    "no"
+    "none"
   ]
 }

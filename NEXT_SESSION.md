@@ -260,29 +260,26 @@ The decision: should a stage that failed be resumable, and if so, how does the
 graph distinguish "finished with an error" from "finished"? That changes what
 `--list` and `--resume` mean, so decide it before touching code.
 
-### 2.11 The shipped demo holds one company - **COSMETIC, worth improving**
+### 2.11 The shipped demo - **RE-RECORDED 2026-08-28, DONE**
 
-`python -m cli --demo` needs no API key at all and is the thing to show
-someone. It replays `demo/recorded_run.json`, a real run, and it shows every
-feature: a grounded exit condition citing a real article, a share price with an
-as-of date, what the stated amount would buy, and a review date.
+`demo/recorded_run.json` now holds `cli-11a4243b`: Lam Research and Applied
+Materials, both graded `direct` against an AI semiconductor-equipment theme,
+both with an article-cited exit condition carrying a real headline and a working
+link, both priced, with share counts and a review date.
 
-But the run behind it produced ONE candidate from nine examined, so it is
-thinner than the three-company run it replaced. Nothing is wrong with it.
-
-**Re-record the next time a live run produces three or four candidates.** Build
-the payload from that run's checkpoint - `recorded_on`, `profile`, `decision`,
-`research_findings`, `risk_findings` - and write it to `demo/recorded_run.json`.
-The tests deliberately do not pin the company or the count, so a re-record needs
-no test changes.
+The best brief this pipeline has produced, and the one `python -m cli --demo`
+shows. It replaced a one-company recording, which was fine but thin.
 
 Saved runs, all replayable at zero quota:
 
-    cli-15031438   semiconductors, 1 recommendation, WITH prices  (the recording)
-    cli-173b47fe   semiconductors, 3 - but no prices, and predates
-                   the plain-English brief
+    cli-11a4243b   semiconductors, 2 recommendations, priced  (the recording)
+    cli-9760c4a2   grid storage - the OutputParserException run, now fixed
     cli-f7bbd302   renewables, recommends NOTHING
     cli-008657ee   healthcare - the run that exposed the margin bug
+
+To re-record after a better run, serialise its checkpoint: `recorded_on`,
+`profile`, `decision`, `research_findings`, `risk_findings`. Costs no quota. The
+tests deliberately pin neither the company nor the count.
 
 ## 3. Then the known weaknesses
 

@@ -1,26 +1,66 @@
 {
   "_comment": "A real recorded run, shipped so the pipeline can be seen working with no API keys and no network. Rendered by `python -m cli --demo`.",
-  "recorded_on": "2026-08-27T02:17:19.803728+00:00",
+  "recorded_on": "2026-08-27T19:55:22.797577+00:00",
   "profile": {
-    "age": 30,
+    "age": 21,
     "investment_experience": "intermediate",
-    "risk_tolerance": "high",
-    "investment_amount": 25000.0,
+    "risk_tolerance": "moderate",
+    "investment_amount": 10000.0,
     "investment_currency": "USD",
-    "investment_window": "within 3 months",
-    "holding_period": "3-5 years",
+    "investment_window": "4 month",
+    "holding_period": "4 months",
     "sectors_of_interest": [
-      "semiconductors",
-      "artificial intelligence"
+      "semiconductors"
     ],
-    "restrictions": []
+    "restrictions": [
+      "none"
+    ]
   },
   "decision": {
     "recommendations": [
       {
-        "ticker": "MRVL",
-        "name": "Marvell Technology, Inc.",
-        "thesis": "Marvell’s partnership with Google gives it a reliable pipeline of high‑volume, high‑margin silicon for data‑center networking and storage, leveraging its advanced IP to meet Google’s expanding cloud infrastructure needs. This positions Marvell to capture a growing share of the data‑center silicon market, driving revenue growth and margin expansion over the next 3‑5 years.",
+        "ticker": "LRCX",
+        "name": "Lam Research Corporation",
+        "thesis": "Lam Research’s advanced wafer‑processing equipment powers the AI‑driven semiconductor boom, and its announced $3 billion R&D investment will accelerate the development of next‑generation tools that meet the high‑volume, high‑precision demands of AI workloads. With a 37% operating margin and low debt, the company is financially positioned to capture this growth, making it a solid pick for a moderate‑risk investor with a 4‑month horizon.",
+        "exit_conditions": [
+          {
+            "condition": "Lam Research fails to invest $3B in R&D as announced",
+            "article_ids": [
+              "c7a5cee9-38d8-44b5-8a20-e50cb737ce22"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "debt_to_equity rises above 1.0",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          },
+          {
+            "condition": "operating_margin falls below 0.3",
+            "article_ids": [],
+            "metric": "operating_margin"
+          }
+        ],
+        "screen_score": 0.7712,
+        "price": {
+          "amount": 315.585,
+          "currency": "USD",
+          "as_of": "2026-08-27T19:49:58.488481Z"
+        },
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "AI-Driven Semiconductor Equipment Growth"
+        ],
+        "evidence_article_ids": [
+          "c7a5cee9-38d8-44b5-8a20-e50cb737ce22"
+        ],
+        "known_risks": []
+      },
+      {
+        "ticker": "AMAT",
+        "name": "Applied Materials, Inc.",
+        "thesis": "Applied Materials provides lithography and deposition equipment that are essential for AI‑driven semiconductor manufacturing, positioning it to capture the growth in AI chip production. Its strong operating margin and low debt‑to‑equity give it the financial flexibility to invest in AI‑focused R&D, making it a compelling pick for a moderate‑risk investor with a short‑term horizon.",
         "exit_conditions": [
           {
             "condition": "revenue_growth turns negative",
@@ -28,26 +68,31 @@
             "metric": "revenue_growth"
           },
           {
-            "condition": "Google reduces its silicon orders from Marvell",
+            "condition": "debt_to_equity rises above 3.0",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          },
+          {
+            "condition": "the company reports a decline in AI product revenue",
             "article_ids": [
-              "8e67084e-5a6b-4b10-b7a1-ea7ab3531744"
+              "c3eac5c0-ad80-4eba-b3c4-5b593a27029a"
             ],
             "metric": null
           }
         ],
-        "screen_score": 0.5888,
+        "screen_score": 0.7087,
         "price": {
-          "amount": 241.38,
+          "amount": 478.835,
           "currency": "USD",
-          "as_of": "2026-08-27T02:14:49.275989Z"
+          "as_of": "2026-08-27T19:50:00.947986Z"
         },
         "verdict": "survives",
         "exposure": "direct",
         "themes": [
-          "Marvell Gains from Google Partnership"
+          "AI-Driven Semiconductor Equipment Growth"
         ],
         "evidence_article_ids": [
-          "8e67084e-5a6b-4b10-b7a1-ea7ab3531744"
+          "c3eac5c0-ad80-4eba-b3c4-5b593a27029a"
         ],
         "known_risks": []
       }
@@ -60,186 +105,224 @@
   "research_findings": {
     "themes": [
       {
-        "name": "Valuation Surge for AI Inference Chip Startup",
-        "why_it_matters": "Investing in early-stage AI chip companies can offer high upside as demand for inference hardware grows. This aligns with the investor’s focus on semiconductors and AI and fits a 3‑5 year horizon.",
+        "name": "AI-Driven Semiconductor Equipment Growth",
+        "why_it_matters": "Investing in companies that supply AI-optimized tools could capture growth in semiconductor manufacturing, aligning with the investor’s focus on semiconductors and moderate risk.",
         "industries": [
-          "semiconductors",
-          "artificial intelligence"
+          "Semiconductors",
+          "Technology Equipment"
         ],
         "timeframe": "within_6_months",
-        "confidence": "medium",
+        "confidence": "high",
         "evidence": [
           {
-            "article_id": "5cb08d7a-ca53-484a-b397-ec46db206098",
+            "article_id": "c7a5cee9-38d8-44b5-8a20-e50cb737ce22",
             "stance": "supports",
-            "relevance": "Etched's $21B valuation signals strong demand for AI inference chips."
+            "relevance": "Lam Research plans $3B R&D investment to boost chip equipment capacity."
+          },
+          {
+            "article_id": "c3eac5c0-ad80-4eba-b3c4-5b593a27029a",
+            "stance": "supports",
+            "relevance": "Applied Materials sees AI driving biggest semiconductor growth inflection."
           }
         ]
       },
       {
-        "name": "Marvell Gains from Google Partnership",
-        "why_it_matters": "A partnership with a major AI customer like Google can accelerate revenue growth for a semiconductor firm, offering a potential catalyst for the investor’s sector focus.",
+        "name": "Critical Metal Supply Constraints",
+        "why_it_matters": "Supply chain disruptions can pressure semiconductor prices and production schedules, offering potential investment opportunities in companies mitigating these risks.",
         "industries": [
-          "semiconductors"
+          "Semiconductors",
+          "Materials"
         ],
         "timeframe": "within_6_months",
-        "confidence": "medium",
+        "confidence": "high",
         "evidence": [
           {
-            "article_id": "8e67084e-5a6b-4b10-b7a1-ea7ab3531744",
+            "article_id": "8157e2bf-bf55-48c9-978c-34cfb2329ab7",
             "stance": "supports",
-            "relevance": "Marvell’s deal with Google boosts its semiconductor business."
+            "relevance": "Tungsten shortage threatens U.S. military and semiconductor industry."
+          },
+          {
+            "article_id": "acb2909c-8d4e-461c-9f49-b4a7e2292f86",
+            "stance": "supports",
+            "relevance": "Chinese germanium export restrictions disrupt Taiwan chip production."
           }
         ]
       },
       {
-        "name": "AI Stocks Hold Amid Rising Yields",
-        "why_it_matters": "The resilience of AI stocks suggests a robust sector that can weather short‑term market volatility, matching the investor’s high risk tolerance and medium‑term horizon.",
+        "name": "Chinese Chip Toolmakers Profit Surge",
+        "why_it_matters": "Growth in Chinese toolmakers could influence global chip manufacturing dynamics, relevant for a semiconductor-focused investor.",
         "industries": [
-          "artificial intelligence"
+          "Semiconductors",
+          "Technology Equipment"
         ],
         "timeframe": "within_6_months",
         "confidence": "medium",
         "evidence": [
           {
-            "article_id": "8a846734-4d56-4e08-8385-a976a6ee5ff2",
+            "article_id": "5ecd8a39-a557-4db3-92f5-efcd15951283",
             "stance": "supports",
-            "relevance": "AI equities remain resilient despite bond market pressure."
+            "relevance": "Chinese chip toolmakers post 400% profit surge due to overseas backlogs."
           }
         ]
       },
       {
-        "name": "AI Compute Power Partnerships",
-        "why_it_matters": "Power infrastructure for AI compute is a growing need; companies enabling this space may benefit from increased AI workloads, offering a new angle within the investor’s AI interest.",
+        "name": "India Semiconductor Expansion",
+        "why_it_matters": "Long-term growth in India’s semiconductor sector may create opportunities for companies involved in chip manufacturing or supply chain.",
         "industries": [
-          "artificial intelligence"
+          "Semiconductors",
+          "Technology Equipment"
         ],
-        "timeframe": "within_6_months",
+        "timeframe": "beyond_18_months",
         "confidence": "medium",
         "evidence": [
           {
-            "article_id": "d3063f3e-1767-47bc-9909-39a648f52df1",
+            "article_id": "78513ac4-318b-4d5f-a00e-e53597f046d5",
             "stance": "supports",
-            "relevance": "Aethero signs power deal with Orbital AI for October Titan Mission."
-          }
-        ]
-      },
-      {
-        "name": "AI Robotics Startup Funding",
-        "why_it_matters": "AI robotics represents a high‑growth sub‑sector that blends AI and hardware, aligning with the investor’s semiconductor and AI focus and offering potential upside over a 3‑5 year period.",
-        "industries": [
-          "artificial intelligence",
-          "robotics"
-        ],
-        "timeframe": "within_6_months",
-        "confidence": "medium",
-        "evidence": [
+            "relevance": "India could add 5-8 semiconductor plants in next 7-8 years."
+          },
           {
-            "article_id": "4483a196-61e2-4f63-ac15-2175fbd0e427",
+            "article_id": "a98e7ea1-dec8-40df-82fd-b86c1e5a5b7e",
             "stance": "supports",
-            "relevance": "General Intuition raises capital to power AI robotics."
+            "relevance": "India's semiconductor demand expected to double next year."
           }
         ]
       }
     ],
     "articles": [
       {
-        "uuid": "8e67084e-5a6b-4b10-b7a1-ea7ab3531744",
-        "title": "Where we stand on Broadcom after Marvell muscles in on its key customer Google",
-        "description": "Every weekday, the Investing Club releases the Homestretch; an actionable afternoon update just in time for the last hour of trading.",
-        "snippet": "Every weekday, the CNBC Investing Club with Jim Cramer releases the Homestretch — an actionable afternoon update, just in time for the last hour of trading on...",
-        "url": "https://www.cnbc.com/2026/08/19/where-we-stand-on-broadcom-as-shares-dip-on-googles-deal-with-marvell.html",
-        "source": "cnbc.com",
-        "published_at": "2026-08-19T18:58:48Z",
+        "uuid": "78513ac4-318b-4d5f-a00e-e53597f046d5",
+        "title": "PM Modi says 5-8 more semiconductor plants likely in next 7-8 years",
+        "description": "From the Red Fort, Narendra Modi said India could see five to eight more semiconductor plants in the next seven to eight years. He linked chipmaking, manufactur...",
+        "snippet": "Prime Minister Narendra Modi on Friday said India is expected to see another five to eight semiconductor plants become operational over the next seven to eight ...",
+        "url": "https://www.indiatoday.in/business/story/semiconductor-plants-india-modi-5-8-more-likely-next-7-8-years-2971710-2026-08-15",
+        "source": "indiatoday.intoday.in",
+        "published_at": "2026-08-15T02:46:22Z",
         "categories": [
-          "general",
-          "business"
-        ]
-      },
-      {
-        "uuid": "5cb08d7a-ca53-484a-b397-ec46db206098",
-        "title": "3 Harvard dropouts just hit a $21B valuation with a chip they say beats Nvidia's best. Should NVDA investors worry?",
-        "description": "After securing $1 billion in sales, Etched claims its chips are the future of AI inference.",
-        "snippet": "It's become a bit boring to hear stories of 20-something techies launching multi-billion-dollar startups from their dorms. However, these tales of online riches...",
-        "url": "https://finance.yahoo.com/technology/ai/articles/3-harvard-dropouts-just-hit-110000286.html",
-        "source": "finance.yahoo.com",
-        "published_at": "2026-08-20T11:00:00Z",
-        "categories": [
-          "business",
           "general"
         ]
       },
       {
-        "uuid": "8a846734-4d56-4e08-8385-a976a6ee5ff2",
-        "title": "Rising yields rattled the market, but we’re sticking with our favorite AI and retail stocks",
-        "description": "Stocks took their cue from the bond market this week.",
-        "snippet": "Rising bond yields and oil prices put stocks under pressure this week, while another bout of volatility in the AI trade tested investors' conviction in the mark...",
-        "url": "https://www.cnbc.com/2026/08/22/rising-yields-rattled-the-market-but-were-sticking-with-our-favorite-ai-and-retail-stocks.html",
-        "source": "cnbc.com",
-        "published_at": "2026-08-22T15:08:54Z",
+        "uuid": "c7a5cee9-38d8-44b5-8a20-e50cb737ce22",
+        "title": "$3 billion investment to boost US chip firm’s research capacity by 50%",
+        "description": "Lam Research is planning to invest over $3 billion in global R&D labs, increasing experiment capacity by more than 50%.",
+        "snippet": "American Fortune 500 company Lam Research plans to invest more than $3 billion over the next five years to expand its global research and development laboratory...",
+        "url": "https://interestingengineering.com/ai-robotics/3-billion-push-us-firm-plans-50-expansion-in-chip-research-capacity",
+        "source": "interestingengineering.com",
+        "published_at": "2026-08-16T13:19:15Z",
         "categories": [
-          "business",
-          "general",
-          "food"
+          "tech",
+          "science"
         ]
       },
       {
-        "uuid": "d3063f3e-1767-47bc-9909-39a648f52df1",
-        "title": "Orbital AI Gets Energy Grid: Aethero Signs Power Deal for October Titan Mission",
-        "description": "Orbital power beaming startup Star Catcher signed its 10th commercial power deal with AI compute company Aethero on Monday, tying together two October 2026 mile...",
-        "snippet": "Space computing's central engineering problem is not the processor. It is the solar array that powers it — and the radiators required to cool it. The more mas...",
-        "url": "https://www.techtimes.com/articles/325393/20260824/orbital-ai-gets-energy-grid-aethero-signs-power-deal-october-titan-mission.htm",
-        "source": "flipboard.com",
-        "published_at": "2026-08-24T20:03:51Z",
+        "uuid": "5ecd8a39-a557-4db3-92f5-efcd15951283",
+        "title": "Chinese Chip Toolmakers Post 400% Profit Surge as Overseas Suppliers’ Two-Year Backlogs Reshape the Industry",
+        "description": "JW Insights reports the shift is a long-term reshaping, not a blip, with SMIC and CXMT spending heavily on capacity expansion.",
+        "snippet": "The ongoing AI boom and its impact on global chip manufacturing have created an opportunity for Chinese chip manufacturing equipment providers to cater to growi...",
+        "url": "https://wccftech.com/chinese-chip-toolmakers-post-400-profit-surge-as-overseas-suppliers-two-year-backlogs-reshape-the-industry/",
+        "source": "wccftech.com",
+        "published_at": "2026-08-19T08:40:46Z",
         "categories": [
           "tech"
         ]
       },
       {
-        "uuid": "4483a196-61e2-4f63-ac15-2175fbd0e427",
-        "title": "General Intuition Aims to Raise Capital to Power AI Robotics",
-        "description": "General Intuition, which is developing a robotics AI model, is reportedly finalizing a funding round that would value it at $6 billion.",
-        "snippet": "General Intuition, which is developing a foundation artificial intelligence model with potential applications in robotics, is finalizing a funding round that wo...",
-        "url": "https://www.pymnts.com/news/investment-tracker/2026/general-intuition-aims-to-raise-capital-at-6-billion-valuation-to-power-ai-robotics/",
-        "source": "pymnts.com",
-        "published_at": "2026-08-24T20:36:08Z",
+        "uuid": "8157e2bf-bf55-48c9-978c-34cfb2329ab7",
+        "title": "The Tungsten Time Bomb: How China’s Stranglehold on a Critical Metal Threatens U.S. Military Superiority and the Global Semiconductor Industry – NaturalNews.com",
+        "description": "Tungsten, a dense metal essential for advanced semiconductors and artificial intelligence hardware, faces a critical supply shortage that has drawn the attentio...",
+        "snippet": "The Tungsten Time Bomb: How China’s Stranglehold on a Critical Metal Threatens U.S. Military Superiority and the Global Semiconductor Industry\n\nTungsten, a de...",
+        "url": "https://www.naturalnews.com/2026-08-25-chinas-stranglehold-critical-metal-threatens-us-military-superiority.html",
+        "source": "naturalnews.com",
+        "published_at": "2026-08-25T06:00:00Z",
+        "categories": [
+          "health",
+          "general"
+        ]
+      },
+      {
+        "uuid": "acb2909c-8d4e-461c-9f49-b4a7e2292f86",
+        "title": "Taiwan Tech Production Hit by Chinese Germanium Export Restrictions, Insiders Say – NaturalNews.com",
+        "description": "Taiwanese technology companies are experiencing production disruptions as a result of Chinese export controls on germanium, according to industry insiders cited...",
+        "snippet": "Taiwan Tech Production Hit by Chinese Germanium Export Restrictions, Insiders Say\n\nTaiwanese technology companies are experiencing production disruptions as a r...",
+        "url": "https://www.naturalnews.com/2026-08-25-taiwan-tech-production-hit-chinese-germanium-export-restrictions.html",
+        "source": "naturalnews.com",
+        "published_at": "2026-08-25T06:00:00Z",
+        "categories": [
+          "health",
+          "general"
+        ]
+      },
+      {
+        "uuid": "a98e7ea1-dec8-40df-82fd-b86c1e5a5b7e",
+        "title": "Gradiant expects India business to double next year as semiconductor, solar demand rises",
+        "description": "Gradiant anticipates doubling its India business next year, fueled by rising semiconductor and solar demand amid capacity challenges.",
+        "snippet": "Industrial water technology company Gradiant expects its India business to double next year, driven by growing demand from semiconductor, solar, printed circuit...",
+        "url": "https://www.thehindu.com/business/Industry/gradiant-expects-india-business-to-double-next-year-as-semiconductor-solar-demand-rises/article71391723.ece",
+        "source": "thehindu.com",
+        "published_at": "2026-08-26T11:42:08Z",
+        "categories": [
+          "general"
+        ]
+      },
+      {
+        "uuid": "c3eac5c0-ad80-4eba-b3c4-5b593a27029a",
+        "title": "Applied Materials Sees AI Driving Its Biggest Semiconductor Growth Inflection Yet",
+        "description": "Applied Materials (NASDAQ:AMAT) President and CEO Gary Dickerson said artificial intelligence is creating what he views as the semiconductor industry’s most c...",
+        "snippet": "He said the company is introducing products this year that it would not have been able to bring to market without AI. Applied's service business, meanwhile, is ...",
+        "url": "https://finance.yahoo.com/technology/ai/articles/applied-materials-sees-ai-driving-160355460.html",
+        "source": "finance.yahoo.com",
+        "published_at": "2026-08-27T16:03:55Z",
         "categories": [
           "business",
-          "tech"
+          "general"
         ]
       }
     ],
     "queries_used": [
-      "semiconductor manufacturing expansion contracts",
-      "AI chip design partnership agreements",
-      "semiconductor supply chain disruption alerts",
-      "AI startup funding round announcements",
-      "semiconductor fab acquisition deals",
-      "AI algorithm patent filing news"
+      "semiconductor manufacturing capacity expansion",
+      "chip supply chain disruption impact",
+      "semiconductor fab investment contracts",
+      "advanced packaging technology adoption",
+      "semiconductor export control policy"
     ],
-    "articles_retrieved": 9,
+    "articles_retrieved": 15,
     "notes": null
   },
   "risk_findings": {
     "critiques": [
       {
-        "ticker": "MRVL",
-        "name": "Marvell Technology, Inc.",
+        "ticker": "LRCX",
+        "name": "Lam Research Corporation",
         "risks": [],
         "queries_used": [
-          "\"Marvell Technology,\" lawsuit",
-          "\"Marvell Technology,\" Partnership"
+          "\"Lam Research\" lawsuit",
+          "\"Lam Research\" Semiconductor"
         ],
         "articles_reviewed": 2,
         "press_releases_withheld": 0,
         "sources_withheld": [
-          "insidermonkey.com"
+          "financefeeds.com"
+        ],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "AMAT",
+        "name": "Applied Materials, Inc.",
+        "risks": [],
+        "queries_used": [
+          "\"Applied Materials,\" lawsuit",
+          "\"Applied Materials,\" Semiconductor"
+        ],
+        "articles_reviewed": 3,
+        "press_releases_withheld": 0,
+        "sources_withheld": [
+          "financefeeds.com"
         ],
         "skipped_reason": null
       }
     ],
     "articles": [],
-    "articles_retrieved": 2,
+    "articles_retrieved": 5,
     "risks_discarded": 0,
     "notes": null
   }
