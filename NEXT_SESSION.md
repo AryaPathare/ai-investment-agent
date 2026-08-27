@@ -1,6 +1,6 @@
 # Start here
 
-Last worked: **2026-08-26**. **The pipeline is complete, demonstrable, durable,
+Last worked: **2026-08-28**. **The pipeline is complete, demonstrable, durable,
 and published.** All five agents are built and verified against their own evals,
 `python -m cli` runs the whole thing end to end, a run that stops can be resumed,
 and CI proves the suite passes on machines that have never seen the project.
@@ -10,7 +10,13 @@ defect and found the next one. **Session 12 was about the person using it**:
 a zero-key demo, the brief rewritten in plain English, and share prices with
 what an amount would buy and a date to look again.
 
-**Nothing is owed.** The entry 82 salvage fix was verified live on 2026-08-28.
+**Nothing is owed.** Session 13 verified the entry 82 salvage fix live,
+re-recorded the demo from the best brief the pipeline has produced (Lam Research
+and Applied Materials, both priced, both citing a real article), and gave the
+sector question a menu of the market's eleven sectors - each with a narrower
+example, because narrow researches better and a bare menu would have pushed
+everyone the wrong way. Entry 83.
+
 Everything still open is a decision rather than a repair:
 
 - **2.9** - Agent 3 only reads the articles Agent 2 chose to CITE, so retrieval
@@ -21,7 +27,7 @@ Everything still open is a decision rather than a repair:
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **82**
+- `docs/PROJECT_LOG.md` is current through entry **83**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -36,7 +42,7 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **797 passed, 1 skipped** in a few seconds. (760 at the end of session
+Expect **806 passed, 1 skipped** in a few seconds. (760 at the end of session
 11; session 12 added tests for the demo, the margin invariant, prices and the
 salvage fix.)
 
@@ -469,7 +475,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 797 tests, a few seconds, no network
+python -m pytest                        # 806 tests, a few seconds, no network
 
 python -m evals.runner                  # Agent 1: 30 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)
