@@ -872,13 +872,19 @@ def test_the_demo_never_builds_the_graph(monkeypatch):
 # about when it is NOT shown matter more than the arithmetic.
 
 
-def _priced(currency="USD", amount=100.0, **kw):
+def _affordable(rec, user):
+    return cli._affordable_shares(rec, user)
+
+
+def _priced(currency="USD", amount=100.0, shares=None, own=None, **kw):
     from models.companies import MarketPrice
     rec = _recommendation(**kw)
     rec.price = MarketPrice(
         amount=amount, currency=currency,
         as_of=datetime(2026, 8, 26, tzinfo=timezone.utc),
     )
+    rec.shares_affordable = shares
+    rec.price_in_investor_currency = own
     return rec
 
 
@@ -891,39 +897,34 @@ def _investor(currency="USD", amount=5000.0):
     )
 
 
-def test_a_matching_currency_says_what_the_amount_would_buy():
-    line = cli._affordable_shares(_priced("USD", 100.0), _investor("USD", 5000.0))
+def test_the_stored_share_count_is_what_gets_printed():
+    """The arithmetic happens in Agent 5, next to the price it came from. This
+    layer only formats, so it can run with no network - which is what lets the
+    demo and a resumed run print at all."""
+    line = _affordable(_priced(shares=50), _investor("USD", 5000.0))
 
     assert "50 shares" in line
 
 
-def test_a_different_currency_says_nothing_rather_than_converting():
-    """No FX. Dividing pounds by a dollar price is wrong by a quarter and looks
-    entirely reasonable on the page."""
-    assert cli._affordable_shares(_priced("USD", 100.0), _investor("GBP")) is None
-
-
-def test_no_stated_currency_says_nothing():
-    """investment_currency is optional, and absent means the amount cannot be
-    placed. Profiles saved before the question existed land here."""
-    investor = _investor()
-    investor.investment_currency = None
-
-    assert cli._affordable_shares(_priced("USD"), investor) is None
-
-
-def test_a_share_costing_more_than_the_whole_amount_says_so():
-    line = cli._affordable_shares(_priced("USD", 9000.0), _investor("USD", 5000.0))
+def test_zero_shares_is_an_answer_not_a_silence():
+    """A computed zero means one share costs more than the whole amount, which
+    a reader cannot work out from a price in a currency they do not use."""
+    line = _affordable(_priced(shares=0), _investor("USD", 5000.0))
 
     assert "costs more than" in line
 
 
-def test_pence_are_converted_before_dividing():
-    """GBp is pence. A 250.0 GBp quote is GBP 2.50, and dividing an amount in
-    pounds by 250 would report a hundredth of the shares it should."""
-    line = cli._affordable_shares(_priced("GBp", 250.0), _investor("GBP", 1000.0))
+def test_an_uncomputable_count_says_nothing():
+    """None means no price, no stated currency or no exchange rate. The brief
+    shows the price alone rather than guessing."""
+    assert _affordable(_priced(shares=None), _investor("USD")) is None
 
-    assert "400 shares" in line
+
+def test_no_stated_currency_says_nothing():
+    investor = _investor()
+    investor.investment_currency = None
+
+    assert _affordable(_priced(shares=50), investor) is None
 
 
 def test_the_review_date_is_three_months_out_not_the_holding_period():

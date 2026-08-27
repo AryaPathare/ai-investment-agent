@@ -707,41 +707,32 @@ def _next_review(today: date | None = None) -> date:
 
 
 def _affordable_shares(rec, user) -> str | None:
-    """"Your amount would buy about N shares", when that can be said honestly.
+    """"Your money would buy about N shares", when that can be said honestly.
 
-    Three conditions, and all of them have to hold:
+    The arithmetic is NOT done here. It is computed in Agent 5 alongside the
+    price it derives from and stored on the recommendation, so this layer never
+    touches the network - the demo and a resumed run both print without one.
 
-    * there is a price at all;
-    * the investor said what currency their amount is in - it is optional, and
-      absent means we cannot place the number;
-    * that currency MATCHES the currency the share trades in.
-
-    No conversion is done, deliberately. An FX rate is another number fetched at
-    another moment and going stale at its own pace, and this is the one figure
-    in the whole brief a beginner might act on directly. Dividing pounds by a
-    dollar price would be wrong by a quarter and would look perfectly reasonable
-    on the page. When the currencies differ the price is still shown and this
-    line is simply absent, which is the honest outcome rather than a degraded
-    one.
+    Absent when there was no price, no stated currency, or no exchange rate,
+    which is the same outcome as before conversion existed.
     """
-    price = getattr(rec, "price", None)
+    shares = getattr(rec, "shares_affordable", None)
     currency = getattr(user, "investment_currency", None)
-    if price is None or currency is None:
+    if shares is None or not currency:
         return None
 
-    amount, code = price.in_major_units
-    if code != currency:
-        return None
-
-    shares = int(user.investment_amount // amount)
-    if shares < 1:
+    # ZERO is a computed answer, not a missing one, and saying so is more use
+    # than silence: one share costing more than the whole amount is exactly the
+    # thing a beginner has no way to work out from a price in another currency.
+    if shares == 0:
         return (
             f"One share costs more than your {currency} "
             f"{user.investment_amount:,.0f}."
         )
+
     return (
         f"Your {currency} {user.investment_amount:,.0f} would buy about "
-        f"{shares:,} share{'' if shares == 1 else 's'} at that price."
+        f"{shares:,} share{'' if shares == 1 else 's'}."
     )
 
 
@@ -766,14 +757,18 @@ def print_next_steps(decision: Decision, state: dict) -> None:
             print(f"  {rec.ticker}: no price was available from the data provider.")
             continue
         amount, code = price.in_major_units
-        print(f"  {rec.ticker}  {code} {amount:,.2f} per share"
-              f"   (as of {price.as_of:%d %b %Y})")
+        line = f"  {rec.ticker}  {code} {amount:,.2f} per share"
+        # The price in THEIR money, when the share trades in something else.
+        # "CNY 373.00" tells a reader almost nothing on its own.
+        own = getattr(rec, "price_in_investor_currency", None)
+        currency = getattr(user, "investment_currency", None)
+        if own is not None and currency and currency != code:
+            line += f"  (about {currency} {own:,.2f})"
+        print(f"{line}   (as of {price.as_of:%d %b %Y})")
+
         affordable = _affordable_shares(rec, user) if user else None
         if affordable:
             print(_wrap(affordable, indent="        "))
-        elif getattr(user, "investment_currency", None):
-            print(f"        Priced in {code}, and you gave your amount in "
-                  f"{user.investment_currency}, so this is not converted.")
 
     print()
     print(_wrap(

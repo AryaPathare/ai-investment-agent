@@ -157,6 +157,13 @@ class Recommendation(BaseModel):
     # Agent 3's output to print it. Optional because a provider may report none,
     # and a brief with no price is better than a brief with a guessed one.
     price: MarketPrice | None = None
+    # Worked out in Python at decision time, not in the CLI, for two reasons.
+    # The rate is fetched from a provider and the display layer must never do
+    # I/O - the demo and a resumed run both print without a network. And a share
+    # count computed later would drift from the price it was derived from, which
+    # is exactly the pairing a reader is being asked to trust.
+    shares_affordable: int | None = None
+    price_in_investor_currency: float | None = None
     verdict: CandidateVerdict
     exposure: str
     themes: list[str] = Field(default_factory=list)

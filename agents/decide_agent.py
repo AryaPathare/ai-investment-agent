@@ -37,6 +37,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from agents.selection import Selection, select
+from clients.companies import fetch_fx_rate
 from agents.structured import invoke_structured
 from config import get_llm
 from models.companies import CompanyCandidate, CompanyFindings
@@ -166,6 +167,39 @@ NO PRICES, NO POSITION SIZES, NO ALLOCATION
 Never suggest how much to invest, what proportion of a portfolio to hold, or
 what the shares are worth. That is advice, and this system is not licensed to
 give it.
+
+WRITE FOR SOMEONE WHO HAS NEVER BOUGHT A SHARE
+
+That is who reads this. They chose a sector from a list twenty minutes ago. Every
+sentence they have to read twice is a sentence that has failed.
+
+ONE IDEA PER SENTENCE, and keep sentences under about twenty words. The failure
+is never that the thought was too complex - it is three thoughts joined by
+commas.
+
+  Hard:  "CATL is the world's largest lithium-ion battery manufacturer,
+          positioned to capture the rapid growth in energy storage demand driven
+          by electric vehicles and grid-scale storage."
+  Plain: "CATL makes more lithium-ion batteries than anyone else in the world.
+          Electric cars and power grids both need them, and demand is growing
+          fast."
+
+SAY WHAT THE COMPANY SELLS, in the words a person outside the industry would
+use. "It makes the machines that print circuits onto silicon wafers" beats "it
+supplies advanced lithography solutions".
+
+BANNED, because they say nothing a reader can picture:
+
+  positioned to capture        well-placed to benefit
+  diversified portfolio        compelling play
+  competitive edge over rivals strong fundamentals
+  robust growth trajectory     leveraging its expertise
+
+If you name a financial measure, say what it means in the same breath: "a 37%
+operating margin, meaning it keeps 37p of profit from every pound of sales".
+
+The same applies to the exit conditions. "The Italian order is cancelled" is
+something a person can check. "Order book deterioration materialises" is not.
 
 KEEP IT SHORT
 """
@@ -389,6 +423,39 @@ def _fallback_conditions(
     )]
 
 
+def _affordability(price, profile) -> tuple[int | None, float | None]:
+    """How many shares the stated amount buys, and the price in their money.
+
+    Converts when the currencies differ, which the first version of this
+    deliberately refused to do. The refusal was the right default and the wrong
+    outcome: a run whose investor said USD was recommended a Shenzhen listing in
+    CNY and a Vietnamese one in VND, so every line read "not converted". The
+    pipeline's job is to find companies anywhere, so currency agreement is the
+    exception rather than something a sensible default can secure.
+
+    Returns (None, None) whenever anything is missing - no price, no stated
+    currency, no rate available - and the brief then shows the price alone,
+    which is the behaviour this replaces rather than removes.
+    """
+    currency = getattr(profile, "investment_currency", None)
+    if price is None or not currency:
+        return None, None
+
+    amount, code = price.in_major_units
+    rate = fetch_fx_rate(currency, code)
+    if rate is None:
+        return None, None
+
+    # Their money, in the currency the share trades in.
+    converted = profile.investment_amount * rate
+    if amount <= 0:
+        return None, None
+
+    # Floor, not round: telling someone they can afford a share they cannot is
+    # the one direction of error that matters here.
+    return int(converted // amount), amount / rate
+
+
 def decide(
     companies: CompanyFindings,
     risks: RiskFindings,
@@ -430,6 +497,8 @@ def decide(
         if not conditions:
             conditions = _fallback_conditions(candidate, critique)
 
+        shares, unit_price = _affordability(candidate.fundamentals.price, profile)
+
         recommendations.append(Recommendation(
             ticker=candidate.ticker,
             name=candidate.name,
@@ -437,6 +506,8 @@ def decide(
             exit_conditions=conditions,
             screen_score=candidate.screen_score,
             price=candidate.fundamentals.price,
+            shares_affordable=shares,
+            price_in_investor_currency=unit_price,
             verdict=critique.verdict,
             exposure=candidate.exposure,
             themes=list(candidate.themes),

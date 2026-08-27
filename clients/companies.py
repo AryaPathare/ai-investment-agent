@@ -665,6 +665,42 @@ def _with_price(fundamentals: Fundamentals, ticker: str, use_cache: bool) -> Fun
     return fundamentals.model_copy(update={"price": price})
 
 
+def fetch_fx_rate(base: str, quote: str, *, use_cache: bool = True) -> float | None:
+    """How many units of ``quote`` one unit of ``base`` buys, or None.
+
+    Added because refusing to convert turned out to fail more often than
+    expected. The first design showed a share count only when the investor's
+    currency matched the share's, on the reasoning that an invented exchange
+    rate is the last thing to put under a number a beginner might act on. That
+    was measured against a cache where 39 of 48 companies traded in USD.
+
+    The case that broke it was not the one predicted. A run whose investor said
+    USD was recommended a Shenzhen listing priced in CNY and a Vietnamese one in
+    VND, so BOTH lines read "not converted" - choosing the majority currency
+    does not help when the pipeline's job is to find companies anywhere.
+
+    This is not a new provider or a new key: yfinance quotes FX pairs as
+    ordinary tickers, through the same fetch and the same cache as every company
+    on the list.
+
+    Returns None rather than raising, and None means the caller shows a price
+    with no share count - the old behaviour, which stays the fallback.
+    """
+    if base == quote:
+        return 1.0
+
+    try:
+        info = _ticker_info(f"{base}{quote}=X", use_cache)
+    except CompanyDataError:
+        return None
+
+    for field in ("regularMarketPrice", "currentPrice", "previousClose"):
+        rate = info.get(field)
+        if rate is not None and rate > 0:
+            return float(rate)
+    return None
+
+
 # --- Public interface --------------------------------------------------------
 
 

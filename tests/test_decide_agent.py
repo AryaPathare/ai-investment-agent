@@ -351,3 +351,81 @@ def test_a_caller_with_no_research_still_gets_the_risk_articles(writer):
     run([candidate()], [crit], articles=[article("u-1")])
 
     assert [a.uuid for a in writer["given"][0]] == ["u-1"]
+
+
+# --- Converting the amount into shares ----------------------------------------
+#
+# The first version refused to convert, showing a share count only when the
+# investor's currency matched the share's. A live run then recommended a
+# Shenzhen listing in CNY and a Vietnamese one in VND to someone who said USD,
+# so every line read "not converted". Currency agreement is the exception when
+# the pipeline's job is to find companies anywhere.
+
+
+def _price(currency, amount):
+    from models.companies import MarketPrice
+    return MarketPrice(
+        amount=amount, currency=currency,
+        as_of=datetime(2026, 8, 27, tzinfo=timezone.utc),
+    )
+
+
+def _investor(currency="USD", amount=10000.0):
+    return profile(investment_currency=currency, investment_amount=amount)
+
+
+def test_a_foreign_price_is_converted_before_dividing(monkeypatch):
+    """The case that forced this: CNY 373 a share, USD 10,000 to spend."""
+    monkeypatch.setattr(decide_agent, "fetch_fx_rate", lambda b, q: 6.7193)
+
+    shares, unit = decide_agent._affordability(_price("CNY", 373.0), _investor())
+
+    assert shares == 180
+    assert round(unit, 2) == 55.51
+
+
+def test_the_count_is_floored_never_rounded_up(monkeypatch):
+    """Telling someone they can afford a share they cannot is the one direction
+    of error that matters here.
+
+    700/200 is 3.5 deliberately: a value that rounds and floors alike proves
+    nothing, and the first version of this test used one.
+    """
+    monkeypatch.setattr(decide_agent, "fetch_fx_rate", lambda b, q: 1.0)
+
+    shares, _ = decide_agent._affordability(_price("USD", 200.0), _investor(amount=700.0))
+
+    assert shares == 3
+
+
+def test_pence_are_converted_before_the_rate_is_applied(monkeypatch):
+    """GBp is pence. A 250.0 GBp quote is GBP 2.50, and dividing by 250 would
+    report a hundredth of the shares it should."""
+    monkeypatch.setattr(decide_agent, "fetch_fx_rate", lambda b, q: 1.0)
+
+    shares, unit = decide_agent._affordability(
+        _price("GBp", 250.0), _investor("GBP", 1000.0)
+    )
+
+    assert shares == 400
+    assert unit == 2.5
+
+
+def test_no_rate_means_no_count_rather_than_a_guess(monkeypatch):
+    """The provider not answering must never become an invented rate under the
+    one number a beginner might act on."""
+    monkeypatch.setattr(decide_agent, "fetch_fx_rate", lambda b, q: None)
+
+    assert decide_agent._affordability(_price("CNY", 373.0), _investor()) == (None, None)
+
+
+def test_no_stated_currency_means_no_count(monkeypatch):
+    monkeypatch.setattr(decide_agent, "fetch_fx_rate", lambda b, q: 6.7193)
+
+    assert decide_agent._affordability(
+        _price("CNY", 373.0), _investor(currency=None)
+    ) == (None, None)
+
+
+def test_no_price_means_no_count():
+    assert decide_agent._affordability(None, _investor()) == (None, None)
