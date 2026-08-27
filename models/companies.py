@@ -118,6 +118,45 @@ class ComparableMetrics(BaseModel):
         description="Total debt / shareholder equity as a RATIO, e.g. 0.06.",
     )
 
+    @model_validator(mode="after")
+    def drop_margins_that_contradict_each_other(self) -> "ComparableMetrics":
+        """Discard both margins when operating exceeds gross.
+
+        Operating margin is gross margin MINUS operating expenses, and expenses
+        are never negative, so on one income statement operating can never be
+        the larger of the two. When it is, at least one of the pair is wrong.
+
+        Observed on REGENXBIO from yfinance: gross -44.9%, operating +27.1%.
+        Both passed ``_sane_margin`` at the client boundary, because that checks
+        each value ALONE and neither is individually absurd. It took the pair to
+        show the fault - and the bad value did not merely survive, it INFLATED
+        the result: operating scored 0.68 of 1.0 and put the company top of a
+        brief a person then read.
+
+        BOTH are dropped, not the odd-looking one, because nothing here can tell
+        which is at fault. Discarding the value that looks wrong would be a
+        guess wearing the costume of a fix.
+
+        The company survives. Losing two metrics drops ``completeness`` from 1.0
+        to 0.5, and the score is multiplied by it, so the candidate keeps its
+        place in the run but ranks with the confidence its evidence actually
+        supports. That is the same rule already applied to a company that simply
+        never had four metrics: less evidence, less confidence.
+
+        Fourth instance of the lesson `_sane_margin` records. A per-field range
+        check cannot see a contradiction BETWEEN fields, so this one sits on the
+        model where every provider passes through it, rather than at one
+        provider's boundary where the last three fixes went.
+        """
+        if self.operating_margin is None or self.gross_margin is None:
+            return self
+
+        if self.operating_margin > self.gross_margin:
+            self.gross_margin = None
+            self.operating_margin = None
+
+        return self
+
     @property
     def completeness(self) -> float:
         """Fraction of metrics actually available.

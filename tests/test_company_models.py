@@ -171,3 +171,72 @@ def test_drop_summary_counts_reasons_most_common_first():
 
 def test_drop_summary_of_nothing_is_empty():
     assert CompanyFindings().drop_summary == {}
+
+
+# --- Margins that contradict each other ---------------------------------------
+#
+# Operating margin is gross margin minus operating expenses, and expenses are
+# never negative, so operating can never be the larger of the two. Found on
+# REGENXBIO from yfinance - gross -44.9%, operating +27.1% - where the bad value
+# scored 0.68 of 1.0 and put the company top of a brief a person then read.
+
+
+def test_margins_that_cannot_both_be_true_are_both_discarded():
+    """BOTH, because nothing here can tell which one is wrong. Dropping the
+    odd-looking one would be a guess wearing the costume of a fix."""
+    m = ComparableMetrics(
+        revenue_growth=4.057,
+        gross_margin=-0.44946998,
+        operating_margin=0.27091,
+        debt_to_equity=3.49003,
+    )
+
+    assert m.gross_margin is None
+    assert m.operating_margin is None
+    # The metrics that were never in doubt survive.
+    assert m.revenue_growth == 4.057
+    assert m.debt_to_equity == 3.49003
+
+
+def test_a_contradiction_costs_the_company_confidence_not_its_place():
+    """Losing two metrics halves completeness, and the score is multiplied by
+    it. The candidate stays in the run and ranks on the evidence it has."""
+    m = ComparableMetrics(
+        revenue_growth=0.2, gross_margin=-0.4,
+        operating_margin=0.3, debt_to_equity=0.5,
+    )
+
+    assert m.completeness == 0.5
+
+
+def test_an_ordinary_pair_is_left_alone():
+    m = ComparableMetrics(gross_margin=0.45, operating_margin=0.15)
+
+    assert m.gross_margin == 0.45
+    assert m.operating_margin == 0.15
+
+
+def test_equal_margins_are_allowed():
+    """A company with no operating expenses at all is implausible but not
+    impossible, and the rule is 'operating cannot EXCEED gross'."""
+    m = ComparableMetrics(gross_margin=0.30, operating_margin=0.30)
+
+    assert m.operating_margin == 0.30
+
+
+def test_both_margins_negative_is_not_a_contradiction():
+    """A loss-making biotech has both below zero, and gross still above
+    operating. Discarding these would throw away the true picture of exactly the
+    companies this system most needs to grade honestly."""
+    m = ComparableMetrics(gross_margin=-0.20781, operating_margin=-0.35047)
+
+    assert m.gross_margin == -0.20781
+    assert m.operating_margin == -0.35047
+
+
+@pytest.mark.parametrize("present", ["gross_margin", "operating_margin"])
+def test_one_margin_alone_is_never_discarded(present):
+    """The check needs the pair. A lone margin has nothing to contradict."""
+    m = ComparableMetrics(**{present: 0.3})
+
+    assert getattr(m, present) == 0.3

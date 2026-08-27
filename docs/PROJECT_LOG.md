@@ -2753,3 +2753,69 @@ else could revise a profile. That is still true of restrictions - deliberately,
 per entry 59 - and is no longer true of sectors. The invariant did not rot; it
 was deliberately altered, and the test now distinguishes the two fields instead
 of treating every revision alike.
+
+### 78. A margin that cannot exist, found by someone asking what a number meant
+
+The question was not "is this broken", it was **"screen scores of 0.50, 0.29 and
+0.16 - is that good or bad?"** Answering it meant decomposing the scores, and
+the top one turned out to be built on an impossible number.
+
+REGENXBIO, from yfinance:
+
+    gross margin      -44.9%
+    operating margin  +27.1%
+
+Operating margin is gross margin MINUS operating expenses, and expenses are
+never negative. On one income statement operating cannot be the larger of the
+two. At least one of that pair is wrong.
+
+**Both passed `_sane_margin`**, the check written for entry 33's operating
+margin of 168. That check tests each value ALONE, and neither of these is
+individually absurd: a negative gross margin is ordinary for a clinical-stage
+biotech, and +27% is an unremarkable operating margin. It takes the PAIR to show
+the fault, and nothing was looking at pairs.
+
+**And it did not merely survive - it inflated the result.** `operating_margin`
+scored 0.68 of a possible 1.0, which is why REGENXBIO ranked FIRST in the brief.
+The one metric that was provably wrong was doing the most work to promote it.
+
+    before   base 0.503 x direct 1.0 x completeness 1.0  =  0.503   ranked 1st
+    after    base 0.600 x direct 1.0 x completeness 0.5  =  0.300
+
+**Both margins are discarded, not the odd-looking one**, because nothing at that
+point can tell which is at fault. Discarding the value that looks wrong would be
+a guess wearing the costume of a fix. The company keeps its place in the run and
+loses confidence instead: completeness falls to 0.5, the score is multiplied by
+it, and it ranks on the evidence it actually has. That is the rule already
+applied to a company that simply never had four metrics.
+
+**The check sits on the MODEL, not at the provider boundary.** The last three
+data-quality fixes all went into `clients/companies.py`, each next to the
+provider that produced the bad value. This invariant is not a provider quirk -
+it is arithmetic, true of any income statement from any source - so it belongs
+where everything passes through. Entry 77's lesson, one day later: a fix applied
+where the bug was observed rather than everywhere it can occur is a fix that
+waits.
+
+**It immediately found two more, in this project's own tests.** The risk-rules
+fixture defaults to `operating_margin=0.15, gross_margin=0.45`, and two tests
+override gross alone - to 0.14 and to 0.05 - leaving a company with a 14% gross
+margin and a 15% operating one. Those fixtures were never real companies. They
+passed for eleven sessions because nothing had ever checked the relationship,
+and they went red the moment something did.
+
+**One honest gap.** The discard is currently invisible to a reader: a metric
+dropped as contradictory looks identical to one the provider never supplied.
+That sits awkwardly against this project's own rule that what gets filtered out
+is reported, and it is recorded here rather than fixed, because expressing it
+properly means a schema change and the fix that matters - the bad number no
+longer reaching a ranking - is already in.
+
+What this run is really an argument for: **the score decomposition is the
+instrument.** `0.50, 0.29, 0.16` looked merely low. Split into
+`base x exposure x completeness` it says something specific about each company -
+Amazon lost 40% purely for being partially exposed, Ultragenyx is a cash-burning
+biotech and correctly near the bottom, and REGENXBIO's leading position rested
+on a number that could not be true. `ScoreBreakdown` was built so a surprising
+ranking would be debuggable rather than mysterious. This is the first time
+anyone asked it to do that, and it worked.

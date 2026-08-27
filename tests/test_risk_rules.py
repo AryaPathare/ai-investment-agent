@@ -120,7 +120,13 @@ def test_negative_free_cash_flow_is_only_minor():
 
 
 def test_a_thin_gross_margin_is_a_competitive_risk():
-    risks = fundamental_risks(candidate(gross_margin=THIN_GROSS_MARGIN - 0.01))
+    # operating_margin as well as gross: the fixture defaults to 0.15, and a
+    # company cannot have a 14% gross margin and a 15% operating one. Left
+    # alone, ComparableMetrics now discards BOTH as contradictory and the rule
+    # has no gross margin to fire on. The fixture was never a real company.
+    risks = fundamental_risks(
+        candidate(gross_margin=THIN_GROSS_MARGIN - 0.01, operating_margin=0.05)
+    )
     assert ("competitive", "minor") in types_and_severities(risks)
 
 
@@ -181,8 +187,10 @@ def test_a_missing_metric_never_fires_a_rule():
 
 def test_several_thresholds_can_fire_at_once():
     risks = fundamental_risks(
+        # operating below gross, for the reason given above.
         candidate(revenue_growth=-0.1, debt_to_equity=4.0,
-                  gross_margin=0.05, free_cash_flow=-2.0)
+                  gross_margin=0.05, operating_margin=0.01,
+                  free_cash_flow=-2.0)
     )
     assert len(risks) == 4
     assert sum(1 for r in risks if r.severity == "material") == 2
