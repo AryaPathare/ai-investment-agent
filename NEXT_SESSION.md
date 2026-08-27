@@ -1,6 +1,6 @@
 # Start here
 
-Last worked: **2026-08-28**. **The pipeline is complete, demonstrable, durable,
+Last worked: **2026-08-27**. **The pipeline is complete, demonstrable, durable,
 and published.** All five agents are built and verified against their own evals,
 `python -m cli` runs the whole thing end to end, a run that stops can be resumed,
 and CI proves the suite passes on machines that have never seen the project.
@@ -59,7 +59,7 @@ python -m cli --help
 
 ## 2. THE TASK
 
-### The salvage fix (entry 82) - **VERIFIED LIVE 2026-08-28**
+### The salvage fix (entry 82) - **VERIFIED LIVE 2026-08-27**
 
 Replayed `analyse_companies` over `cli-9760c4a2`'s checkpointed research - the
 exact input that raised `OutputParserException` the day before. It completed:
@@ -266,7 +266,7 @@ The decision: should a stage that failed be resumable, and if so, how does the
 graph distinguish "finished with an error" from "finished"? That changes what
 `--list` and `--resume` mean, so decide it before touching code.
 
-### 2.11 The shipped demo - **RE-RECORDED 2026-08-28, DONE**
+### 2.11 The shipped demo - **RE-RECORDED 2026-08-27, DONE**
 
 `demo/recorded_run.json` now holds `cli-11a4243b`: Lam Research and Applied
 Materials, both graded `direct` against an AI semiconductor-equipment theme,
