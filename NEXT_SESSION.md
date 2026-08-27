@@ -5,19 +5,22 @@ and published.** All five agents are built and verified against their own evals,
 `python -m cli` runs the whole thing end to end, a run that stops can be resumed,
 and CI proves the suite passes on machines that have never seen the project.
 
-**Session 10 closed the project; session 11 fixed its last defect and found the
-next one.** 2.2c, 2.5 and 2.6 are verified. 2.8 is fixed and verified. Two live
-runs exist on the current code, one showing a full brief and one showing the
-refusal path.
+**Sessions 10-12.** Session 10 closed the project. Session 11 fixed its last
+defect and found the next one. **Session 12 was about the person using it**:
+a zero-key demo, the brief rewritten in plain English, and share prices with
+what an amount would buy and a date to look again.
 
-**The open defect is 2.9**, and unlike everything before it, it needs a DESIGN
-DECISION rather than a prompt edit: Agent 3 only reads the articles Agent 2
-chose to cite, so retrieval is throttled by a filter one stage earlier. See
-section 2.9 and entry 75.
+**Two things are open, and both are decisions rather than repairs:**
+
+- **2.9** - Agent 3 only reads the articles Agent 2 chose to CITE, so retrieval
+  is throttled one stage earlier. Section 2.9, entry 75.
+- **2.10** - a failure in the LAST agent ends the graph cleanly but is not
+  resumable, so the four stages already paid for cannot be continued from the
+  CLI. Entry 81.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **75**
+- `docs/PROJECT_LOG.md` is current through entry **81**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -32,8 +35,8 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **760 passed, 1 skipped** in a few seconds. (752 until session 11 added
-eight tests for the research runner. Not 707 - that was the COLLECTED count. Do not add `-q`:
+Expect **793 passed, 1 skipped** in a few seconds. (760 at the end of session
+11; session 12 added tests for the demo, the margin invariant and prices. Not 707 - that was the COLLECTED count. Do not add `-q`:
 pytest.ini already sets it, and `-qq` suppresses the summary line, which is how
 the wrong number survived.)
 
@@ -250,6 +253,52 @@ before touching code.
 **It only bites when the pool is thin**, which is why two runs were needed to
 see it - in semiconductors, discarding twelve articles cost nothing.
 
+### 2.10 A failed last agent is not resumable - **OPEN, entry 81**
+
+Agent 5 died on an intermittent empty-generation 400 during a live run. The
+retry that Agents 2 and 3 already had is now added, so the immediate cause is
+fixed. The structural part is not.
+
+`decide_node` catches the exception and records it in state, so the graph
+FINISHES - cleanly, by design, because a traceback must never reach a user. But
+`--resume` then sees a completed run rather than something to continue, and the
+research, company analysis and risk critique already paid for (~30k) cannot be
+picked up from the CLI.
+
+**Ending cleanly and being recoverable are different properties**, and this is
+the first time the difference cost anything. It was recovered by replaying
+`decide()` over the checkpoint by hand - one model call instead of twelve -
+which is the fourth time the checkpoint database has been a recovery instrument
+rather than a resume feature.
+
+The decision: should a stage that failed be resumable, and if so, how does the
+graph distinguish "finished with an error" from "finished"? That changes what
+`--list` and `--resume` mean, so decide it before touching code.
+
+### 2.11 The shipped demo holds one company - **COSMETIC, worth improving**
+
+`python -m cli --demo` needs no API key at all and is the thing to show
+someone. It replays `demo/recorded_run.json`, a real run, and it shows every
+feature: a grounded exit condition citing a real article, a share price with an
+as-of date, what the stated amount would buy, and a review date.
+
+But the run behind it produced ONE candidate from nine examined, so it is
+thinner than the three-company run it replaced. Nothing is wrong with it.
+
+**Re-record the next time a live run produces three or four candidates.** Build
+the payload from that run's checkpoint - `recorded_on`, `profile`, `decision`,
+`research_findings`, `risk_findings` - and write it to `demo/recorded_run.json`.
+The tests deliberately do not pin the company or the count, so a re-record needs
+no test changes.
+
+Saved runs, all replayable at zero quota:
+
+    cli-15031438   semiconductors, 1 recommendation, WITH prices  (the recording)
+    cli-173b47fe   semiconductors, 3 - but no prices, and predates
+                   the plain-English brief
+    cli-f7bbd302   renewables, recommends NOTHING
+    cli-008657ee   healthcare - the run that exposed the margin bug
+
 ## 3. Then the known weaknesses
 
 All measured, all deliberately left. Work them in the order they would change an
@@ -438,7 +487,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 752 tests, a few seconds, no network
+python -m pytest                        # 793 tests, a few seconds, no network
 
 python -m evals.runner                  # Agent 1: 30 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)

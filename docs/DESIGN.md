@@ -109,6 +109,22 @@ one of these was measured rather than guessed at; where something was fixed,
   however many were retrieved. In a rich sector this costs nothing; in a thin
   one it empties the brief. **The one open defect**, and it needs a design
   decision rather than an edit.
+- **A failure in the LAST agent cannot be resumed.** The graph records the
+  error in state and finishes cleanly, by design, so a traceback never reaches a
+  reader - but `--resume` then sees a completed run, and the four stages already
+  paid for cannot be continued from the CLI. Recoverable by replaying `decide()`
+  over the checkpoint by hand. Ending cleanly and being recoverable turn out to
+  be different properties.
+- **No forecast, and that is deliberate.** Nothing here predicts a price, names
+  a sell date or says how much to invest. There is no valuation model, no price
+  target and no expected-return estimate, so any of those would be the only
+  figure in the output citing nothing. The exit conditions are the sell signal,
+  and they are event-based rather than dated.
+- **The share count is often absent.** It needs a price, a stated investor
+  currency, and a match between that and the share's. No exchange rate is
+  invented, and 39 of 48 cached companies trade in USD - so a reader who says
+  GBP will usually see a price and no count. A missing line was preferred to a
+  figure that is quietly wrong by a quarter.
 - **The renewables brief is thin, and honestly so.** Of roughly ten companies
   examined for that profile, about three are investable — renewable-energy news
   is dominated by private and foreign firms. Now that loose exposure is graded

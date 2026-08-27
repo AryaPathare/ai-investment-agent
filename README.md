@@ -257,8 +257,8 @@ docs/              Design notes and the project log.
 The short version — [`docs/DESIGN.md`](docs/DESIGN.md) has all of them with
 their evidence.
 
-- **Agent 3 only reads the articles Agent 2 chose to cite.** The one open
-  defect. Retrieval is throttled by a filter one stage earlier — 17 articles
+- **Agent 3 only reads the articles Agent 2 chose to cite.** The main open
+  item. Retrieval is throttled by a filter one stage earlier — 17 articles
   retrieved became 5 examined — which costs nothing in a rich sector and empties
   the brief in a thin one.
 - **Briefs can be thin.** Roughly three of ten examined companies are
@@ -269,6 +269,9 @@ their evidence.
   article). Both structural, both measured, both accepted deliberately.
 - **Two of the four exclusion reasons have never fired** against real data —
   `restriction_violation` and `disqualified_by_risk`. The other two now have.
+- **A failure in the last agent cannot be resumed.** The graph ends cleanly and
+  records the error, so `--resume` sees a finished run and the earlier stages'
+  work cannot be continued from the CLI.
 
 ---
 
