@@ -3249,3 +3249,68 @@ The decision stands; it is just no longer bundled with a lie.
 Five tests, and both halves broken on purpose before being trusted: remove the
 status and the checkpoint test goes red; remove the CLI branch and the resume
 test goes red.
+
+### 89. Closed
+
+Fourteen sessions, eighty-nine entries, 816 tests. The pipeline takes a person's
+answers, researches their sectors in current news, finds companies genuinely
+exposed to what it found, argues against each one, and writes a brief a beginner
+can read - with a price, what their money would buy, and a date to look again.
+It runs end to end, resumes when it stops, and says plainly when the answer is
+nothing.
+
+**Closed with two things fixed and one decision standing.**
+
+FIXED TONIGHT
+
+Entry 88: a failed run reported that it had finished. The error was already in
+state and nothing read it.
+
+REJECTED TONIGHT, WHICH IS ALSO A RESULT
+
+Entry 87: 2.9's article supply was widened and it made everything worse. The
+treated run looked like a success on its own numbers - no hard failures, full
+completeness, a candidate - and only a control run in the same session showed it
+had traded two themes for two citations. The section was aimed one level away
+from the constraint: the ceiling is `research_max_themes`, not article supply.
+
+ACCEPTED, NOT FIXED
+
+Recorded with evidence and deliberately left, each because the instrument that
+would close it does not exist or costs more than the defect:
+
+- **Agent 2 records almost no dissenting evidence.** Structural - most themes
+  cite one article and one article cannot disagree with itself. Routed around by
+  giving Agent 4 its own adversarial retrieval.
+- **Agent 4's source filter cannot cover its long tail.** 86 of 130 observed
+  sources contributed exactly one article. Three instruments were tried and
+  rejected on evidence: provider categories, query-term matching, and filtering
+  by domain.
+- **Two scoring limits.** Ranking saturates at the top; financial companies cap
+  at 0.50. Neither changes an ordering anyone consumes.
+- **Two of four exclusion reasons have never fired on real data.**
+- **The 12 hard Agent 1 cases score 12/12**, which by the rubric written with
+  them means they are too easy. The number is no longer evidence about Agent 1.
+
+STILL OPEN, AND STILL A DECISION
+
+2.10's second half. Making a failed run resumable means re-entering a completed
+thread, which changes what `--resume` and `--list` mean for every run. Worth
+doing only if somebody decides that first.
+
+WHAT THIS PROJECT KEPT TEACHING
+
+The suite was green through every significant defect any agent ever had. Unit
+tests proved the code did what it said; only the evals showed whether what it
+said was right - and only a control run, held beside it in the same session,
+showed whether a change was an improvement rather than a different set of clean
+numbers.
+
+The rest were variations on one theme. A test that cannot fail is not evidence -
+learned about a mutation test, re-learned about a quota probe. A guard whose
+failure message cannot be read is most of the way to no guard. A property
+defined by what it is not admits every new case by default. And a diagnosis
+written from the output of the last stage that touched something will name the
+wrong stage: it happened with the exposure grade, the zero-candidate runs, the
+citation rate, and the article pool, four times, and each time the real cause
+was one step upstream.

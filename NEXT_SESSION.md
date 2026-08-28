@@ -1,48 +1,27 @@
 # Start here
 
-Last worked: **2026-08-28**. **The pipeline is complete, demonstrable, durable,
-and published.** All five agents are built and verified against their own evals,
-`python -m cli` runs the whole thing end to end, a run that stops can be resumed,
-and CI proves the suite passes on machines that have never seen the project.
+**THIS PROJECT IS CLOSED.** Finished 2026-08-28, session 14, entry 89.
 
-**Sessions 10-12.** Session 10 closed the project. Session 11 fixed its last
-defect and found the next one. **Session 12 was about the person using it**:
-a zero-key demo, the brief rewritten in plain English, and share prices with
-what an amount would buy and a date to look again.
+Fourteen sessions, 89 log entries, 816 tests, CI green on Ubuntu and Windows.
+The pipeline runs end to end, resumes when it stops, prices what it recommends
+and says plainly when the answer is nothing.
 
-**Nothing is owed.** Session 13 verified the entry 82 salvage fix live,
-re-recorded the demo from the best brief the pipeline has produced (Lam Research
-and Applied Materials, both priced, both citing a real article), and gave the
-sector question a menu of the market's eleven sectors - each with a narrower
-example, because narrow researches better and a bare menu would have pushed
-everyone the wrong way. Entry 83.
+**Nothing is owed and nothing is unverified.** Section 2 below is a record of
+what was done, kept because the arguments in it are the useful part. Section 3
+lists what was ACCEPTED rather than fixed, each with the evidence and the
+instrument that failed.
 
-Session 13 also added FX conversion, after a run whose investor said USD was
-recommended a Shenzhen listing in CNY and a Vietnamese one in VND - so both
-share-count lines read "not converted". Entry 84.
+**One decision stands**: 2.10's second half, making a failed run resumable. It
+changes what `--resume` and `--list` mean for every run, so it needs deciding
+before it is built. It is not a repair - the failure it recovers from is rare,
+its immediate cause is fixed, and the run now reports itself honestly.
 
-**NOTHING IS UNVERIFIED.** Session 14 ran the CLI live (`cli-25528e4a`, 124s)
-and entry 85's beginner writing rules hold: the thesis opens "CATL is the
-world's largest manufacturer of sodium-ion batteries, a technology that offers a
-cheaper alternative to lithium for grid storage and electric vehicles". Outside
-words, one idea per sentence. Entry 86.
-
-That run also showed **2.9 in a real brief for the first time**: 8 articles
-retrieved, 4 cited, 6 companies examined, ONE candidate where the cap is three.
-Nothing in the output is wrong; it is a smaller answer than the retrieval paid
-for.
-
-Everything else open is a decision rather than a repair:
-
-- **2.9** - Agent 3 only reads the articles Agent 2 chose to CITE, so retrieval
-  is throttled one stage earlier. Section 2.9, entry 75.
-- **2.10** - a failure in the LAST agent ends the graph cleanly but is not
-  resumable, so the four stages already paid for cannot be continued from the
-  CLI. Entry 81.
+If you come back to this, read entry 89 first, then entry 87 - the second is the
+clearest example of the habit the whole log is about.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **88**
+- `docs/PROJECT_LOG.md` is current through entry **89**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
