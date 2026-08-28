@@ -1,6 +1,7 @@
 # Start here
 
 **THIS PROJECT IS CLOSED.** Finished 2026-08-28, session 14, entry 89.
+Session 15 re-recorded the demo from a live run; entry 90.
 
 Fourteen sessions, 89 log entries, 816 tests, CI green on Ubuntu and Windows.
 The pipeline runs end to end, resumes when it stops, prices what it recommends
@@ -21,7 +22,7 @@ clearest example of the habit the whole log is about.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **89**
+- `docs/PROJECT_LOG.md` is current through entry **90**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so

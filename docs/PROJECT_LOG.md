@@ -3314,3 +3314,44 @@ written from the output of the last stage that touched something will name the
 wrong stage: it happened with the exposure grade, the zero-candidate runs, the
 citation rate, and the article pool, four times, and each time the real cause
 was one step upstream.
+
+## Session 15 — 2026-08-28
+
+### 90. Re-recorded the demo, and the labels earned their keep
+
+A live interactive run - Technology and Utilities, USD 1,000, `cli-0562c71f` -
+produced the widest brief the pipeline has made: **three recommendations**
+(NVIDIA, Samsung, SMIC), a fourth company recorded as considered and not chosen,
+three currencies, and one exit condition per company grounded in a real article.
+
+Re-recorded `demo/recorded_run.json` from it. Measured against what it replaced:
+
+                        recommended  also considered  conditions citing an article
+    previous (LRCX, AMAT)     2             0                    2 of 6
+    new (NVDA, SMSNN, 0981)   3             1                    3 of 9
+
+The citation RATE is unchanged at one per company - which is what the prompt
+requires and, as entry 62 established, all Agent 5 can do when it is handed one
+article per candidate. What the new recording adds is coverage: it exercises the
+ALSO CONSIDERED section, which the old one never reached, and it carries the
+line "One share costs more than your USD 1,000". A demo that shows the honest
+answer to a small amount is worth more than one where every number fits.
+
+**Entry 88 paid off within the hour.** `--list` now reads:
+
+    cli-9760c4a2  failed at the last stage      grid storage
+    cli-15031438  failed at the last stage      semiconductors, artificial ...
+    cli-b78354f3  failed at the last stage      whichever will make me the ...
+
+Three runs that had been sitting in the database labelled "finished" since
+before the status existed. Nothing was re-run and nothing was recorded to find
+them; the errors had been in state the whole time. **The fix was not to collect
+information but to read what was already there**, which is the third time on
+this project that the missing piece turned out to be already present and
+unexamined - after the cache provenance and Agent 5's evidence.
+
+A smaller correction worth keeping: the first attempt to compare the two
+recordings counted `article_id` and found zero citations, which contradicted the
+handoff. The field is `article_ids`. **The handoff was right and the probe was
+wrong** - the same shape as the `asked_by` mistake in entry 54, and the second
+time a wrong key nearly became a reported finding.

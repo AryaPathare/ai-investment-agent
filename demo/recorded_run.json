@@ -1,32 +1,114 @@
 {
-  "_comment": "A real recorded run, shipped so the pipeline can be seen working with no API keys and no network. Rendered by `python -m cli --demo`.",
-  "recorded_on": "2026-08-27T19:55:22.797577+00:00",
   "profile": {
-    "age": 21,
-    "investment_experience": "intermediate",
-    "risk_tolerance": "moderate",
-    "investment_amount": 10000.0,
+    "age": 56,
+    "investment_experience": "beginner",
+    "risk_tolerance": "low",
+    "investment_amount": 1000.0,
     "investment_currency": "USD",
-    "investment_window": "4 month",
-    "holding_period": "4 months",
+    "investment_window": "5 months",
+    "holding_period": "10 months",
     "sectors_of_interest": [
-      "semiconductors"
+      "Technology",
+      "Utilities"
     ],
     "restrictions": [
-      "none"
+      "no"
     ]
   },
   "decision": {
     "recommendations": [
       {
-        "ticker": "LRCX",
-        "name": "Lam Research Corporation",
-        "thesis": "Lam Research’s advanced wafer‑processing equipment powers the AI‑driven semiconductor boom, and its announced $3 billion R&D investment will accelerate the development of next‑generation tools that meet the high‑volume, high‑precision demands of AI workloads. With a 37% operating margin and low debt, the company is financially positioned to capture this growth, making it a solid pick for a moderate‑risk investor with a 4‑month horizon.",
+        "ticker": "NVDA",
+        "name": "NVIDIA Corporation",
+        "thesis": "NVIDIA sells GPUs that power AI workloads. Its revenue grows as AI chip demand rises. The company is a good fit for a low‑risk investor holding for ten months.",
         "exit_conditions": [
           {
-            "condition": "Lam Research fails to invest $3B in R&D as announced",
+            "condition": "Microsoft secures majority of TSMC capacity for its Maia 300 chip.",
             "article_ids": [
-              "c7a5cee9-38d8-44b5-8a20-e50cb737ce22"
+              "346d2a08-40fb-49bf-93fd-e76aa3f05583"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "revenue_growth turns negative.",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          },
+          {
+            "condition": "debt_to_equity rises above 1.0.",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          }
+        ],
+        "screen_score": 0.9988,
+        "price": {
+          "amount": 217.095,
+          "currency": "USD",
+          "as_of": "2026-08-28T19:16:33.226736Z"
+        },
+        "shares_affordable": 4,
+        "price_in_investor_currency": 217.095,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "AI Chip Capacity Crunch"
+        ],
+        "evidence_article_ids": [
+          "346d2a08-40fb-49bf-93fd-e76aa3f05583",
+          "6a9bf61a-e428-4038-9c41-ef831931ba31"
+        ],
+        "known_risks": []
+      },
+      {
+        "ticker": "SMSNN.MX",
+        "name": "SAMSUNG ELECTRONICS CO",
+        "thesis": "Samsung Electronics is a global leader in semiconductor manufacturing, producing AI chips for Nvidia, Apple, and Tesla. Its advanced 3nm and 5nm foundry nodes let it charge premium prices amid the AI chip capacity crunch. With a 52% operating margin and low debt, it offers a safe play for a low‑risk, 10‑month investor.",
+        "exit_conditions": [
+          {
+            "condition": "Samsung reduces AI chip prices by more than 10% within six months.",
+            "article_ids": [
+              "6a9bf61a-e428-4038-9c41-ef831931ba31"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "Operating margin falls below 0.4.",
+            "article_ids": [],
+            "metric": "operating_margin"
+          },
+          {
+            "condition": "Debt-to-equity ratio rises above 0.2.",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          }
+        ],
+        "screen_score": 0.9363,
+        "price": {
+          "amount": 81745.9,
+          "currency": "MXN",
+          "as_of": "2026-08-28T19:16:40.392004Z"
+        },
+        "shares_affordable": 0,
+        "price_in_investor_currency": 4799.407015998826,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "AI Chip Capacity Crunch"
+        ],
+        "evidence_article_ids": [
+          "6a9bf61a-e428-4038-9c41-ef831931ba31"
+        ],
+        "known_risks": []
+      },
+      {
+        "ticker": "0981.HK",
+        "name": "SMIC",
+        "thesis": "SMIC is China’s largest foundry that makes mature‑node chips used in AI processors. Its planned capacity expansion will let it supply more AI chips as demand surges, boosting its share of the market. Because it finances growth from its balance sheet, the company may not fit a low‑risk investor over a 10‑month horizon.",
+        "exit_conditions": [
+          {
+            "condition": "SMIC's capacity utilization falls below 90%",
+            "article_ids": [
+              "78133eef-1b06-4fd6-846d-7ddc18af1d13"
             ],
             "metric": null
           },
@@ -36,219 +118,214 @@
             "metric": "debt_to_equity"
           },
           {
-            "condition": "operating_margin falls below 0.3",
+            "condition": "operating_margin falls below 10%",
             "article_ids": [],
             "metric": "operating_margin"
           }
         ],
-        "screen_score": 0.7712,
+        "screen_score": 0.5565,
         "price": {
-          "amount": 315.585,
-          "currency": "USD",
-          "as_of": "2026-08-27T19:49:58.488481Z"
+          "amount": 71.3,
+          "currency": "HKD",
+          "as_of": "2026-08-28T19:16:36.035555Z"
         },
+        "shares_affordable": 109,
+        "price_in_investor_currency": 9.09461976070818,
         "verdict": "survives",
         "exposure": "direct",
         "themes": [
-          "AI-Driven Semiconductor Equipment Growth"
+          "AI Chip Capacity Crunch"
         ],
         "evidence_article_ids": [
-          "c7a5cee9-38d8-44b5-8a20-e50cb737ce22"
+          "78133eef-1b06-4fd6-846d-7ddc18af1d13"
         ],
-        "known_risks": []
-      },
-      {
-        "ticker": "AMAT",
-        "name": "Applied Materials, Inc.",
-        "thesis": "Applied Materials provides lithography and deposition equipment that are essential for AI‑driven semiconductor manufacturing, positioning it to capture the growth in AI chip production. Its strong operating margin and low debt‑to‑equity give it the financial flexibility to invest in AI‑focused R&D, making it a compelling pick for a moderate‑risk investor with a short‑term horizon.",
-        "exit_conditions": [
-          {
-            "condition": "revenue_growth turns negative",
-            "article_ids": [],
-            "metric": "revenue_growth"
-          },
-          {
-            "condition": "debt_to_equity rises above 3.0",
-            "article_ids": [],
-            "metric": "debt_to_equity"
-          },
-          {
-            "condition": "the company reports a decline in AI product revenue",
-            "article_ids": [
-              "c3eac5c0-ad80-4eba-b3c4-5b593a27029a"
-            ],
-            "metric": null
-          }
-        ],
-        "screen_score": 0.7087,
-        "price": {
-          "amount": 478.835,
-          "currency": "USD",
-          "as_of": "2026-08-27T19:50:00.947986Z"
-        },
-        "verdict": "survives",
-        "exposure": "direct",
-        "themes": [
-          "AI-Driven Semiconductor Equipment Growth"
-        ],
-        "evidence_article_ids": [
-          "c3eac5c0-ad80-4eba-b3c4-5b593a27029a"
-        ],
-        "known_risks": []
+        "known_risks": [
+          "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business."
+        ]
       }
     ],
-    "excluded": [],
+    "excluded": [
+      {
+        "ticker": "BABA",
+        "name": "Alibaba Group Holding Limited",
+        "reason": "outside_top_three",
+        "detail": "ranked 4 of 4 eligible (weakened, score 0.314)"
+      }
+    ],
     "no_recommendation_reason": null,
     "conditions_discarded": 0,
-    "notes": null
+    "notes": "4 companies were looked at closely and the best 3 are above. The rest are listed with the reason each one was not chosen."
   },
   "research_findings": {
     "themes": [
       {
-        "name": "AI-Driven Semiconductor Equipment Growth",
-        "why_it_matters": "Investing in companies that supply AI-optimized tools could capture growth in semiconductor manufacturing, aligning with the investor’s focus on semiconductors and moderate risk.",
+        "name": "AI Chip Capacity Crunch",
+        "why_it_matters": "Investor’s tech focus may see short‑term volatility as chip prices rise; understanding capacity constraints helps gauge AI chip price trends and potential impact on related tech stocks.",
         "industries": [
-          "Semiconductors",
-          "Technology Equipment"
+          "Technology"
         ],
-        "timeframe": "within_6_months",
+        "timeframe": "already_underway",
         "confidence": "high",
         "evidence": [
           {
-            "article_id": "c7a5cee9-38d8-44b5-8a20-e50cb737ce22",
+            "article_id": "346d2a08-40fb-49bf-93fd-e76aa3f05583",
             "stance": "supports",
-            "relevance": "Lam Research plans $3B R&D investment to boost chip equipment capacity."
+            "relevance": "Microsoft seeks TSMC capacity for its new AI chip, highlighting demand pressure."
           },
           {
-            "article_id": "c3eac5c0-ad80-4eba-b3c4-5b593a27029a",
+            "article_id": "78133eef-1b06-4fd6-846d-7ddc18af1d13",
             "stance": "supports",
-            "relevance": "Applied Materials sees AI driving biggest semiconductor growth inflection."
+            "relevance": "SMIC plans capacity expansion due to high mature‑node chip demand."
+          },
+          {
+            "article_id": "6a9bf61a-e428-4038-9c41-ef831931ba31",
+            "stance": "supports",
+            "relevance": "Samsung raises chip prices amid TSMC capacity crunch."
           }
         ]
       },
       {
-        "name": "Critical Metal Supply Constraints",
-        "why_it_matters": "Supply chain disruptions can pressure semiconductor prices and production schedules, offering potential investment opportunities in companies mitigating these risks.",
+        "name": "APAC Cloud Expansion",
+        "why_it_matters": "Cloud growth fuels demand for data‑center hardware; investor may consider exposure to cloud infrastructure providers that benefit from expanding capacity.",
         "industries": [
-          "Semiconductors",
-          "Materials"
-        ],
-        "timeframe": "within_6_months",
-        "confidence": "high",
-        "evidence": [
-          {
-            "article_id": "8157e2bf-bf55-48c9-978c-34cfb2329ab7",
-            "stance": "supports",
-            "relevance": "Tungsten shortage threatens U.S. military and semiconductor industry."
-          },
-          {
-            "article_id": "acb2909c-8d4e-461c-9f49-b4a7e2292f86",
-            "stance": "supports",
-            "relevance": "Chinese germanium export restrictions disrupt Taiwan chip production."
-          }
-        ]
-      },
-      {
-        "name": "Chinese Chip Toolmakers Profit Surge",
-        "why_it_matters": "Growth in Chinese toolmakers could influence global chip manufacturing dynamics, relevant for a semiconductor-focused investor.",
-        "industries": [
-          "Semiconductors",
-          "Technology Equipment"
+          "Technology"
         ],
         "timeframe": "within_6_months",
         "confidence": "medium",
         "evidence": [
           {
-            "article_id": "5ecd8a39-a557-4db3-92f5-efcd15951283",
+            "article_id": "91f97296-4aa2-4e89-88bc-0905e16824af",
             "stance": "supports",
-            "relevance": "Chinese chip toolmakers post 400% profit surge due to overseas backlogs."
+            "relevance": "Tencent and Alibaba expand APAC cloud regions, adding capacity."
+          },
+          {
+            "article_id": "821df302-a74f-4e39-bcc2-65fde17f1481",
+            "stance": "weakens",
+            "relevance": "Alibaba’s profits fall as cloud expansion costs rise."
           }
         ]
       },
       {
-        "name": "India Semiconductor Expansion",
-        "why_it_matters": "Long-term growth in India’s semiconductor sector may create opportunities for companies involved in chip manufacturing or supply chain.",
+        "name": "Back‑end Manufacturing Growth",
+        "why_it_matters": "Back‑end expansion supports the semiconductor supply chain; investor may watch for companies benefiting from increased packaging capacity as demand rises.",
         "industries": [
-          "Semiconductors",
-          "Technology Equipment"
+          "Technology"
         ],
-        "timeframe": "beyond_18_months",
+        "timeframe": "6_to_18_months",
         "confidence": "medium",
         "evidence": [
           {
-            "article_id": "78513ac4-318b-4d5f-a00e-e53597f046d5",
+            "article_id": "0ce0c4ae-3e1c-46e6-8670-f40ae890681a",
             "stance": "supports",
-            "relevance": "India could add 5-8 semiconductor plants in next 7-8 years."
-          },
+            "relevance": "JCET reports 79.4% YoY profit growth and expands advanced packaging."
+          }
+        ]
+      },
+      {
+        "name": "Utility Demand Surge",
+        "why_it_matters": "Growing semiconductor and solar demand boosts utility services; investor’s utilities interest may benefit from increased energy consumption in these sectors.",
+        "industries": [
+          "Utilities",
+          "Technology"
+        ],
+        "timeframe": "6_to_18_months",
+        "confidence": "medium",
+        "evidence": [
           {
             "article_id": "a98e7ea1-dec8-40df-82fd-b86c1e5a5b7e",
             "stance": "supports",
-            "relevance": "India's semiconductor demand expected to double next year."
+            "relevance": "Gradiant expects India business to double, driven by semiconductor and solar demand."
+          }
+        ]
+      },
+      {
+        "name": "Digital Energy Services",
+        "why_it_matters": "Digital energy services expansion indicates rising demand for data‑center power; investor’s utilities focus may find opportunities in energy infrastructure supporting tech growth.",
+        "industries": [
+          "Utilities"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "51787c88-b98a-429f-8160-cd452ecf6766",
+            "stance": "supports",
+            "relevance": "Wasion Holdings reports doubled digital energy services and a 153% surge in data‑center orders."
           }
         ]
       }
     ],
     "articles": [
       {
-        "uuid": "78513ac4-318b-4d5f-a00e-e53597f046d5",
-        "title": "PM Modi says 5-8 more semiconductor plants likely in next 7-8 years",
-        "description": "From the Red Fort, Narendra Modi said India could see five to eight more semiconductor plants in the next seven to eight years. He linked chipmaking, manufactur...",
-        "snippet": "Prime Minister Narendra Modi on Friday said India is expected to see another five to eight semiconductor plants become operational over the next seven to eight ...",
-        "url": "https://www.indiatoday.in/business/story/semiconductor-plants-india-modi-5-8-more-likely-next-7-8-years-2971710-2026-08-15",
-        "source": "indiatoday.intoday.in",
-        "published_at": "2026-08-15T02:46:22Z",
+        "uuid": "346d2a08-40fb-49bf-93fd-e76aa3f05583",
+        "title": "Microsoft's Maia 300 Chip Targets NVIDIA's AI Dominance",
+        "description": "Microsoft plans to unveil its Maia 300 AI chip in September, seeking TSMC capacity for over 300,000 units by 2027 as it aims to reduce reliance on NVIDIA proces...",
+        "snippet": "Key Points\n\nInterested in Microsoft Corporation? Here are five stocks we like better.\n\nMicrosoft plans to unveil its Maia 300 AI chip as soon as September and i...",
+        "url": "https://finance.yahoo.com/technology/ai/articles/microsofts-maia-300-chip-targets-120000573.html",
+        "source": "finance.yahoo.com",
+        "published_at": "2026-08-16T12:00:00Z",
         "categories": [
+          "business",
           "general"
         ]
       },
       {
-        "uuid": "c7a5cee9-38d8-44b5-8a20-e50cb737ce22",
-        "title": "$3 billion investment to boost US chip firm’s research capacity by 50%",
-        "description": "Lam Research is planning to invest over $3 billion in global R&D labs, increasing experiment capacity by more than 50%.",
-        "snippet": "American Fortune 500 company Lam Research plans to invest more than $3 billion over the next five years to expand its global research and development laboratory...",
-        "url": "https://interestingengineering.com/ai-robotics/3-billion-push-us-firm-plans-50-expansion-in-chip-research-capacity",
+        "uuid": "78133eef-1b06-4fd6-846d-7ddc18af1d13",
+        "title": "Chinese firm sees 93.7% capacity use as high demand drives chip shortages",
+        "description": "Chinese firm SMIC plans to expand its capacities in its factories, as customer demand for “mature-node chips” increases.",
+        "snippet": "Demand is high for mature-node chips for AI processors, and China’s Semiconductor Manufacturing International Corporation (SMIC) intends to raise the bar, acc...",
+        "url": "https://interestingengineering.com/ai-robotics/chinese-firm-smic-capacity-utilization-chip",
         "source": "interestingengineering.com",
-        "published_at": "2026-08-16T13:19:15Z",
+        "published_at": "2026-08-16T23:08:13Z",
         "categories": [
           "tech",
           "science"
         ]
       },
       {
-        "uuid": "5ecd8a39-a557-4db3-92f5-efcd15951283",
-        "title": "Chinese Chip Toolmakers Post 400% Profit Surge as Overseas Suppliers’ Two-Year Backlogs Reshape the Industry",
-        "description": "JW Insights reports the shift is a long-term reshaping, not a blip, with SMIC and CXMT spending heavily on capacity expansion.",
-        "snippet": "The ongoing AI boom and its impact on global chip manufacturing have created an opportunity for Chinese chip manufacturing equipment providers to cater to growi...",
-        "url": "https://wccftech.com/chinese-chip-toolmakers-post-400-profit-surge-as-overseas-suppliers-two-year-backlogs-reshape-the-industry/",
-        "source": "wccftech.com",
-        "published_at": "2026-08-19T08:40:46Z",
+        "uuid": "91f97296-4aa2-4e89-88bc-0905e16824af",
+        "title": "Tencent and Alibaba expand APAC cloud infrastructure",
+        "description": "Tencent and Alibaba cloud infrastructure expands across APAC, with new capacity in Malaysia and South Korea as AI and cloud spending rises.",
+        "snippet": "Tencent Cloud plans to establish its first cloud region in Malaysia, while Alibaba Cloud has launched a third data centre in South Korea, adding capacity in two...",
+        "url": "https://www.cloudcomputing-news.net/news/tencent-alibaba-apac-cloud-infrastructure/",
+        "source": "cloudcomputing-news.net",
+        "published_at": "2026-08-19T09:00:00Z",
         "categories": [
           "tech"
         ]
       },
       {
-        "uuid": "8157e2bf-bf55-48c9-978c-34cfb2329ab7",
-        "title": "The Tungsten Time Bomb: How China’s Stranglehold on a Critical Metal Threatens U.S. Military Superiority and the Global Semiconductor Industry – NaturalNews.com",
-        "description": "Tungsten, a dense metal essential for advanced semiconductors and artificial intelligence hardware, faces a critical supply shortage that has drawn the attentio...",
-        "snippet": "The Tungsten Time Bomb: How China’s Stranglehold on a Critical Metal Threatens U.S. Military Superiority and the Global Semiconductor Industry\n\nTungsten, a de...",
-        "url": "https://www.naturalnews.com/2026-08-25-chinas-stranglehold-critical-metal-threatens-us-military-superiority.html",
-        "source": "naturalnews.com",
-        "published_at": "2026-08-25T06:00:00Z",
+        "uuid": "6a9bf61a-e428-4038-9c41-ef831931ba31",
+        "title": "Samsung Raises Chip Prices as TSMC Faces Capacity Crunch: Nvidia, Apple, and Tesla Drive Soaring Demand",
+        "description": "In response to the escalating demand for artificial intelligence (AI) chips, Samsung Electronics has announced a significant price hike of up to 15% on select",
+        "snippet": "Samsung Raises Chip Prices as TSMC Faces Capacity Crunch: Nvidia, Apple, and Tesla Drive Soaring Demand\n\nSamsung Electronics Implements Up to 15% Price Increase...",
+        "url": "https://profitconfidential.com/samsung-reportedly-hikes-chip-prices-amid-tsmc-capacity-crunch-nvidia-apple-tesla-fuel-demand/",
+        "source": "profitconfidential.com",
+        "published_at": "2026-08-19T12:07:47Z",
         "categories": [
-          "health",
-          "general"
+          "business"
         ]
       },
       {
-        "uuid": "acb2909c-8d4e-461c-9f49-b4a7e2292f86",
-        "title": "Taiwan Tech Production Hit by Chinese Germanium Export Restrictions, Insiders Say – NaturalNews.com",
-        "description": "Taiwanese technology companies are experiencing production disruptions as a result of Chinese export controls on germanium, according to industry insiders cited...",
-        "snippet": "Taiwan Tech Production Hit by Chinese Germanium Export Restrictions, Insiders Say\n\nTaiwanese technology companies are experiencing production disruptions as a r...",
-        "url": "https://www.naturalnews.com/2026-08-25-taiwan-tech-production-hit-chinese-germanium-export-restrictions.html",
-        "source": "naturalnews.com",
-        "published_at": "2026-08-25T06:00:00Z",
+        "uuid": "821df302-a74f-4e39-bcc2-65fde17f1481",
+        "title": "Alibaba profits fall on weak e-commerce sales, costs for cloud and AI expansion",
+        "description": "Alibaba Group reported a sharp fall in profits in the June quarter, as growth in cloud and AI services could not offset a slowdown in its core e-commerce busine...",
+        "snippet": "Alibaba profits fall on weak e-commerce sales, costs for cloud and AI expansion\n\nAlibaba Group reported a sharp fall in profits in the June quarter, as growth i...",
+        "url": "https://www.telecompaper.com/news/alibaba-profits-fall-on-weak-e-commerce-sales-costs-for-cloud-and-ai-expansion--1580418",
+        "source": "telecompaper.com",
+        "published_at": "2026-08-20T11:56:00Z",
+        "categories": []
+      },
+      {
+        "uuid": "0ce0c4ae-3e1c-46e6-8670-f40ae890681a",
+        "title": "JCET Reports 79.4% YoY Growth in H1 2026 Net Profit Attributable to Shareholders, Accelerates Advanced Packaging Expansion",
+        "description": "**media[1184907]**SHANGHAI, Aug. 20, 2026 /PRNewswire/ -- JCET Group (SSE: 600584), a leading global provider of integrated circuit (IC) back-end manufacturing ...",
+        "snippet": "SHANGHAI\n\nAug. 20, 2026\n\n/PRNewswire/ -- JCET Group (SSE: 600584), a leading global provider of integrated circuit (IC) back-end manufacturing and technology se...",
+        "url": "https://www.manilatimes.net/2026/08/21/tmt-newswire/pr-newswire/jcet-reports-794-yoy-growth-in-h1-2026-net-profit-attributable-to-shareholders-accelerates-advanced-packaging-expansion/2409549",
+        "source": "manilatimes.net",
+        "published_at": "2026-08-20T16:26:08Z",
         "categories": [
-          "health",
+          "business",
           "general"
         ]
       },
@@ -265,13 +342,13 @@
         ]
       },
       {
-        "uuid": "c3eac5c0-ad80-4eba-b3c4-5b593a27029a",
-        "title": "Applied Materials Sees AI Driving Its Biggest Semiconductor Growth Inflection Yet",
-        "description": "Applied Materials (NASDAQ:AMAT) President and CEO Gary Dickerson said artificial intelligence is creating what he views as the semiconductor industry’s most c...",
-        "snippet": "He said the company is introducing products this year that it would not have been able to bring to market without AI. Applied's service business, meanwhile, is ...",
-        "url": "https://finance.yahoo.com/technology/ai/articles/applied-materials-sees-ai-driving-160355460.html",
-        "source": "finance.yahoo.com",
-        "published_at": "2026-08-27T16:03:55Z",
+        "uuid": "51787c88-b98a-429f-8160-cd452ecf6766",
+        "title": "Wasion Holdings (3393.HK) Announces 2026 Interim Results",
+        "description": "Turnover of Digital Energy Services and International Business Both Doubled",
+        "snippet": "Turnover of Digital Energy Services and International Business Both Doubled\n\nData Center Orders Surge 153% as Computing Power and Electric Power Coordination Le...",
+        "url": "https://www.manilatimes.net/2026/08/27/tmt-newswire/pr-newswire/wasion-holdings-3393hk-announces-2026-interim-results/2413158",
+        "source": "manilatimes.net",
+        "published_at": "2026-08-27T10:01:00Z",
         "categories": [
           "business",
           "general"
@@ -279,50 +356,170 @@
       }
     ],
     "queries_used": [
-      "semiconductor manufacturing capacity expansion",
-      "chip supply chain disruption impact",
-      "semiconductor fab investment contracts",
-      "advanced packaging technology adoption",
-      "semiconductor export control policy"
+      "semiconductor supply chain expansion",
+      "AI chip manufacturing capacity",
+      "grid modernization contracts",
+      "utility rate hike approvals",
+      "cloud infrastructure expansion"
     ],
-    "articles_retrieved": 15,
+    "articles_retrieved": 12,
     "notes": null
   },
   "risk_findings": {
     "critiques": [
       {
-        "ticker": "LRCX",
-        "name": "Lam Research Corporation",
+        "ticker": "NVDA",
+        "name": "NVIDIA Corporation",
         "risks": [],
         "queries_used": [
-          "\"Lam Research\" lawsuit",
-          "\"Lam Research\" Semiconductor"
+          "\"NVIDIA\" lawsuit",
+          "\"NVIDIA\" Capacity"
         ],
-        "articles_reviewed": 2,
+        "articles_reviewed": 5,
         "press_releases_withheld": 0,
         "sources_withheld": [
-          "financefeeds.com"
+          "zerohedge.com"
         ],
         "skipped_reason": null
       },
       {
-        "ticker": "AMAT",
-        "name": "Applied Materials, Inc.",
+        "ticker": "SMSNN.MX",
+        "name": "SAMSUNG ELECTRONICS CO",
         "risks": [],
         "queries_used": [
-          "\"Applied Materials,\" lawsuit",
-          "\"Applied Materials,\" Semiconductor"
+          "\"SAMSUNG ELECTRONICS\" lawsuit",
+          "\"SAMSUNG ELECTRONICS\" Capacity"
         ],
-        "articles_reviewed": 3,
+        "articles_reviewed": 2,
         "press_releases_withheld": 0,
         "sources_withheld": [
-          "financefeeds.com"
+          "profitconfidential.com"
         ],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "0981.HK",
+        "name": "SMIC",
+        "risks": [
+          {
+            "ticker": "0981.HK",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business.",
+            "article_ids": [],
+            "metric": "free_cash_flow_is_negative",
+            "metric_value": -1.0
+          }
+        ],
+        "queries_used": [
+          "\"SMIC\" lawsuit",
+          "\"SMIC\" Capacity"
+        ],
+        "articles_reviewed": 2,
+        "press_releases_withheld": 0,
+        "sources_withheld": [
+          "airedale.futurecdn.net"
+        ],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "BABA",
+        "name": "Alibaba Group Holding Limited",
+        "risks": [
+          {
+            "ticker": "BABA",
+            "risk_type": "financial",
+            "severity": "material",
+            "claim": "Alibaba's quarterly profits fell sharply as AI infrastructure investment increased, compressing margins.",
+            "article_ids": [
+              "bdad3b13-c4e3-4c39-abfa-ee72de8a42df"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "BABA",
+            "risk_type": "financial",
+            "severity": "material",
+            "claim": "A 75% surge in capex turned Alibaba's free cash flow into a 45 billion yuan outflow, eroding cash reserves.",
+            "article_ids": [
+              "58fbf910-270b-4d14-98c8-19b5f1cf0014"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "BABA",
+            "risk_type": "competitive",
+            "severity": "minor",
+            "claim": "Tencent's simultaneous expansion of APAC cloud infrastructure intensifies competition for Alibaba Cloud in the region.",
+            "article_ids": [
+              "91f97296-4aa2-4e89-88bc-0905e16824af"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "BABA",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business.",
+            "article_ids": [],
+            "metric": "free_cash_flow_is_negative",
+            "metric_value": -1.0
+          }
+        ],
+        "queries_used": [
+          "\"Alibaba\" lawsuit",
+          "\"Alibaba\" Cloud"
+        ],
+        "articles_reviewed": 6,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
         "skipped_reason": null
       }
     ],
-    "articles": [],
-    "articles_retrieved": 5,
+    "articles": [
+      {
+        "uuid": "91f97296-4aa2-4e89-88bc-0905e16824af",
+        "title": "Tencent and Alibaba expand APAC cloud infrastructure",
+        "description": "Tencent and Alibaba cloud infrastructure expands across APAC, with new capacity in Malaysia and South Korea as AI and cloud spending rises.",
+        "snippet": "Tencent Cloud plans to establish its first cloud region in Malaysia, while Alibaba Cloud has launched a third data centre in South Korea, adding capacity in two...",
+        "url": "https://www.cloudcomputing-news.net/news/tencent-alibaba-apac-cloud-infrastructure/",
+        "source": "cloudcomputing-news.net",
+        "published_at": "2026-08-19T09:00:00Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "bdad3b13-c4e3-4c39-abfa-ee72de8a42df",
+        "title": "Alibaba profits hit by AI spending despite strong cloud growth",
+        "description": "Alibaba has reported a sharp fall in quarterly profits as the Chinese technology giant ramps up investment in its AI infrastructure.",
+        "snippet": "Alibaba has reported a sharp fall in quarterly profits as the Chinese technology giant ramps up investment in its AI infrastructure, the latest stage in its tra...",
+        "url": "https://internetretailing.net/alibaba-profits-hit-by-ai-spending-despite-strong-cloud-growth/",
+        "source": "internetretailing.net",
+        "published_at": "2026-08-21T11:23:35Z",
+        "categories": [
+          "entertainment",
+          "business"
+        ]
+      },
+      {
+        "uuid": "58fbf910-270b-4d14-98c8-19b5f1cf0014",
+        "title": "Alibaba Sinks 7% as a 75% Capex Surge Swallows 45% Cloud Growth; Baidu Ticks Up",
+        "description": "Alibaba's cloud business just posted a 22-quarter high in growth, yet the stock is sinking while rival Baidu climbs. The reason comes down to a single line in t...",
+        "snippet": "Quick Read\n\nBABA dropped 7% as a 75% capex surge flipped free cash flow to a 45 billion yuan outflow, overshadowing 45% cloud growth.\n\nBIDU gained 2% harvesting...",
+        "url": "https://finance.yahoo.com/markets/stocks/articles/alibaba-sinks-7-75-capex-154347067.html",
+        "source": "finance.yahoo.com",
+        "published_at": "2026-08-21T15:43:47Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      }
+    ],
+    "articles_retrieved": 15,
     "risks_discarded": 0,
     "notes": null
   }
