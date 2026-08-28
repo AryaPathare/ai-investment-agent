@@ -1,6 +1,6 @@
 # Start here
 
-Last worked: **2026-08-27**. **The pipeline is complete, demonstrable, durable,
+Last worked: **2026-08-28**. **The pipeline is complete, demonstrable, durable,
 and published.** All five agents are built and verified against their own evals,
 `python -m cli` runs the whole thing end to end, a run that stops can be resumed,
 and CI proves the suite passes on machines that have never seen the project.
@@ -21,10 +21,16 @@ Session 13 also added FX conversion, after a run whose investor said USD was
 recommended a Shenzhen listing in CNY and a Vietnamese one in VND - so both
 share-count lines read "not converted". Entry 84.
 
-**ONE THING IS UNVERIFIED**: entry 85 rewrote the brief's writing rules for a
-beginner - one idea per sentence, eight banned phrases, say what the company
-sells in outside words. It is a prompt change and no live run has read it yet.
-Check the next brief's thesis before trusting it.
+**NOTHING IS UNVERIFIED.** Session 14 ran the CLI live (`cli-25528e4a`, 124s)
+and entry 85's beginner writing rules hold: the thesis opens "CATL is the
+world's largest manufacturer of sodium-ion batteries, a technology that offers a
+cheaper alternative to lithium for grid storage and electric vehicles". Outside
+words, one idea per sentence. Entry 86.
+
+That run also showed **2.9 in a real brief for the first time**: 8 articles
+retrieved, 4 cited, 6 companies examined, ONE candidate where the cap is three.
+Nothing in the output is wrong; it is a smaller answer than the retrieval paid
+for.
 
 Everything else open is a decision rather than a repair:
 
@@ -36,7 +42,7 @@ Everything else open is a decision rather than a repair:
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **85**
+- `docs/PROJECT_LOG.md` is current through entry **86**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so

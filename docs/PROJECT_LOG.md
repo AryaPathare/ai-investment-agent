@@ -3140,3 +3140,34 @@ labels, the machine names - and left the text itself alone. Half a job, and it
 took a person reading a real brief to say so.
 
 Unverified: it is a prompt change and the next live run is the measurement.
+
+## Session 14 — 2026-08-28
+
+### 86. The last unverified thing, verified
+
+`python -m cli --profile examples/beginner_renewables.json`, 124s, exit 0, run
+id `cli-25528e4a`. One recommendation: CATL, priced, FX-converted, with a date
+to look again.
+
+**Entry 85's rewrite holds.** The thesis opens "CATL is the world's largest
+manufacturer of sodium-ion batteries, a technology that offers a cheaper
+alternative to lithium for grid storage and electric vehicles" - outside words,
+one idea per sentence, no banned phrases. That was the only thing the project
+still owed.
+
+**2.9 is visible in a real brief for the first time.** 8 articles retrieved, 4
+cited, 6 companies examined, ONE candidate. The reader gets one company where
+the cap is three, and nothing in the output is wrong - it is simply a smaller
+answer than the retrieval paid for. Section 2.9 argued this from counts; this is
+what it looks like to a person.
+
+Two things worth noting rather than fixing. The single article-cited exit
+condition cites `memeburn.com`, and the article is "CATL Stock: How to Buy It,
+and What the Sodium-Ion Push Really Means" - a stock-tip piece, which is the
+shape the query prompt tells Agent 2 to avoid, arriving through Agent 4's
+retrieval instead. And the risk critic found 0 risks from 1 article after
+withholding 2 press releases, so "we argued against this one and it held up"
+rests on very little. Both are the long tail and the thin pool, already
+recorded.
+
+**Nothing is owed and nothing is unverified.** 2.9 and 2.10 remain decisions.
