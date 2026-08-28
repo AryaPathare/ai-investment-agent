@@ -42,7 +42,7 @@ Everything else open is a decision rather than a repair:
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **86**
+- `docs/PROJECT_LOG.md` is current through entry **87**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -235,7 +235,7 @@ Confirmed again on a different sector the same day: six queries, all four words.
 The runner now reports the three signals itself, and has its first tests.
 Entry 73.
 
-### 2.9 Agent 3 only reads the articles Agent 2 CITED - **OPEN, needs a decision**
+### 2.9 Agent 3's pool - **RE-FRAMED 2026-08-28, entry 87. It is themes, not articles**
 
     renewables      9 retrieved -> 3 cited     6 discarded
     semiconductors  17 retrieved -> 5 cited   12 discarded
@@ -251,10 +251,25 @@ so the pool reaching Agent 3 is capped near five however many were retrieved.
 The known cost of single-source themes was "thin evidence"; the real cost is
 that it caps the company pipeline.
 
-**Why this is not just an edit.** Whether Agent 3 should read every retrieved
-article, or whether uncited articles become a separate lower-priority pool,
-changes what "the research found" means to every stage downstream. Decide that
-before touching code.
+**Both options in this section are aimed one level away from the constraint.**
+Agent 3 grades (company, theme) PAIRS, so an uncited article maps to no theme
+and there is nothing to grade its companies against. Widening the article list
+does not widen the candidate list.
+
+**Tried and rejected 2026-08-28** (entry 87): telling Agent 2 to cite every
+supporting article. Measured against a same-session control on the same profile:
+
+                        themes  cited  mentions  companies  candidates
+        with the rule      3       5        5         5          1
+        control            5       6       13        10          2
+
+Worse on every axis, because the model CONSOLIDATED - three themes instead of
+five - and theme count drives the pool harder than citations per theme.
+
+**So the real ceiling is `research_max_themes` (5), with most runs producing
+three to five.** That is the number that caps how many companies can ever be
+examined. Anything done here should start there, and should use a control run -
+the treated run alone looked like a success.
 
 **It only bites when the pool is thin**, which is why two runs were needed to
 see it - in semiconductors, discarding twelve articles cost nothing.

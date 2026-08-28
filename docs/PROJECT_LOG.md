@@ -3171,3 +3171,44 @@ rests on very little. Both are the long tail and the thin pool, already
 recorded.
 
 **Nothing is owed and nothing is unverified.** 2.9 and 2.10 remain decisions.
+
+### 87. 2.9, attempted and rejected: the throttle is themes, not citations
+
+Section 2.9 offered two ways to widen Agent 3's pool - let it read every
+retrieved article, or give uncited articles a separate lower-priority pool.
+Reading the code first ruled out both as simple edits, for a reason 2.9 does not
+mention: **Agent 3 grades (company, theme) PAIRS.** An uncited article maps to
+no theme, so there is nothing to grade the companies in it against. Widening the
+article list does not widen the candidate list; it produces companies the
+grading model has no question to ask about.
+
+That left a third option the section had not considered, and it looked like the
+cheap one. The theme prompt says how to cite and how to label a stance, but
+never says to cite EVERY supporting article - and most themes cite exactly one.
+So: tell it that a citation is not a footnote, it is how an article reaches the
+rest of the system, and an omitted article is deleted along with every company
+named in it.
+
+Measured, then measured again against a control on the same profile in the same
+session:
+
+                    themes  cited  mentions  companies  candidates
+    with the rule      3       5        5         5          1
+    control            5       6       13        10          2
+
+**Worse on every axis.** The mechanism is visible in the first column: told to
+attach every bearing article to a theme, the model CONSOLIDATED - three themes
+instead of five. Since Agent 3 works from (company, theme) pairs, theme count
+drives the candidate pool harder than citations per theme. The change traded two
+themes for two citations, and two themes cost more.
+
+Reverted. **The finding is worth more than the change would have been**: 2.9 is
+written as an article-supply problem and it is really a theme-count problem, so
+the two options it proposes are aimed one level away from the constraint. A cap
+of five themes, with most runs producing three to five, is the ceiling on how
+many companies can ever be examined.
+
+Article variance means one pair of runs is not proof, and the control is the
+only reason this is reportable at all - the treated run alone looked fine: 0
+hard failures, 100% completeness, one candidate. **A single number could not
+have shown this, and would have been read as success.**
