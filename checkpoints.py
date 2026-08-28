@@ -7,7 +7,7 @@ terminal at that prompt threw away the run and every API call it had paid for.
 
 WHAT A SAVED RUN CAN LOOK LIKE
 
-Three states, and they need different treatment, which is why ``SavedRun``
+Four states, and they need different treatment, which is why ``SavedRun``
 exists rather than a bare thread id:
 
 ``paused``    The graph interrupted to ask the user something and is waiting
@@ -18,6 +18,11 @@ exists rather than a bare thread id:
               finished and does NOT repeat the ones that had.
 ``finished``  It ran to the end. There is a decision to read and nothing to
               resume.
+``failed``    It reached the end because a node caught its own exception and
+              recorded it rather than letting a traceback out. Shaped exactly
+              like ``finished`` - nothing pending - so it was reported as
+              finished until 2026-08-28. Not resumable today; the work already
+              paid for is stranded. See section 2.10.
 
 That ``stopped`` runs resume mid-pipeline is the part worth knowing. A run
 killed during Agent 4 keeps Agents 1, 2 and 3's work, which on this project's
@@ -68,7 +73,7 @@ delete. Sooner or later somebody clears the cache; they should not lose a live
 session by doing it.
 """
 
-RunStatus = Literal["paused", "stopped", "finished"]
+RunStatus = Literal["paused", "stopped", "finished", "failed"]
 
 
 @dataclass(frozen=True)
@@ -91,7 +96,14 @@ class SavedRun:
 
     @property
     def can_resume(self) -> bool:
-        return self.status != "finished"
+        """Whether ``--resume`` can carry this run forward.
+
+        Written as a list of what CAN resume rather than "not finished".
+        ``failed`` is also finished in the graph's terms - nothing is pending -
+        so the old test would have started calling it resumable the moment the
+        status existed, and offered a resume that cannot work.
+        """
+        return self.status in ("paused", "stopped")
 
 
 class CheckpointStore:
@@ -121,7 +133,12 @@ class CheckpointStore:
 
         interrupts = [i for task in snapshot.tasks for i in task.interrupts]
         if not snapshot.next:
-            status: RunStatus = "finished"
+            # A node that caught its own exception records it and lets the graph
+            # END, deliberately, so no traceback reaches a user. That makes a
+            # failed run indistinguishable from a successful one by shape alone
+            # - both simply have nothing left to do - and it was being listed as
+            # "finished". The error is already in state; this reads it.
+            status: RunStatus = "failed" if snapshot.values.get("error") else "finished"
         elif interrupts:
             status = "paused"
         else:

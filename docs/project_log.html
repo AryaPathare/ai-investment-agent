@@ -884,5 +884,16 @@ control            5       6       13        10          2</code></pre>
 <p><strong>Worse on every axis.</strong> The mechanism is visible in the first column: told to attach every bearing article to a theme, the model CONSOLIDATED - three themes instead of five. Since Agent 3 works from (company, theme) pairs, theme count drives the candidate pool harder than citations per theme. The change traded two themes for two citations, and two themes cost more.</p>
 <p>Reverted. <strong>The finding is worth more than the change would have been</strong>: 2.9 is written as an article-supply problem and it is really a theme-count problem, so the two options it proposes are aimed one level away from the constraint. A cap of five themes, with most runs producing three to five, is the ceiling on how many companies can ever be examined.</p>
 <p>Article variance means one pair of runs is not proof, and the control is the only reason this is reportable at all - the treated run alone looked fine: 0 hard failures, 100% completeness, one candidate. <strong>A single number could not have shown this, and would have been read as success.</strong></p>
+<h3 id="88-a-failed-run-said-it-had-finished">88. A failed run said it had finished</h3>
+<p>Section 2.10 is written as a resumability problem: Agent 5 died on an intermittent 400, <code>decide_node</code> caught it and recorded it so the graph could reach END cleanly, and the ~30k already spent on Agents 2 to 4 could not be picked up again.</p>
+<p>Reading it first turned up a smaller problem sitting on top of that one. <code>SavedRun.status</code> is derived from the graph's shape - nothing pending means <code>finished</code> - and a failed run has nothing pending either. So <code>--list</code> reported it as <strong>finished</strong>, and <code>--resume</code> answered:</p>
+<pre><code>Run 'cli-8f21' already finished. Showing what it produced.
+==============================================================
+ THE RUN COULD NOT FINISH</code></pre>
+<p>The error always reached the reader, with the right guidance and exit code 1. The sentence introducing it said the opposite.</p>
+<p><strong>Nothing needed recording to fix it.</strong> <code>state["error"]</code> was already there; <code>run()</code> simply never looked. A fourth status, <code>failed</code>, reads it.</p>
+<p><code>can_resume</code> was rewritten from <code>status != "finished"</code> to a list of what CAN resume. The old form would have started calling failed runs resumable the moment the status existed - offering a resume that cannot work - which is the brittleness of defining a property by what it is not. <strong>A negative test admits every new case by default.</strong></p>
+<p>Resumability itself is deliberately NOT done. It means re-entering a completed thread with <code>update_state(as_node=...)</code>, which changes what <code>--resume</code> and <code>--list</code> mean for every run, and the honest label was worth having on its own. The decision stands; it is just no longer bundled with a lie.</p>
+<p>Five tests, and both halves broken on purpose before being trusted: remove the status and the checkpoint test goes red; remove the CLI branch and the resume test goes red.</p>
 </body>
 </html>

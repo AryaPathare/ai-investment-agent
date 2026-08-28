@@ -931,6 +931,7 @@ STATUS_TEXT = {
     "paused": "paused, waiting on your answer",
     "stopped": "stopped partway through",
     "finished": "finished",
+    "failed": "failed at the last stage",
 }
 
 
@@ -978,6 +979,16 @@ def resume(store, thread_id: str) -> int:
         print(f"\nNo saved run called {thread_id!r}.")
         print("Run python -m cli --list to see what is saved.")
         return 1
+
+    if saved.status == "failed":
+        # A failed run is shaped like a finished one - nothing pending - so it
+        # fell into the branch below and announced "already finished, showing
+        # what it produced" directly above a banner reading THE RUN COULD NOT
+        # FINISH. The error always reached the reader; the sentence introducing
+        # it contradicted it.
+        print(f"\nRun {thread_id!r} failed before it could finish. Here is why.")
+        print_as_of_notice(saved.updated_at, "This run was made")
+        return print_outcome(store.graph.get_state(store.config(thread_id)).values)
 
     if saved.status == "finished":
         # Not an error: the answer is right there. Reprint it rather than

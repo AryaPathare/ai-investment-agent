@@ -1013,3 +1013,53 @@ def test_every_sector_offered_is_one_the_provider_reports():
     assert {"Technology", "Healthcare", "Consumer Cyclical",
             "Financial Services", "Utilities"} <= names
     assert len(cli.SECTORS) == 11
+
+
+def test_resuming_a_failed_run_says_it_failed(
+    always_valid, stub_pipeline, db, answers, capsys, monkeypatch
+):
+    """Section 2.10. A failed run is shaped like a finished one, so it fell into
+    the branch above and announced "already finished, showing what it produced"
+    directly above THE RUN COULD NOT FINISH. The error always reached the
+    reader; the sentence introducing it said the opposite."""
+    import checkpoints
+
+    stub_pipeline()
+    monkeypatch.setattr(
+        workflow, "decide",
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("empty generation")),
+    )
+    with checkpoints.open_store(db) as store:
+        store.graph.invoke(
+            {"user_input": cli.load_profile("examples/beginner_renewables.json")},
+            store.config("broke-1"),
+        )
+    answers()
+
+    assert cli.main(["--db", str(db), "--resume", "broke-1"]) == 1
+    out = capsys.readouterr().out
+    assert "failed before it could finish" in out
+    assert "already finished" not in out
+    assert "COULD NOT FINISH" in out
+
+
+def test_a_failed_run_is_listed_as_failed_not_finished(
+    always_valid, stub_pipeline, db, capsys, monkeypatch
+):
+    """--list is where somebody goes to find a run worth returning to."""
+    import checkpoints
+
+    stub_pipeline()
+    monkeypatch.setattr(
+        workflow, "decide",
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("empty generation")),
+    )
+    with checkpoints.open_store(db) as store:
+        store.graph.invoke(
+            {"user_input": cli.load_profile("examples/beginner_renewables.json")},
+            store.config("broke-2"),
+        )
+
+    assert cli.main(["--db", str(db), "--list"]) == 0
+    out = capsys.readouterr().out
+    assert "failed at the last stage" in out

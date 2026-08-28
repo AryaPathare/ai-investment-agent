@@ -363,3 +363,61 @@ def test_the_database_is_a_real_sqlite_file(db, agents):
         connection.close()
 
     assert "checkpoints" in tables
+
+
+# --- A failed run is not a finished one --------------------------------------
+#
+# Section 2.10. Agent 5 died on an intermittent 400 during a live run.
+# decide_node catches its own exception and records it, so the graph reaches END
+# cleanly - a traceback must never reach a user - which left a failed run shaped
+# exactly like a successful one: nothing pending. It was reported as "finished",
+# and --resume answered "already finished, showing what it produced" directly
+# above a banner reading THE RUN COULD NOT FINISH.
+
+
+def test_a_run_whose_last_agent_failed_reports_failed(db, agents, monkeypatch):
+    """The error is already in state. Nothing new is recorded; this reads it."""
+    agents()
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("empty generation")
+
+    monkeypatch.setattr(workflow, "decide", boom)
+
+    with checkpoints.open_store(db) as store:
+        store.graph.invoke({"user_input": _user()}, store.config("broke"))
+        saved = store.run("broke")
+        state = store.graph.get_state(store.config("broke")).values
+
+    assert saved.status == "failed"
+    assert "empty generation" in state["error"]
+    assert state.get("decision") is None
+
+
+def test_a_failed_run_is_not_offered_as_resumable(db, agents, monkeypatch):
+    """It cannot be resumed today - the graph has nothing pending - so offering
+    it would be a worse lie than the one this replaced. can_resume is written as
+    a list of what CAN resume, so adding a status does not silently opt it in."""
+    agents()
+    monkeypatch.setattr(
+        workflow, "decide",
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("empty generation")),
+    )
+
+    with checkpoints.open_store(db) as store:
+        store.graph.invoke({"user_input": _user()}, store.config("broke"))
+        saved = store.run("broke")
+
+    assert saved.can_resume is False
+
+
+def test_a_successful_run_is_still_finished_not_failed(db, agents):
+    """The status keys off the error, so a run with no error must be unmoved."""
+    agents()
+    with checkpoints.open_store(db) as store:
+        store.graph.invoke({"user_input": _user()}, store.config("fine"))
+        saved = store.run("fine")
+        state = store.graph.get_state(store.config("fine")).values
+
+    assert saved.status == "finished"
+    assert state.get("error") is None

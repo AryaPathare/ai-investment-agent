@@ -42,7 +42,7 @@ Everything else open is a decision rather than a repair:
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **87**
+- `docs/PROJECT_LOG.md` is current through entry **88**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -274,7 +274,7 @@ the treated run alone looked like a success.
 **It only bites when the pool is thin**, which is why two runs were needed to
 see it - in semiconductors, discarding twelve articles cost nothing.
 
-### 2.10 A failed last agent is not resumable - **OPEN, entry 81**
+### 2.10 A failed last agent is not resumable - **HALF DONE 2026-08-28, entry 88**
 
 Agent 5 died on an intermittent empty-generation 400 during a live run. The
 retry that Agents 2 and 3 already had is now added, so the immediate cause is
@@ -285,6 +285,14 @@ FINISHES - cleanly, by design, because a traceback must never reach a user. But
 `--resume` then sees a completed run rather than something to continue, and the
 research, company analysis and risk critique already paid for (~30k) cannot be
 picked up from the CLI.
+
+**The labelling half is DONE** (entry 88). A failed run was reported as
+`finished` by `--list` and `--resume` said "already finished, showing what it
+produced" directly above THE RUN COULD NOT FINISH. `state["error"]` was already
+there; nothing looked at it. There is now a fourth status, `failed`, and
+`can_resume` lists what CAN resume rather than excluding what cannot.
+
+**Resumability itself is still open, and still a decision.**
 
 **Ending cleanly and being recoverable are different properties**, and this is
 the first time the difference cost anything. It was recovered by replaying

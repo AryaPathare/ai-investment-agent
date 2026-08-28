@@ -3212,3 +3212,40 @@ Article variance means one pair of runs is not proof, and the control is the
 only reason this is reportable at all - the treated run alone looked fine: 0
 hard failures, 100% completeness, one candidate. **A single number could not
 have shown this, and would have been read as success.**
+
+### 88. A failed run said it had finished
+
+Section 2.10 is written as a resumability problem: Agent 5 died on an
+intermittent 400, `decide_node` caught it and recorded it so the graph could
+reach END cleanly, and the ~30k already spent on Agents 2 to 4 could not be
+picked up again.
+
+Reading it first turned up a smaller problem sitting on top of that one.
+`SavedRun.status` is derived from the graph's shape - nothing pending means
+`finished` - and a failed run has nothing pending either. So `--list` reported
+it as **finished**, and `--resume` answered:
+
+    Run 'cli-8f21' already finished. Showing what it produced.
+    ==============================================================
+     THE RUN COULD NOT FINISH
+
+The error always reached the reader, with the right guidance and exit code 1.
+The sentence introducing it said the opposite.
+
+**Nothing needed recording to fix it.** `state["error"]` was already there;
+`run()` simply never looked. A fourth status, `failed`, reads it.
+
+`can_resume` was rewritten from `status != "finished"` to a list of what CAN
+resume. The old form would have started calling failed runs resumable the moment
+the status existed - offering a resume that cannot work - which is the
+brittleness of defining a property by what it is not. **A negative test admits
+every new case by default.**
+
+Resumability itself is deliberately NOT done. It means re-entering a completed
+thread with `update_state(as_node=...)`, which changes what `--resume` and
+`--list` mean for every run, and the honest label was worth having on its own.
+The decision stands; it is just no longer bundled with a lie.
+
+Five tests, and both halves broken on purpose before being trusted: remove the
+status and the checkpoint test goes red; remove the CLI branch and the resume
+test goes red.
