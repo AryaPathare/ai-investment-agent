@@ -924,5 +924,20 @@ cli-15031438  failed at the last stage      semiconductors, artificial ...
 cli-b78354f3  failed at the last stage      whichever will make me the ...</code></pre>
 <p>Three runs that had been sitting in the database labelled "finished" since before the status existed. Nothing was re-run and nothing was recorded to find them; the errors had been in state the whole time. <strong>The fix was not to collect information but to read what was already there</strong>, which is the third time on this project that the missing piece turned out to be already present and unexamined - after the cache provenance and Agent 5's evidence.</p>
 <p>A smaller correction worth keeping: the first attempt to compare the two recordings counted <code>article_id</code> and found zero citations, which contradicted the handoff. The field is <code>article_ids</code>. <strong>The handoff was right and the probe was wrong</strong> - the same shape as the <code>asked_by</code> mistake in entry 54, and the second time a wrong key nearly became a reported finding.</p>
+<h3 id="91-why-restriction-violation-had-never-fired-and-firing-it">91. Why restriction_violation had never fired, and firing it</h3>
+<p>Two of the four exclusion reasons had unit tests only. <code>restriction_violation</code> is the gate that stops a company the investor explicitly forbade from reaching a person, which made it the highest-consequence untested path in the system.</p>
+<p><strong>The live probe was inconclusive, and the reason is the finding.</strong> A profile of "technology" with "No semiconductor companies" - chosen because technology news reliably names chip firms - produced ZERO candidates. Agent 2's queries explain it:</p>
+<pre><code>AI startup funding round          software company acquisition deal
+cloud infrastructure expansion    tech company IPO filing
+cybersecurity breach response     software platform launch announcement</code></pre>
+<p>Not one mentions chips or hardware. Agent 2 honoured the restriction at QUERY TIME, as its prompt tells it to, so the retrieved articles were about private AI startups and a venture firm, and nothing listed survived to be excluded.</p>
+<p><strong>So the gate is not untested so much as rarely reached.</strong> The restriction is enforced three stages earlier, and selection is a last line of defence that normal use walks around. Entry 57 is the exception that proves it: TotalEnergies reached the candidate list on a fossil-fuel-excluding profile because an oil major appeared incidentally in RENEWABLES news, which Agent 2 had every reason to query.</p>
+<p>Then fired it, at zero quota, against the real candidates of <code>cli-0562c71f</code>:</p>
+<pre><code>NVDA      Semiconductors        -&gt; restriction_violation, term 'semiconductor'
+0981.HK   Semiconductors        -&gt; restriction_violation, term 'semiconductor'
+SMSNN.MX  Consumer Electronics  -&gt; kept
+BABA      Internet Retail       -&gt; kept</code></pre>
+<p>Real candidates, real provider industry strings, real selection code. It also validates entry 57's fix against real data for the first time: <strong>the match is on <code>industry</code></strong>, and neither "NVIDIA Corporation" nor its rationale contains the word semiconductor. Without sector and industry in the haystack this would have passed.</p>
+<p><strong>What was substituted matters.</strong> Only the investor's RESTRICTION was changed, which is user input and legitimately variable. <code>disqualified_by_risk</code> was left alone, because firing it would mean inventing a critical risk - substituting AGENT OUTPUT, which is a unit test wearing a live run's clothes. It remains unverified, and the honest way to reach it is a live run where a critic really does find something critical.</p>
 </body>
 </html>

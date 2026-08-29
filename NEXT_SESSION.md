@@ -22,7 +22,7 @@ clearest example of the habit the whole log is about.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **90**
+- `docs/PROJECT_LOG.md` is current through entry **91**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -422,7 +422,15 @@ observed. Narrow it in ONE place for both agents if it ever fires falsely.
 
 Worth knowing before trusting a clean eval run.
 
-- **Two of the four exclusion reasons have never fired.** `cli-173b47fe`
+- **`restriction_violation` FIRES CORRECTLY** (2026-08-28, entry 91), replayed
+  over the real candidates of `cli-0562c71f`: NVDA and 0981.HK excluded on
+  industry "Semiconductors", Samsung and Alibaba kept. It had never fired live
+  because Agent 2 honours restrictions at QUERY time, so nothing forbidden
+  usually reaches selection at all - the gate is rarely reached, not broken.
+  **`disqualified_by_risk` is still unverified**, and deliberately: firing it
+  would mean inventing a critical risk, which substitutes agent output rather
+  than user input.
+- **(superseded) Two of the four exclusion reasons have never fired.** `cli-173b47fe`
   populated `Decision.excluded` for the first time on real data - six
   candidates, three recommended - but only with `outside_top_three` and
   `not_critiqued`. **`restriction_violation` and `disqualified_by_risk` are the

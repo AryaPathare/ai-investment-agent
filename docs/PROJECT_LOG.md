@@ -3355,3 +3355,49 @@ recordings counted `article_id` and found zero citations, which contradicted the
 handoff. The field is `article_ids`. **The handoff was right and the probe was
 wrong** - the same shape as the `asked_by` mistake in entry 54, and the second
 time a wrong key nearly became a reported finding.
+
+### 91. Why restriction_violation had never fired, and firing it
+
+Two of the four exclusion reasons had unit tests only. `restriction_violation`
+is the gate that stops a company the investor explicitly forbade from reaching
+a person, which made it the highest-consequence untested path in the system.
+
+**The live probe was inconclusive, and the reason is the finding.** A profile of
+"technology" with "No semiconductor companies" - chosen because technology news
+reliably names chip firms - produced ZERO candidates. Agent 2's queries explain
+it:
+
+    AI startup funding round          software company acquisition deal
+    cloud infrastructure expansion    tech company IPO filing
+    cybersecurity breach response     software platform launch announcement
+
+Not one mentions chips or hardware. Agent 2 honoured the restriction at QUERY
+TIME, as its prompt tells it to, so the retrieved articles were about private AI
+startups and a venture firm, and nothing listed survived to be excluded.
+
+**So the gate is not untested so much as rarely reached.** The restriction is
+enforced three stages earlier, and selection is a last line of defence that
+normal use walks around. Entry 57 is the exception that proves it: TotalEnergies
+reached the candidate list on a fossil-fuel-excluding profile because an oil
+major appeared incidentally in RENEWABLES news, which Agent 2 had every reason
+to query.
+
+Then fired it, at zero quota, against the real candidates of `cli-0562c71f`:
+
+    NVDA      Semiconductors        -> restriction_violation, term 'semiconductor'
+    0981.HK   Semiconductors        -> restriction_violation, term 'semiconductor'
+    SMSNN.MX  Consumer Electronics  -> kept
+    BABA      Internet Retail       -> kept
+
+Real candidates, real provider industry strings, real selection code. It also
+validates entry 57's fix against real data for the first time: **the match is on
+`industry`**, and neither "NVIDIA Corporation" nor its rationale contains the
+word semiconductor. Without sector and industry in the haystack this would have
+passed.
+
+**What was substituted matters.** Only the investor's RESTRICTION was changed,
+which is user input and legitimately variable. `disqualified_by_risk` was left
+alone, because firing it would mean inventing a critical risk - substituting
+AGENT OUTPUT, which is a unit test wearing a live run's clothes. It remains
+unverified, and the honest way to reach it is a live run where a critic really
+does find something critical.
