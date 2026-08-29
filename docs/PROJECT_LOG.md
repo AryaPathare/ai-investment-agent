@@ -3492,28 +3492,45 @@ heading.
 entries ago, and the count is precise enough to say exactly when anybody last
 read the sentence around it.
 
-**Four copies of a stale number, and one correct one.** A clean
-`python -m pytest` reports **816 passed, 1 skipped**:
+**Four copies of a stale number, and the RIGHT one was in the harmless place.**
 
     NEXT_SESSION.md line 8     816 tests                      correct
     NEXT_SESSION.md line 42    expect 811 passed, 1 skipped   stale
     NEXT_SESSION.md line 506   811 tests                      stale
     README.md lines 95, 191    811 tests                      stale
 
-**This looks like entry 56 and is not.** Entry 56 was a number that had never
-been right - 707 collected, read as 707 passed, off a progress bar of dots
-because `-qq` had suppressed the summary line. This one was right when it was
-written. 811 was session 12's total; sessions 13 and 14 added five tests, and
-nobody went back to the sentences. Line 42 still credits session 12 for the
-growth from 760, naming the session that made it stale in the act of being
-wrong about it.
+A clean run reports **816 passed, 1 skipped**. Counted at each session
+boundary, in collected tests:
 
-The part worth keeping is which copy a reader trusts. The correct number was
-sitting in the handoff's own header, and the stale one outnumbered it four to
-one - so a reader sweeping the files from outside took the majority and picked
-816 as the odd one out. **Frequency is not evidence.** A number copied into five
-places does not become four-fifths true. It becomes one fact and four echoes,
-and the echoes are what survive an edit, because nothing points at them.
+    end of session 11    761        end of session 13    812
+    end of session 12    798        end of session 14    817
+
+**811 was correct for exactly one session.** All three copies of it were written
+on 2026-08-27 in `3ba6ed4`, at the end of session 13, when 812 collected minus
+one skipped was 811 passed. The next commit to touch the subject was `a6838d5`
+the following day - "Close the project" - which added the line *Fourteen
+sessions, 89 log entries, 816 tests* to the top of the handoff after entry 88's
+five new tests, and did not touch the three sentences already in the file
+saying 811.
+
+So the two numbers were written by the same author, into the same file, one day
+apart, and disagreed from the moment the second was written. **The update went
+to the sentence being written, not to the sentence being contradicted.**
+
+Which copy was which is the part worth recording. The current number was in the
+SUMMARY, where a count is decoration - nobody acts on "816 tests" in a status
+line. The stale one was in the VERIFICATION INSTRUCTION thirty lines below it,
+the line that tells a returning reader what a healthy suite looks like. Anybody
+following the handoff would have run pytest, been told to expect 811, seen 816,
+and gone looking for what they had broken. **A stale number in a check does not
+merely fail to inform. It manufactures a discrepancy in a system that is fine.**
+
+Entry 56 is the ancestor of this and it went the other way: a count read off a
+progress bar because `-qq` had suppressed the summary line. The response then
+was to write the number down. It was written down four times, the copies drifted
+inside one file, and nothing compared them. All of them now read "816 passed, 1
+skipped" rather than "816 tests", because collected is 817, and the difference
+between those two words is what entry 56 was about in the first place.
 
 **And a session that was never opened.** Counting sessions to correct the
 handoff's "Fourteen" turned up 14 `## Session` headings for 15 sessions: entries
@@ -3616,10 +3633,13 @@ Running the suite settles it in one command:
     816 passed, 1 skipped        python -m pytest
     817 tests collected          python -m pytest --collect-only
 
-811 was the stale copy and 812 was never a real number. **A number in a document
-can only be checked against the thing it counts** - and 816 and 817 are both
-true, which is the same collected-versus-passed seam entry 56 fell into, still
-open for anyone quoting a single figure.
+Both halves of that were wrong in an instructive way. 811 was the stale copy -
+and 812 was a real number, just not the current one: it was the collected count
+at the end of session 13, which is exactly where the three copies of 811 came
+from. The reasoning was sound and the inputs were a session out of date.
+**A number in a document can only be checked against the thing it counts** - and
+816 and 817 are both true today, which is the same collected-versus-passed seam
+entry 56 fell into, still open for anyone quoting a single figure.
 
 **Still no guard**, on entry 92's reasoning - the project is closed. But the
 honest version of entry 94's last paragraph is narrower than what it said: a

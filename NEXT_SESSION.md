@@ -7,7 +7,8 @@ and what the closing sessions rejected (93). Session 16 corrected the public
 documents, which had drifted the same way (94), and a second reading against
 the code found five more (95).
 
-Sixteen sessions, 95 log entries, 816 tests, CI green on Ubuntu and Windows.
+Sixteen sessions, 95 log entries, 816 passed and 1 skipped, CI green on Ubuntu
+and Windows.
 The pipeline runs end to end, resumes when it stops, prices what it recommends
 and says plainly when the answer is nothing.
 
@@ -41,9 +42,11 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **816 passed, 1 skipped** in a few seconds. (760 at the end of session
-11; session 12 added tests for the demo, the margin invariant, prices and the
-salvage fix, and session 14 added five more for the failed-run status.)
+Expect **816 passed, 1 skipped** in a few seconds - 817 collected, and the
+distinction matters (entry 56). Counted at each session end: 760 passed after
+session 11, 797 after session 12 (demo, margin invariant, prices, salvage), 811
+after session 13 (the sector menu and the FX and plain-language work), 816 after
+session 14 (entry 88's failed-run status).
 
 Do not add `-q`: pytest.ini already sets it, and `-qq` suppresses the summary
 line, which is how a wrong count once survived for two sessions.
@@ -507,7 +510,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 816 tests, a few seconds, no network
+python -m pytest                        # 816 passed, 1 skipped; no network
 
 python -m evals.runner                  # Agent 1: 32 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)

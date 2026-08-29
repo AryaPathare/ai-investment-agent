@@ -94,8 +94,8 @@ what the project produces.
 python -m pytest
 ```
 
-816 tests in a few seconds, no network and no credentials. If both of these work,
-your install is good.
+**816 passed, 1 skipped** in a few seconds, no network and no credentials. If
+both of these work, your install is good.
 
 ### 3. Add an API key
 
@@ -190,7 +190,7 @@ profile on a different day finds different companies.
 ## Tests and evals
 
 ```powershell
-python -m pytest                        # 816 unit tests, seconds, no network, no key
+python -m pytest                        # 816 passed, 1 skipped; seconds, no network
 ```
 
 The evals make **real API calls** and are how the agents were developed. Start
