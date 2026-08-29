@@ -3019,6 +3019,8 @@ assumption without stating it.
 Third time a structured-output envelope has cost a run, and the first time the
 salvage layer was present, correct, and simply not reachable.
 
+## Session 13 — 2026-08-27
+
 ### 83. A menu that does not make everyone broader
 
 The sector question offered three examples and a blank line. For the audience
@@ -3473,3 +3475,99 @@ The common shape: **three of these four were rejected on evidence gathered after
 the idea looked good**, and the fourth was rejected on what the evidence would
 have been worth. The instrument that decided every one of them was the same -
 hold something constant and look again.
+
+## Session 16 — 2026-08-29
+
+### 94. The front page described a project five sessions old
+
+The repository is about to be shown to people, so the public documents were read
+from outside for the first time - the way somebody arriving from a link reads
+them, rather than the way their author does. `README.md` and `docs/DESIGN.md`
+between them carried four claims the repository had stopped supporting, a test
+count that was stale in four places, and a session that had never been given a
+heading.
+
+**The stale number dates itself.** Both files say the log has 72 entries. Entry
+72 is the last entry of session 10, on 25 August. Five sessions and twenty-one
+entries ago, and the count is precise enough to say exactly when anybody last
+read the sentence around it.
+
+**Four copies of a stale number, and one correct one.** A clean
+`python -m pytest` reports **816 passed, 1 skipped**:
+
+    NEXT_SESSION.md line 8     816 tests                      correct
+    NEXT_SESSION.md line 42    expect 811 passed, 1 skipped   stale
+    NEXT_SESSION.md line 506   811 tests                      stale
+    README.md lines 95, 191    811 tests                      stale
+
+**This looks like entry 56 and is not.** Entry 56 was a number that had never
+been right - 707 collected, read as 707 passed, off a progress bar of dots
+because `-qq` had suppressed the summary line. This one was right when it was
+written. 811 was session 12's total; sessions 13 and 14 added five tests, and
+nobody went back to the sentences. Line 42 still credits session 12 for the
+growth from 760, naming the session that made it stale in the act of being
+wrong about it.
+
+The part worth keeping is which copy a reader trusts. The correct number was
+sitting in the handoff's own header, and the stale one outnumbered it four to
+one - so a reader sweeping the files from outside took the majority and picked
+816 as the odd one out. **Frequency is not evidence.** A number copied into five
+places does not become four-fifths true. It becomes one fact and four echoes,
+and the echoes are what survive an edit, because nothing points at them.
+
+**And a session that was never opened.** Counting sessions to correct the
+handoff's "Fourteen" turned up 14 `## Session` headings for 15 sessions: entries
+76 to 85 all sit under **Session 12 - 2026-08-26**, while entry 92 says in its
+own text that the repository was at "session 13, entry 85". Git dates the split
+exactly - entry 82 committed on the 26th, 83 on the 27th, 86 on the 28th - so
+session 13 is 2026-08-27, entries 83 to 85, and its heading was never written.
+Restored. Unlike the rest of this entry that is not prose that drifted; it is a
+structural element skipped once, then inherited by every count derived from it,
+including the first draft of this entry.
+
+**The four claims, and which entry made each one wrong:**
+
+| Claim on the front page | Made wrong by |
+|---|---|
+| Two of four exclusion reasons have never fired | 91 - `restriction_violation` fired against real candidates |
+| `--resume` sees a failed run as finished | 88 - a fourth status, and `--list` reads "failed at the last stage" |
+| The article pool is the one open defect | 87 - built, measured against a control, reverted; the ceiling is theme count |
+| Every claim cites an article or a metric, "nothing else ships" | 20 - never true; grounding is necessary and not sufficient |
+
+**Three of those went stale by getting BETTER, and one was never right.** That
+is the part worth keeping. The limitations list described an older and worse
+version of the project, because nobody re-reads a limitation after fixing it.
+The headline described a better one, because nobody re-reads a headline after
+writing it. Same failure - prose written once and checked by nothing - drifting
+in opposite directions for the same reason.
+
+The article-pool bullet is the worst of the four, because it is not merely out
+of date. It carries the diagnosis entry 87 disproved - that the constraint is
+article supply - so a reader following the "one open defect" would have gone
+looking one level away from where the ceiling actually is.
+
+**Entry 47 already knew this.** *A weakness recorded in prose is a claim, and it
+decays like any other claim.* That was learned about the internal weakness list
+in session 8, where the measured version was different every time and twice
+argued for doing less work. The public documents are the same failure one layer
+out, at the file a stranger reads first, and nothing carried the lesson across.
+
+**Nothing was built to prevent it**, on entry 92's reasoning: the project is
+closed, and a guard nobody maintains is worse than a habit. But there is a
+sharper reason than that one, and it is the closing observation.
+
+A guard is easy to write for the counts. Entry numbers can be counted from
+markdown headings, pytest reports its own total, and a missing session heading
+is a gap in an integer sequence. Entry 63's instrument points at this document
+with almost no work, and it would have caught every mechanical defect above.
+**It would also have missed all four claims that mattered** - the checkable part
+of a document is not the part that misleads anybody. A reader who trusted a
+green build would have been told the counts were consistent, and told nothing
+about the four sentences describing a system that no longer exists.
+
+So this is now the third document in this log to go stale with nothing checking
+it - the rendered HTML in entry 63, the handoff in entry 92, and the front page
+here. The first got a mechanism. The second got a habit. This one got a reader,
+which is the only thing that would have worked, and it arrived because the
+repository was finally being shown to somebody rather than because anything in
+it complained.

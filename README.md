@@ -4,12 +4,13 @@
 
 Five LLM agents that research stocks for someone who doesn't know where to
 start. You say which sectors interest you, how much risk you can take and what
-you want to avoid; it finds what's happening in those sectors, finds real public
-companies exposed to it, **attacks its own conclusions**, and recommends up to
-three — or recommends **nothing**, which is a first-class outcome rather than a
-blank screen.
+you want to avoid. It finds what's happening in those sectors, identifies real
+public companies exposed to it, **attacks its own conclusions**, and recommends
+up to three — or recommends **nothing**, which is a first-class outcome rather
+than a blank screen.
 
-Every claim cites a retrieved article or a measured number. Nothing else ships.
+Every claim must cite a retrieved article or a measured number, and anything
+grounded in neither is discarded and counted.
 
 > **Not investment advice.** A personal learning project, not licensed or
 > qualified to advise anyone. Its output should not be acted on.
@@ -20,26 +21,27 @@ MIT licensed — see [LICENSE](LICENSE).
 
 ## What it produces
 
-Each recommendation states a thesis, the conditions that would break it and
-what grounds each one, then what to do next — the share price, what your amount
-would buy, and a date to look again:
+Each recommendation gives a thesis, the conditions that would break it and what
+grounds each one, then what to do next. From `python -m cli --demo`:
 
 ```
-     WHAT WOULD MEAN THIS HAS STOPPED BEING A GOOD IDEA
-       - The Italian 1.2GW order is cancelled or materially reduced.
-         grounds: "Waaree wins 1.2GW module order from Italian developer"
-                  ft.com, 2026-08-17
-       - debt_to_equity rises above 2.0.
-         grounds: metric debt_to_equity
+     What would mean the idea has stopped working
+       • Microsoft secures majority of TSMC capacity for its Maia 300 chip.
+           Check: "Microsoft's Maia 300 Chip Targets NVIDIA's AI Dominance"
+                  finance.yahoo.com, 16 Aug 2026
+       • revenue growth turns negative.
+           Check: the company's reported revenue growth
 ```
 
-A condition grounded in neither is discarded, and the discards are counted.
+The `Check:` line is the point: every condition names either an article the
+model was shown or a measured metric. The rest are discarded and counted.
 
 ```
-  MRVL  USD 241.38 per share   (as of 27 Aug 2026)
-        Your USD 25,000 would buy about 103 shares at that price.
+  NVDA  USD 217.09 per share   (as of 28 Aug 2026)
+        Your USD 1,000 would buy about 4 shares.
 
-  Look at this again on 25 Nov 2026, about three months from now.
+  Look at this again on 28 Nov 2026, about three months from now - roughly one
+  set of results.
 ```
 
 **No forecast and no allocation.** It never predicts a price, names a sell date
@@ -84,15 +86,15 @@ pip install -r requirements.txt
 python -m cli --demo
 ```
 
-Prints a real recorded run: the same renderer, the same models, the same
-grounded exit conditions, with no network call and nothing to sign up for. This
-is the fastest way to see what the project actually produces.
+Prints a real recorded run — same renderer, same models, same grounded exit
+conditions, no network call and nothing to sign up for. The fastest way to see
+what the project produces.
 
 ```
 python -m pytest
 ```
 
-811 tests in a few seconds, no network and no credentials. If both of these work,
+816 tests in a few seconds, no network and no credentials. If both of these work,
 your install is good.
 
 ### 3. Add an API key
@@ -135,20 +137,20 @@ wrong layer.
 python -m cli --profile examples/semiconductors_high_risk.json
 ```
 
-Or answer eight questions yourself:
+Or answer the nine questions yourself:
 
 ```
 python -m cli                             # then --save-profile mine.json to keep them
 ```
 
-It asks eight questions. The sector question lists the eleven sectors the market
-is divided into, with a narrower example beside each — pick a number, or type
-something of your own. **Narrower researches better**: "grid storage" produces a
-sharper brief than "utilities".
+The sector question lists the eleven sectors the market is divided into, with a
+narrower example beside each — pick a number, or type something of your own.
+**Narrower researches better**: "grid storage" produces a sharper brief than
+"utilities".
 
 A run takes **two to three minutes** and about a dozen model calls, printing
-each stage as it lands. One run costs roughly 25–30k of Groq's daily 200k, so
-you get about six or seven a day on the free tier.
+each stage as it lands. At roughly 25–30k of Groq's daily 200k, that is six or
+seven runs a day on the free tier.
 
 ### 5. If it stops, resume it
 
@@ -172,9 +174,9 @@ forced to produce a pick. It prints a banner with the reason instead of a blank
 screen.
 
 **Sector choice matters more than it looks.** Semiconductors are covered densely
-enough in the news to produce a full brief. Renewable energy is dominated by
-private and foreign firms, so `examples/beginner_renewables.json` can
-legitimately come back with nothing — that is the system working, not breaking.
+enough to produce a full brief. Renewable energy is dominated by private and
+foreign firms, so `examples/beginner_renewables.json` can legitimately come back
+with nothing — the system working, not breaking.
 
 **Try the interrupt.** `examples/conflicted_crypto.json` contains a
 contradiction. The pipeline stops mid-run, asks you to resolve it, and continues
@@ -188,15 +190,15 @@ profile on a different day finds different companies.
 ## Tests and evals
 
 ```powershell
-python -m pytest                        # 811 unit tests, seconds, no network, no key
+python -m pytest                        # 816 unit tests, seconds, no network, no key
 ```
 
-The evals make **real API calls** and are how the agents were actually
-developed. Start with `--tag hard`; a full `decision_runner` run costs most of a
-free day's tokens.
+The evals make **real API calls** and are how the agents were developed. Start
+with `--tag hard`; a full `decision_runner` run costs most of a free day's
+tokens.
 
 ```powershell
-python -m evals.runner                  # Agent 1: 30 labelled cases
+python -m evals.runner                  # Agent 1: 32 labelled cases
 python -m evals.runner --tag hard --repeat 3
 python -m evals.research_runner         # Agent 2
 python -m evals.company_runner          # Agent 3  (runs 2 -> 3)
@@ -205,10 +207,10 @@ python -m evals.decision_runner         # Agent 5  (the full chain, most expensi
 ```
 
 **Tests and evals answer different questions.** `pytest` proves the code does
-what it says — deterministic, no network, always green. The evals make real API
-calls against known-correct answers and measure the model's *judgment*, which is
-probabilistic and so is a measurement to compare across prompt changes, not a
-pass/fail gate.
+what it says — deterministic, no network, always green. The evals call the real
+API against known-correct answers and measure the model's *judgment*. That is
+probabilistic, so an eval is a measurement to compare across prompt changes, not
+a pass/fail gate.
 
 That distinction is the whole project. Every significant defect came from an
 eval, never from the test suite — and the suite was green throughout. The
@@ -260,32 +262,44 @@ docs/              Design notes and the project log.
 ## Known limitations
 
 The short version — [`docs/DESIGN.md`](docs/DESIGN.md) has all of them with
-their evidence.
+their evidence. Every item here was measured rather than guessed at, and each
+names the instrument that would close it and why it was not built.
 
-- **Agent 3 only reads the articles Agent 2 chose to cite.** The main open
-  item. Retrieval is throttled by a filter one stage earlier — 17 articles
-  retrieved became 5 examined — which costs nothing in a rich sector and empties
-  the brief in a thin one.
+- **The candidate pool is capped by theme count, not article supply.** Agent 3
+  grades (company, theme) pairs, so an uncited article maps to no theme, and
+  widening the article list only produces companies with no question to ask
+  about them. Telling Agent 2 to cite every supporting article was built and
+  measured against a control: it consolidated five themes into three and came
+  out worse on every axis. Reverted. The five-theme cap is the real ceiling on
+  how many companies can ever be examined.
 - **Briefs can be thin.** Roughly three of ten examined companies are
   investable on a renewables theme — most of that news is about private and
   foreign firms. A one-company brief is the honest output, not a broken one.
 - **Agent 2 rarely records dissenting evidence**, and **the source filter can't
   cover its long tail** (86 of 130 observed sources contributed exactly one
   article). Both structural, both measured, both accepted deliberately.
-- **Two of the four exclusion reasons have never fired** against real data —
-  `restriction_violation` and `disqualified_by_risk`. The other two now have.
-- **A failure in the last agent cannot be resumed.** The graph ends cleanly and
-  records the error, so `--resume` sees a finished run and the earlier stages'
-  work cannot be continued from the CLI.
+- **One of the four exclusion reasons has never fired.** `disqualified_by_risk`
+  has unit tests only, deliberately: firing it would mean inventing a critical
+  risk, and a fabricated critique proves only that the code runs on a
+  fabrication. `restriction_violation` was fired against a real run's candidates
+  by substituting the investor's restriction, which is user input and
+  legitimately variable.
+- **A failed run cannot be resumed.** The graph records the error in state and
+  finishes cleanly, so a traceback never reaches a reader. `--list` and
+  `--resume` report it as failed, but the four stages already paid for cannot be
+  picked up. Recoverable by replaying `decide()` over the checkpoint by hand.
+  Ending cleanly and being recoverable are different properties.
 
 ---
 
 ## The log
 
 **[`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) is the interesting half of this
-repository.** 72 entries recording what broke, what the first diagnosis was, and
+repository.** 94 entries recording what broke, what the first diagnosis was, and
 why it was usually wrong — an operating margin of 168 that corrupted two
 verified agents, a citation rate blamed on the model that turned out to be
-plumbing, and the tests-passing-model-never-called story above.
+plumbing, the tests-passing-model-never-called story above, and a widening fix
+that was built, measured against a control, found worse on every axis and
+reverted — where the finding was worth more than the change would have been.
 
 The code shows what was built. The log shows how it was found out.

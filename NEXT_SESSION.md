@@ -3,9 +3,10 @@
 **THIS PROJECT IS CLOSED.** Finished 2026-08-28, session 14, entry 89.
 Session 15 re-recorded the demo from a live run (entry 90), fired the
 restriction gate (91), and recorded how the handoff itself went stale (92)
-and what the closing sessions rejected (93).
+and what the closing sessions rejected (93). Session 16 corrected the public
+documents, which had drifted the same way (94).
 
-Fourteen sessions, 89 log entries, 816 tests, CI green on Ubuntu and Windows.
+Sixteen sessions, 94 log entries, 816 tests, CI green on Ubuntu and Windows.
 The pipeline runs end to end, resumes when it stops, prices what it recommends
 and says plainly when the answer is nothing.
 
@@ -24,7 +25,7 @@ clearest example of the habit the whole log is about.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **93**
+- `docs/PROJECT_LOG.md` is current through entry **94**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -39,9 +40,9 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **811 passed, 1 skipped** in a few seconds. (760 at the end of session
+Expect **816 passed, 1 skipped** in a few seconds. (760 at the end of session
 11; session 12 added tests for the demo, the margin invariant, prices and the
-salvage fix.)
+salvage fix, and session 14 added five more for the failed-run status.)
 
 Do not add `-q`: pytest.ini already sets it, and `-qq` suppresses the summary
 line, which is how a wrong count once survived for two sessions.
@@ -135,6 +136,7 @@ project's own design rules point at. **Fix it in ONE place for both agents.**
 
 Still true and now more interesting: Agent 5's exclusion path has never fired
 on real data. TTE is the first candidate that should trigger it.
+*(Superseded 2026-08-28: `restriction_violation` has since fired — entry 91.)*
 
 ### 2.4 The zero-candidate profile - **FIXED 2026-08-24**
 
@@ -286,19 +288,22 @@ The decision: should a stage that failed be resumable, and if so, how does the
 graph distinguish "finished with an error" from "finished"? That changes what
 `--list` and `--resume` mean, so decide it before touching code.
 
-### 2.11 The shipped demo - **RE-RECORDED 2026-08-27, DONE**
+### 2.11 The shipped demo - **RE-RECORDED 2026-08-28, entry 90**
 
-`demo/recorded_run.json` now holds `cli-11a4243b`: Lam Research and Applied
-Materials, both graded `direct` against an AI semiconductor-equipment theme,
-both with an article-cited exit condition carrying a real headline and a working
-link, both priced, with share counts and a review date.
+`demo/recorded_run.json` holds `cli-0562c71f`: NVIDIA, Samsung and SMIC, all
+graded `direct` against an AI chip-capacity theme, each with an article-cited
+exit condition carrying a real headline and a working link, all three priced
+across three currencies, plus a fourth company recorded as considered and not
+chosen.
 
-The best brief this pipeline has produced, and the one `python -m cli --demo`
-shows. It replaced a one-company recording, which was fine but thin.
+The widest brief this pipeline has produced, and the one `python -m cli --demo`
+shows. It replaced the two-company Lam Research / Applied Materials recording
+made a day earlier.
 
 Saved runs, all replayable at zero quota:
 
-    cli-11a4243b   semiconductors, 2 recommendations, priced  (the recording)
+    cli-0562c71f   technology + utilities, 3 recommendations  (the recording)
+    cli-11a4243b   semiconductors, 2 recommendations, priced
     cli-9760c4a2   grid storage - the OutputParserException run, now fixed
     cli-f7bbd302   renewables, recommends NOTHING
     cli-008657ee   healthcare - the run that exposed the margin bug
@@ -306,6 +311,9 @@ Saved runs, all replayable at zero quota:
 To re-record after a better run, serialise its checkpoint: `recorded_on`,
 `profile`, `decision`, `research_findings`, `risk_findings`. Costs no quota. The
 tests deliberately pin neither the company nor the count.
+
+**The current recording omits `recorded_on`**, so `--demo` prints no recording
+date. Harmless - the field is optional - but include it next time.
 
 ## 3. Then the known weaknesses
 
@@ -432,11 +440,6 @@ Worth knowing before trusting a clean eval run.
   **`disqualified_by_risk` is still unverified**, and deliberately: firing it
   would mean inventing a critical risk, which substitutes agent output rather
   than user input.
-- **(superseded) Two of the four exclusion reasons have never fired.** `cli-173b47fe`
-  populated `Decision.excluded` for the first time on real data - six
-  candidates, three recommended - but only with `outside_top_three` and
-  `not_critiqued`. **`restriction_violation` and `disqualified_by_risk` are the
-  two that matter and both still have unit tests only.**
 - **A thin-sector brief can legitimately be empty**, and 2.9 makes that more
   likely than the pool alone would. Do not read an empty renewables run as a
   regression without checking retrieved-versus-cited first.
@@ -503,9 +506,9 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 811 tests, a few seconds, no network
+python -m pytest                        # 816 tests, a few seconds, no network
 
-python -m evals.runner                  # Agent 1: 30 labelled cases
+python -m evals.runner                  # Agent 1: 32 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)
 python -m evals.research_runner         # Agent 2: process quality, 5 profiles
 python -m evals.company_runner          # Agent 3: runs 2 -> 3

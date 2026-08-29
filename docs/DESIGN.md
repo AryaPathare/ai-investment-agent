@@ -1,7 +1,7 @@
 # Design notes
 
 The reasoning behind the build, and an honest account of what it still gets
-wrong. [`PROJECT_LOG.md`](PROJECT_LOG.md) is the narrative version — 72 entries
+wrong. [`PROJECT_LOG.md`](PROJECT_LOG.md) is the narrative version — 94 entries
 of what broke and why the first diagnosis was usually wrong.
 
 ---
@@ -92,29 +92,34 @@ bugs on its first live run.
 
 ---
 
----
-
 ## Known limitations
 
 Ordered by how much each would change an answer a reader actually sees. Every
-one of these was measured rather than guessed at; where something was fixed,
+one of these was measured rather than guessed at, and each names the instrument
+that would close it and why it was not built; where something was fixed,
 `docs/PROJECT_LOG.md` records what the fix cost and what it revealed.
 
-- **Agent 3 only reads the articles Agent 2 chose to cite.**
+- **The candidate pool is capped by theme count, not article supply.**
   `ResearchFindings.articles` keeps the articles a *theme* cited, and company
-  extraction reads that list — so retrieval feeds the residue of a decision made
-  one stage earlier for a different purpose. Two live runs on 2026-08-26: 9
-  retrieved became 3, and 17 became 5. Most themes cite exactly one article and
-  there is a five-theme cap, so the pool reaching Agent 3 is capped near five
-  however many were retrieved. In a rich sector this costs nothing; in a thin
-  one it empties the brief. **The one open defect**, and it needs a design
-  decision rather than an edit.
-- **A failure in the LAST agent cannot be resumed.** The graph records the
-  error in state and finishes cleanly, by design, so a traceback never reaches a
-  reader - but `--resume` then sees a completed run, and the four stages already
-  paid for cannot be continued from the CLI. Recoverable by replaying `decide()`
-  over the checkpoint by hand. Ending cleanly and being recoverable turn out to
-  be different properties.
+  extraction reads that list — two live runs on 2026-08-26 saw 9 retrieved
+  become 3, and 17 become 5. The obvious reading is that the article list is
+  too narrow, and it is the wrong one. Agent 3 grades (company, theme) *pairs*,
+  so an uncited article maps to no theme and widening the list produces
+  companies the grading model has no question to ask about. Telling Agent 2 to
+  cite every supporting article — the cheap version of the fix, aimed at the
+  observation that most themes cite exactly one (13 of 18 in the baseline) —
+  was built and measured against a control in the same session: it consolidated
+  five themes into three and came out worse on every axis, because theme count
+  drives the pool harder than citations per theme. Reverted; entry 87 has the
+  numbers. With a five-theme cap and most runs producing three to five, **that
+  cap is the ceiling** on how many companies can ever be examined, and lifting
+  it is a design decision rather than an edit.
+- **A failed run cannot be resumed.** The graph records the error in state and
+  finishes cleanly, by design, so a traceback never reaches a reader. `--list`
+  and `--resume` now read it as `failed` rather than finished (entry 88), but
+  the four stages already paid for still cannot be picked up from the CLI.
+  Recoverable by replaying `decide()` over the checkpoint by hand. Ending
+  cleanly and being recoverable turn out to be different properties.
 - **No forecast, and that is deliberate.** Nothing here predicts a price, names
   a sell date or says how much to invest. There is no valuation model, no price
   target and no expected-return estimate, so any of those would be the only
@@ -122,7 +127,7 @@ one of these was measured rather than guessed at; where something was fixed,
   and they are event-based rather than dated.
 - **The share count is often absent.** It needs a price, a stated investor
   currency, and a match between that and the share's. No exchange rate is
-  invented, and 39 of 48 cached companies trade in USD - so a reader who says
+  invented, and 39 of 48 cached companies trade in USD — so a reader who says
   GBP will usually see a price and no count. A missing line was preferred to a
   figure that is quietly wrong by a quarter.
 - **The renewables brief is thin, and honestly so.** Of roughly ten companies
@@ -145,8 +150,6 @@ one of these was measured rather than guessed at; where something was fixed,
   uncategorised, and query-term matching cannot tell a lithium battery deal
   from a battery-storage company. What carries the weight instead is a filter
   on article *shape* rather than publisher. **Accepted deliberately.**
-- **Most Agent 2 themes cite one source** (13 of 18 in the baseline), and it
-  reaches the five-theme cap on well-covered sectors.
 - **Ranking saturates, and financial companies are capped.** A company beyond
   every cap scores a flat 1.000, so exceptional companies are not distinguishable
   from each other; banks have no cost of goods, so their completeness caps at
@@ -163,12 +166,17 @@ one of these was measured rather than guessed at; where something was fixed,
 Distinct from the above: these are not known to be wrong, they are simply
 untested against the live pipeline.
 
-- **Two of the four exclusion reasons have never fired.** A live run on
-  2026-08-26 populated `Decision.excluded` for the first time — six candidates,
-  three recommended — but only with `outside_top_three` and `not_critiqued`.
-  Nothing has yet been excluded for `restriction_violation` or
-  `disqualified_by_risk`, which are the two that matter, and those still have
-  unit tests only.
+- **One of the four exclusion reasons has never fired.** `restriction_violation`
+  fired against the real candidates of `cli-0562c71f`, using real provider
+  industry strings and the real selection code, by substituting only the
+  investor's restriction — user input, and legitimately variable. That also
+  validated entry 57's fix against real data for the first time: **the match is
+  on `industry`**, not on name, since neither "NVIDIA Corporation" nor its
+  rationale contains the word semiconductor. `disqualified_by_risk` still has
+  unit tests only, deliberately — firing it would mean inventing a critical
+  risk, and a fabricated critique proves only that the code runs on a
+  fabrication. It needs a live run where a critic really finds something
+  critical.
 - **The 12 hard Agent 1 cases no longer discriminate.** They score 12/12, and
   the rubric written alongside them says 8–10 is a good hard set and 12 means
   it is too easy. Fixing the defect the set was built to catch spent its
