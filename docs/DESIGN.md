@@ -1,7 +1,7 @@
 # Design notes
 
 The reasoning behind the build, and an honest account of what it still gets
-wrong. [`PROJECT_LOG.md`](PROJECT_LOG.md) is the narrative version — 94 entries
+wrong. [`PROJECT_LOG.md`](PROJECT_LOG.md) is the narrative version — 95 entries
 of what broke and why the first diagnosis was usually wrong.
 
 ---

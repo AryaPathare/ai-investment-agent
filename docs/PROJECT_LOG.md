@@ -3571,3 +3571,65 @@ here. The first got a mechanism. The second got a habit. This one got a reader,
 which is the only thing that would have worked, and it arrived because the
 repository was finally being shown to somebody rather than because anything in
 it complained.
+
+### 95. The second reading, and what entry 94 got wrong about guards
+
+Entry 94 was written from a sweep that read the public documents as prose. A
+second pass read them against the CODE instead, and found five more defects in
+the same four files - four of which a machine could have caught.
+
+| Defect | The instrument that settles it |
+|---|---|
+| README sample output used `grounds:` and an all-caps heading | grep the renderer for the literal |
+| "eight questions" - there are nine | `len(QUESTIONS)` |
+| "30 labelled cases" - `CASES` holds 32 | `len(CASES)` |
+| 2.11 described the recording entry 90 replaced | the tickers in `demo/recorded_run.json` |
+| A superseded bullet contradicting the one above it | nothing - prose |
+
+**The worst of the five was the most checkable.** The README's sample output is
+the first thing a visitor sees, and it showed output this program cannot
+produce: `grounds:` and `WHAT WOULD MEAN THIS HAS STOPPED BEING A GOOD IDEA`
+were replaced by `Check:` and plain-language labels in entry 85, and the
+companies in it - MRVL, a Waaree order - appear in no run in the checkpoint
+database. Not a stale claim ABOUT the system. A picture of a system that never
+existed, at the top of the front page, where `grep grounds: cli.py` returns
+nothing.
+
+**So entry 94's closing argument is too clean.** It said the checkable part of a
+document is not the part that misleads anybody, and concluded that entry 63's
+instrument would have caught the harmless half and missed everything that
+mattered. Four of these five had a mechanical instrument sitting right there,
+and one of them was worse than anything on the first list.
+
+The mistake was generalising from the instrument. The first sweep read the
+documents as documents, so it found what that reading finds - drifted claims, an
+overclaim, wrong counts. The second read them against the code, and found what
+THAT reading finds. **Entry 94 mistook the bias of its own instrument for a
+property of documents.** It is entry 87 one level up: the treated run alone
+looked fine, and only a control made it readable.
+
+The arithmetic makes the point without any argument. Reasoning from the
+documents, the first sweep concluded that 816 was the odd one out against four
+copies of 811, and proposed that 811 passed plus 1 skipped meant 812 collected.
+Running the suite settles it in one command:
+
+    816 passed, 1 skipped        python -m pytest
+    817 tests collected          python -m pytest --collect-only
+
+811 was the stale copy and 812 was never a real number. **A number in a document
+can only be checked against the thing it counts** - and 816 and 817 are both
+true, which is the same collected-versus-passed seam entry 56 fell into, still
+open for anyone quoting a single figure.
+
+**Still no guard**, on entry 92's reasoning - the project is closed. But the
+honest version of entry 94's last paragraph is narrower than what it said: a
+guard would have caught most of the second list and none of the first, and
+nothing tells a reader which list they are looking at.
+
+**Tagged `v1.0.0`.** The case study about this repository quotes these numbers,
+and the moment it goes out the repository becomes a cited artefact - so a post
+reading "816 tests" against a repo that has moved on would be this same failure
+a third time, in public and with a reader's clone as the evidence. The tag is a
+fixed point to cite. Adding this entry moved the count from 94 to 95 and made
+three documents stale in the writing of it, which is the whole log in one
+sentence.

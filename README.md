@@ -295,7 +295,7 @@ names the instrument that would close it and why it was not built.
 ## The log
 
 **[`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) is the interesting half of this
-repository.** 94 entries recording what broke, what the first diagnosis was, and
+repository.** 95 entries recording what broke, what the first diagnosis was, and
 why it was usually wrong — an operating margin of 168 that corrupted two
 verified agents, a citation rate blamed on the model that turned out to be
 plumbing, the tests-passing-model-never-called story above, and a widening fix
