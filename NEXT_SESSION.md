@@ -8,11 +8,11 @@ documents, which had drifted the same way (94), and a second reading against
 the code found five more (95).
 
 Sixteen sessions, 95 log entries, 816 passed and 1 skipped, CI green on Ubuntu
-and Windows.
-The pipeline runs end to end, resumes when it stops, prices what it recommends
-and says plainly when the answer is nothing.
+and Windows. The pipeline runs end to end, resumes when it stops, prices what it
+recommends and says plainly when the answer is nothing.
 
-**Nothing is owed and nothing is unverified.** Section 2 below is a record of
+**Nothing is owed except the v1.0.1 batch below, and nothing is unverified.**
+Section 2 below is a record of
 what was done, kept because the arguments in it are the useful part. Section 3
 lists what was ACCEPTED rather than fixed, each with the evidence and the
 instrument that failed.
@@ -28,6 +28,38 @@ clearest example of the habit the whole log is about.
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - `docs/PROJECT_LOG.md` is current through entry **95**
+- Tagged **`v1.0.0`** at `48f9c08` - the fixed point the case study cites
+
+---
+
+## v1.0.1: batched, deliberately not cut yet
+
+Five known-wrong statements, all in code and example files rather than the four
+documents `v1.0.0` covers, and none affecting anything the case study quotes.
+Held as a batch because drafting the "what it does" section means checking every
+behavioural claim against the code, which will probably find more. **Cut it once,
+after the paper is drafted and before the post goes out.**
+
+| Where | Says | Should say |
+|---|---|---|
+| `cli.py:294` | "Ask the eight questions" | nine |
+| `cli.py:970` | "eight prompts between each attempt" | see below - the unit is wrong too |
+| `tests/test_cli.py:660` | "Asking eight questions again" | nine |
+| `examples/README.md:4` | "without retyping eight questions" | nine |
+| `demo/recorded_run.json` | omits the optional `recorded_on` | so `--demo` prints no recording date |
+
+`investment_currency` (entry 80, 2026-08-26) took the count from eight to nine;
+entry 83 rebuilt the sector question without changing it. Verified twice:
+`len(QUESTIONS)` is 9 and `ask_profile` asks all nine unconditionally, and
+driving the CLI with nine piped answers consumed exactly nine and saved nine
+fields.
+
+**`cli.py:970` is wrong on the unit, not just the digit.** It counts PROMPTS
+while everything else counts QUESTIONS, and those came apart the moment the
+`ValidationError` re-ask loop existed: a rejected answer re-prompts without
+adding a question, and Agent 1's clarification adds a tenth prompt only when it
+finds a contradiction. Fix the vocabulary or the next person reintroduces the
+ambiguity from the other side. **Same disease as 816 versus 817.**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
