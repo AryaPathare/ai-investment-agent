@@ -3401,3 +3401,75 @@ alone, because firing it would mean inventing a critical risk - substituting
 AGENT OUTPUT, which is a unit test wearing a live run's clothes. It remains
 unverified, and the honest way to reach it is a live run where a critic really
 does find something critical.
+
+### 92. The handoff was four sessions out of date, and it was believed
+
+Session 15 opened by reading `NEXT_SESSION.md`, which described session 8, 51
+log entries, and seven quota-bound tasks. All of it was true once. The repository
+was at session 13, entry 85, with 26 commits on top.
+
+**Everything that followed for the next stretch was work on a project that no
+longer existed.** Tasks were planned that later sessions had already finished -
+2.6 in particular, "specified but deliberately not built", had been built AND
+measured in session 10. Worse, a prompt section was deleted as a "revert" of a
+change that four sessions of evals had since been run against. It was never
+committed, but it was one command away.
+
+Two signals were available and neither was used. The memory index said "project
+COMPLETE at session 10, log entry 72" - it contradicted the file, and the file
+was believed because it was longer and more specific. And `git log` was one
+command away the entire time; it was eventually run for an unrelated reason and
+answered the question in three seconds.
+
+**A handoff document is a CLAIM about the repository, not the repository.** It
+is written by someone who is about to stop working and cannot describe what
+happens next. Every other artefact here is checked against reality by something
+- tests run, evals score, entry 63 fails the build when the rendered log drifts
+from its source - and the one document that steers the whole session was checked
+by nothing.
+
+The cheap fix is a habit rather than code: **read the handoff, then run
+`git log --oneline -5` and compare the dates.** Thirty seconds, and it would have
+saved the stretch. A stronger version would have the handoff carry the SHA it
+was written against and fail loudly when HEAD has moved past it, which is the
+same instrument as entry 63 pointed at a different document. Not built, because
+the project is closed and a guard nobody will maintain is worse than a habit.
+
+The pattern is one this log already knows in another costume: **a stale document
+is confidently wrong, and confidence is what makes it expensive.** That is
+exactly what entry 63 was about - the rendered log going stale within four
+minutes - and the response there was a mechanism. Here it happened to the
+document that decides what a whole session does.
+
+### 93. What the closing sessions rejected, and how
+
+Worth recording alongside what shipped, because the log otherwise reads as a
+list of changes that worked.
+
+**Filtering press releases by SOURCE.** The obvious instrument, proposed and
+killed by its own evidence within ten minutes: six of seven cached articles from
+globalrenewablenews.com are issuer announcements, and the seventh is the
+Canadian Solar litigation headline this project has twice named as the thing
+that must never be filtered. Entry 54.
+
+**Widening Agent 3's article pool.** Both options section 2.9 proposed were dead
+on inspection, because Agent 3 grades (company, theme) pairs and an uncited
+article maps to no theme. The third option, cheaper and unproposed, was
+implemented and then measured against a control that showed it was a regression.
+Entry 87.
+
+**Making a failed run resumable.** Deliberately left at half - the honest LABEL
+was separated from the resumability and only the label was built, because
+re-entering a completed thread changes what `--resume` and `--list` mean for
+every run. Entry 88.
+
+**Inventing a critical risk to fire `disqualified_by_risk`.** Refused. The
+restriction gate was fired by substituting the investor's RESTRICTION, which is
+user input; firing the risk gate would mean substituting AGENT OUTPUT, and a
+fabricated critique proves only that the code runs on a fabricated critique.
+Entry 91.
+
+The common shape: **three of these four were rejected on evidence gathered after
+the idea looked good**, and the fourth was rejected on what the evidence would
+have been worth. The instrument that decided every one of them was the same -
+hold something constant and look again.
