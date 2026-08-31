@@ -44,10 +44,13 @@ jobs:
         python-version: ["3.14"]
 
     steps:
-      - uses: actions/checkout@v4
+      # Pinned to majors that run on node24. v4/v5 respectively were forced
+      # onto node24 by the runner and warned on every run; the deprecation
+      # eventually stops being a warning.
+      - uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
