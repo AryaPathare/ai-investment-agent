@@ -5,7 +5,6 @@
     "risk_tolerance": "low",
     "investment_amount": 1000.0,
     "investment_currency": "USD",
-    "investment_window": "5 months",
     "holding_period": "10 months",
     "sectors_of_interest": [
       "Technology",

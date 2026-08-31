@@ -1,11 +1,14 @@
 """LangGraph workflow for the investment research pipeline.
 
-Covers Agents 1 to 3: validate the investor profile, pausing to ask the user
+Covers all five agents: validate the investor profile, pausing to ask the user
 whenever two of their answers genuinely conflict; research current themes
-grounded in real news articles; then find investable companies genuinely
-exposed to those themes.
+grounded in real news articles; find investable companies genuinely exposed to
+those themes; attack each candidate with the bear case; then write the brief.
 
-    START -> profile_agent -> (valid) -----------> research -> companies -> END
+    START -> profile_agent -> (valid) ----> research -> companies
+                           |                                |
+                           |                                v
+                           |                          risk_critic -> decide -> END
                            -> (clarification) -> ask user -> back to profile_agent
                            -> (exhausted) -> give up ------> END
                            -> (failed) -------------------> END

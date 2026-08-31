@@ -101,7 +101,6 @@ def _user(**overrides) -> UserInput:
         investment_experience="intermediate",
         risk_tolerance="moderate",
         investment_amount=5000.0,
-        investment_window="within 3 months",
         holding_period="3-5 years",
         sectors_of_interest=["technology"],
         restrictions=[],
@@ -113,16 +112,6 @@ CASES: list[EvalCase] = [
     # -----------------------------------------------------------------------
     # REGRESSIONS — bugs already found and fixed. These must never fail again.
     # -----------------------------------------------------------------------
-    EvalCase(
-        name="window_vs_holding_period",
-        why=(
-            "REGRESSION: the agent used to call these contradictory. They are "
-            "different concepts - when you buy vs how long you hold."
-        ),
-        user=_user(investment_window="within 1 month", holding_period="3-5 years"),
-        expected_status="valid",
-        tags=("regression", "false-positive"),
-    ),
     EvalCase(
         name="interest_vs_restriction_conflict",
         why=(

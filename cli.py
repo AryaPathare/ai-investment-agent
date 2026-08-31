@@ -273,8 +273,14 @@ QUESTIONS: list[tuple[str, object]] = [
             CURRENCIES,
         ),
     ),
-    ("investment_window", lambda: _ask_text("When do you need the money back")),
-    ("holding_period", lambda: _ask_text("How long do you expect to hold")),
+    # ONE time question, not two. This used to ask "When do you need the money
+    # back" and then "How long do you expect to hold", which for a retail user
+    # are the same question - and the first one contradicted what the profile
+    # agent believed the field held. See models/user_input.py.
+    (
+        "holding_period",
+        lambda: _ask_text("How long do you plan to keep this money invested"),
+    ),
     # The single highest-signal answer in the whole run: Agent 2 turns this
     # straight into search queries, so it gets a menu of its own rather than a
     # one-line prompt. See SECTORS: the list exists to stop a beginner facing a
@@ -343,7 +349,7 @@ def describe_profile(user: UserInput) -> str:
     return (
         f"age {user.age}, {user.investment_experience}, "
         f"{user.risk_tolerance} risk, {user.investment_amount:,.0f} "
-        f"over {user.investment_window}\n"
+        f"held for {user.holding_period}\n"
         f"  interested in: {sectors}\n"
         f"  will not hold: {limits}"
     )

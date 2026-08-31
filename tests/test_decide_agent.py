@@ -35,7 +35,7 @@ def article(uuid):
 def profile(**overrides):
     base = dict(age=40, investment_experience="intermediate",
                 risk_tolerance="moderate", investment_amount=5000.0,
-                investment_window="within 3 months", holding_period="3-5 years",
+                holding_period="3-5 years",
                 sectors_of_interest=["technology"], restrictions=[], status="valid")
     return InvestorProfile(**{**base, **overrides})
 

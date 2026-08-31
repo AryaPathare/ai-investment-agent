@@ -7,7 +7,7 @@ and what the closing sessions rejected (93). Session 16 corrected the public
 documents, which had drifted the same way (94), and a second reading against
 the code found five more (95).
 
-Sixteen sessions, 95 log entries, 816 passed and 1 skipped, CI green on Ubuntu
+Seventeen sessions, 97 log entries, 856 passed and 1 skipped, CI green on Ubuntu
 and Windows. The pipeline runs end to end, resumes when it stops, prices what it
 recommends and says plainly when the answer is nothing.
 
@@ -59,7 +59,7 @@ while everything else counts QUESTIONS, and those came apart the moment the
 `ValidationError` re-ask loop existed: a rejected answer re-prompts without
 adding a question, and Agent 1's clarification adds a tenth prompt only when it
 finds a contradiction. Fix the vocabulary or the next person reintroduces the
-ambiguity from the other side. **Same disease as 816 versus 817.**
+ambiguity from the other side. **Same disease as the 816-versus-817 confusion (entry 95).**
 
 **The git history was rewritten on 2026-08-23** to change the commit author to
 `Arya Pathare <patharearya@gmail.com>`. Every SHA before that point changed, so
@@ -74,11 +74,13 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **816 passed, 1 skipped** in a few seconds - 817 collected, and the
+Expect **856 passed, 1 skipped** in a few seconds - 857 collected, and the
 distinction matters (entry 56). Counted at each session end: 760 passed after
 session 11, 797 after session 12 (demo, margin invariant, prices, salvage), 811
 after session 13 (the sector menu and the FX and plain-language work), 816 after
-session 14 (entry 88's failed-run status).
+session 14 (entry 88's failed-run status), 814 then 856 after session 17 -
+entry 96 held the only DECREASE on record, because deleting one eval case
+removes two tests (`CASES` is parametrised twice), and entry 97 added 42.
 
 Do not add `-q`: pytest.ini already sets it, and `-qq` suppresses the summary
 line, which is how a wrong count once survived for two sessions.
@@ -542,7 +544,7 @@ python -m cli --profile examples/conflicted_crypto.json   # shows the interrupt
 python -m cli --save-profile mine.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 816 passed, 1 skipped; no network
+python -m pytest                        # 856 passed, 1 skipped; no network
 
 python -m evals.runner                  # Agent 1: 32 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)

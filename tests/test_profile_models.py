@@ -73,7 +73,6 @@ def test_untouchable_fields_are_copied_verbatim(conflicted_user):
         "age",
         "investment_experience",
         "investment_amount",
-        "investment_window",
         "holding_period",
     ):
         assert getattr(profile, field) == getattr(conflicted_user, field)
@@ -208,7 +207,6 @@ def test_only_the_restriction_the_user_raised_is_removable():
         investment_experience="intermediate",
         risk_tolerance="moderate",
         investment_amount=5000.0,
-        investment_window="within 3 months",
         holding_period="3-5 years",
         sectors_of_interest=["technology"],
         restrictions=["Do not invest in technology companies", "No tobacco"],

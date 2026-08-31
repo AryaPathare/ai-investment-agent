@@ -3653,3 +3653,110 @@ a third time, in public and with a reader's clone as the evidence. The tag is a
 fixed point to cite. Adding this entry moved the count from 94 to 95 and made
 three documents stale in the writing of it, which is the whole log in one
 sentence.
+
+## Session 17 — 2026-08-30
+
+### 96. Two questions that were one question, and the check that had been switched off
+
+Users kept getting confused by the two timeframe questions, which is where this
+started. They were right to be, and the confusion was the visible end of a
+disagreement inside the code.
+
+The CLI asked **"When do you need the money back"** for `investment_window` and
+**"How long do you expect to hold"** for `holding_period`. Agent 1's prompt,
+meanwhile, defined the first field as *when the user plans to buy*. So the
+question asked for an EXIT horizon and the agent read the answer as an ENTRY
+time - opposite ends of the same trade. For a retail investor the two questions
+are the same question anyway, so people answered it twice, or gave up: the saved
+`mine.json` had `investment_window: "8"`, a bare number, because the question did
+not mean anything.
+
+Both fields were bare `str` with no `Field(description=...)` - the only two in
+`UserInput` without one. That is almost certainly where the drift began: with
+nothing written down, the meaning lived in the agent prompt, and the CLI wording
+was free to wander away from it.
+
+**The part that mattered more than the wording.** Rule 1 of Agent 1's prompt
+told the model these two fields are never contradictory, and
+`window_vs_holding_period` locked that in as a `regression` case that must never
+fail. Correct for the field's intended meaning. But against the question the CLI
+actually asked, it disabled the one check that would have caught the confusion:
+the recorded demo run holds `window: "5 months"` with `holding_period:
+"10 months"` - needing the cash back before the hold is finished - and Agent 1
+was required to pass it. **A guard written against the intended meaning is no
+guard at all once the wording drifts.**
+
+Deleting that eval case was therefore not tidying up. It removed a check that
+had been switched off, by removing the ambiguity that switched it off.
+
+**What the field actually fed.** A grep for the name found only a cosmetic
+summary line, which was the wrong thing to grep for. Agent 1 dumps the whole
+profile (`model_dump_json`), and so does Agent 2 - twice, at query generation
+and at theme synthesis. So the VALUE reached three model prompts without the
+NAME appearing anywhere near them, including the one prompt the entire run
+cascades from. Agents 3 and 4 never see the profile and Agent 5 reads named
+fields only, so those were genuinely untouched. **Searching for a field name
+does not find where a whole-object dump carries its value.**
+
+Cutting it rather than rewording it: nothing schedules a purchase, so entry
+timing had no consumer, and Agent 2 was being handed two timeframes that
+contradicted each other with no descriptions to tell them apart. It now gets
+one. `holding_period` keeps the free text - "18 months", "until my daughter
+starts university" - and gains only a non-blank check, since `--profile`
+bypasses the CLI's own re-ask and this is now the only timeframe in the profile.
+
+Removing it changed 816 passed to 814: `CASES` is parametrised twice, so one
+deleted case is two fewer tests. Old profiles and old checkpoints still load -
+Pydantic ignores the extra key - so the 17 saved runs, one of them resumable,
+survived the schema change untouched. The demo header now reads `held for 10
+months` instead of `over 5 months`, which no longer contradicts the theses three
+lines below it that talk about holding for ten.
+
+Also corrected here: `workflow.py` still opened with "Covers Agents 1 to 3"
+while the graph had been building all five for several sessions.
+
+### 97. "none" is not a restriction, and the prompt had already lost that argument
+
+The live run that verified entry 96 (`cli-96acf3af`) answered the restrictions
+question with **"none"**, so `restrictions: ["none"]` went into the profile. The
+shipped recording in `demo/recorded_run.json` carries `["no"]`, from a different
+session and a different person. Two runs, two users, same answer - and the
+prompt has said **"blank if none"** the whole time.
+
+A restriction is not inert. Agent 2 is instructed to honour restrictions at
+QUERY time, so the literal string "none" is carried into the query prompt as an
+area not to research, and it printed in the profile line as `will not hold: no`.
+Neither run was damaged by it - Agent 2 evidently ignored it - but that is luck,
+not a guarantee, and the line was about to be shown to people.
+
+**The wording was not the fix.** The prompt already said the right thing and was
+ignored twice. Entry 96 was a question whose wording invited a useless answer;
+this is a question whose wording invites a useless answer *even when correctly
+worded*, because "none" is the natural way to say it out loud. So the guard went
+into the model, where `--profile` cannot walk around it either.
+
+**The whole design is the false-positive direction.** Dropping a REAL
+restriction would research an area the investor explicitly prohibited - the one
+thing this project says must never happen - and it would do it silently. And
+almost every real restriction people write begins with exactly these words:
+"no fossil fuels", "no tobacco", "nothing in defence", "none of the tobacco
+majors". So the match is against the WHOLE answer, casefolded and stripped of
+trailing punctuation, against a closed list - **never a prefix**. The test file
+reflects the asymmetry: nine surviving answers are asserted against twenty-one
+dropped ones, because the surviving list is where a regression actually hurts.
+`"not really interested in banks"` survives even though `"not really"` is itself
+on the no-op list.
+
+The recording was **left as recorded**. `demo/recorded_run.json` still holds
+`["no"]`, because that is what that person typed, and a test now asserts both
+halves: the file still says `["no"]`, and loading it through `UserInput` yields
+`[]`. The demo prints "will not hold: no restrictions" without the recording
+being edited into saying something it never said.
+
+Also landed here: a non-blank check on `holding_period`. Entry 96 left it the
+only timeframe in the profile, feeding Agent 2's query prompt and Agent 5's
+brief, and the CLI's re-ask does not protect the `--profile` path. It stays free
+text - "18 months", "until my daughter starts university" - because a fixed menu
+would force every answer into it.
+
+814 passed to **856**, 857 collected.

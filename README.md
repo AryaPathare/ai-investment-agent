@@ -94,7 +94,7 @@ what the project produces.
 python -m pytest
 ```
 
-**816 passed, 1 skipped** in a few seconds, no network and no credentials. If
+**856 passed, 1 skipped** in a few seconds, no network and no credentials. If
 both of these work, your install is good.
 
 ### 3. Add an API key
@@ -190,7 +190,7 @@ profile on a different day finds different companies.
 ## Tests and evals
 
 ```powershell
-python -m pytest                        # 816 passed, 1 skipped; seconds, no network
+python -m pytest                        # 856 passed, 1 skipped; seconds, no network
 ```
 
 The evals make **real API calls** and are how the agents were developed. Start
@@ -295,7 +295,7 @@ names the instrument that would close it and why it was not built.
 ## The log
 
 **[`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) is the interesting half of this
-repository.** 95 entries recording what broke, what the first diagnosis was, and
+repository.** 97 entries recording what broke, what the first diagnosis was, and
 why it was usually wrong — an operating margin of 168 that corrupted two
 verified agents, a citation rate blamed on the model that turned out to be
 plumbing, the tests-passing-model-never-called story above, and a widening fix

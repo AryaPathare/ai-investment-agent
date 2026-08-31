@@ -4,7 +4,6 @@
   "risk_tolerance": "low",
   "investment_amount": 10000.0,
   "investment_currency": "USD",
-  "investment_window": "8",
   "holding_period": "3 months",
   "sectors_of_interest": [
     "Healthcare",

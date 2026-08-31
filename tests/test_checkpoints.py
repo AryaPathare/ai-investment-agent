@@ -39,7 +39,6 @@ def _user(sectors=("renewable energy",)) -> UserInput:
         investment_experience="beginner",
         risk_tolerance="low",
         investment_amount=1000.0,
-        investment_window="within 6 months",
         holding_period="5 years",
         sectors_of_interest=list(sectors),
         restrictions=[],

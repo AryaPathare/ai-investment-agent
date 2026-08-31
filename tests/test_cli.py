@@ -56,7 +56,6 @@ PROFILE_ANSWERS = [
     "moderate",
     "5000",
     "USD",
-    "within 3 months",
     "5+ years",
     "renewable energy, grid storage",
     "no fossil fuels",
@@ -892,7 +891,7 @@ def _investor(currency="USD", amount=5000.0):
     return UserInput(
         age=30, investment_experience="beginner", risk_tolerance="moderate",
         investment_amount=amount, investment_currency=currency,
-        investment_window="within 3 months", holding_period="3-5 years",
+        holding_period="3-5 years",
         sectors_of_interest=["technology"], restrictions=[],
     )
 

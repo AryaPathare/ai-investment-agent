@@ -4,7 +4,6 @@
   "risk_tolerance": "high",
   "investment_amount": 25000.0,
   "investment_currency": "USD",
-  "investment_window": "within 3 months",
   "holding_period": "3-5 years",
   "sectors_of_interest": [
     "semiconductors",
