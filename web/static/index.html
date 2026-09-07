@@ -367,10 +367,10 @@ function showBrief(brief) {
       }
 
       if (rec.price) {
-        let line = rec.price.currency + " " + rec.price.amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) + " per share";
+        let line = rec.price.currency + " " + rec.price.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " per share";
         if (rec.price.in_investor_currency !== null) {
           line += " (about " + rec.price.investor_currency + " " +
-            rec.price.in_investor_currency.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ")";
+            rec.price.in_investor_currency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ")";
         }
         line += " — as of " + rec.price.as_of_on;
         panel.append(el("p", line, "help"));
