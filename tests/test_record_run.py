@@ -13,6 +13,7 @@ models the graph writes, so a schema change goes red here instead.
 """
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -60,6 +61,32 @@ def test_every_recording_renders_a_brief(path, capsys):
 
     assert "This is research, not advice" in out
     assert "WORTH A LOOK" in out or "NOTHING IS BEING RECOMMENDED" in out
+
+
+@pytest.mark.parametrize(
+    "path", recordings() + [PROJECT_ROOT / "demo" / "recorded_run.json"],
+    ids=lambda p: p.stem,
+)
+def test_every_recording_says_when_it_was_run(path):
+    """A brief carries share prices from the day it ran.
+
+    Without this the reader is shown a price with no indication of its age,
+    which is the one thing they might act on directly. It was listed as an open
+    v1.0.1 item for the shipped demo alone; the gallery would have multiplied it
+    by five.
+    """
+    payload = json.loads(path.read_text(encoding="utf-8"))
+
+    assert payload.get("recorded_on"), f"{path.name} does not say when it was run"
+    datetime.fromisoformat(payload["recorded_on"])
+
+
+def test_the_recording_date_is_when_the_run_happened(finished, tmp_path):
+    """Not when the file was written. A recording made today of a run made last
+    week is dated last week, or the notice above lies about the prices."""
+    payload = build(finished, recorded_on="2026-08-26T15:37:50+00:00")
+
+    assert payload["recorded_on"] == "2026-08-26T15:37:50+00:00"
 
 
 def test_the_gallery_includes_a_run_that_recommends_nothing():

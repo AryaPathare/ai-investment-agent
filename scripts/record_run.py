@@ -56,7 +56,7 @@ class NotRecordable(Exception):
     """The run exists and is not a finished brief."""
 
 
-def build(values: dict) -> dict:
+def build(values: dict, recorded_on: str | None = None) -> dict:
     """The recording for one run's state.
 
     ``mode="json"`` throughout, because the state carries datetimes - article
@@ -69,7 +69,15 @@ def build(values: dict) -> dict:
     if values.get("error"):
         raise NotRecordable(f"the run failed: {values['error']}")
 
+    payload = {}
+    if recorded_on:
+        # WHEN THE RUN HAPPENED, not when the file was written. Share prices in
+        # a brief are from a moment, and a reader arriving at an old recording
+        # needs to know that before they read a number rather than after.
+        payload["recorded_on"] = recorded_on
+
     return {
+        **payload,
         "profile": values["user_input"].model_dump(mode="json"),
         "decision": values["decision"].model_dump(mode="json"),
         "research_findings": values["research_findings"].model_dump(mode="json"),
@@ -103,7 +111,7 @@ def record(thread_id: str, destination: Path, db_path=None) -> dict:
             )
         values = store.graph.get_state(store.config(thread_id)).values
 
-    payload = build(values)
+    payload = build(values, recorded_on=saved.updated_at)
     verify(payload)
 
     destination.parent.mkdir(parents=True, exist_ok=True)

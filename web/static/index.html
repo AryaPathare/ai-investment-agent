@@ -493,9 +493,21 @@ async function loadGallery() {
   for (const run of body.runs) {
     const card = el("div", null, "card");
     card.append(el("div", run.sectors.join(", "), "asked"));
-    const money = run.currency ? run.currency + " " + run.amount.toLocaleString() : String(run.amount);
+    // A run made before the currency question existed has no currency, and a
+    // bare number beside "USD 12,000" reads as a missing unit rather than as
+    // the honest "we did not ask" that it is.
+    const money = run.currency
+      ? run.currency + " " + run.amount.toLocaleString()
+      : run.amount.toLocaleString() + " (currency not asked)";
     card.append(el("div", `${run.experience}, ${run.risk_tolerance} risk, ${money}, ${run.holding_period}`, "who"));
     card.append(el("div", run.headline + (run.recommendations.length ? " — " + run.recommendations.join(", ") : ""), "got"));
+    if (run.recorded_on) {
+      // The date is not decoration: a brief carries share prices from the day
+      // it ran, and a reader needs that before the numbers rather than after.
+      const when = new Date(run.recorded_on);
+      card.append(el("div", "run on " + when.toLocaleDateString(undefined,
+        { day: "numeric", month: "short", year: "numeric" }), "who"));
+    }
     card.addEventListener("click", () => showRecording(run.name));
     list.append(card);
   }

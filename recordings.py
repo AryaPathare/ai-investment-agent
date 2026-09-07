@@ -98,6 +98,7 @@ def summarise(path: Path) -> dict:
     count = len(decision.recommendations)
     return {
         "name": path.stem,
+        "recorded_on": state.get("recorded_on"),
         "sectors": list(user.sectors_of_interest),
         "recommended_nothing": decision.recommended_nothing,
         "recommendations": [r.ticker for r in decision.recommendations],

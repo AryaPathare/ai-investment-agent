@@ -1,4 +1,5 @@
 {
+  "recorded_on": "2026-08-28T19:20:04.474281+00:00",
   "profile": {
     "age": 56,
     "investment_experience": "beginner",
@@ -19,7 +20,7 @@
       {
         "ticker": "NVDA",
         "name": "NVIDIA Corporation",
-        "thesis": "NVIDIA sells GPUs that power AI workloads. Its revenue grows as AI chip demand rises. The company is a good fit for a low‑risk investor holding for ten months.",
+        "thesis": "NVIDIA sells GPUs that power AI workloads. Its revenue grows as AI chip demand rises. The company is a good fit for a low\u2011risk investor holding for ten months.",
         "exit_conditions": [
           {
             "condition": "Microsoft secures majority of TSMC capacity for its Maia 300 chip.",
@@ -61,7 +62,7 @@
       {
         "ticker": "SMSNN.MX",
         "name": "SAMSUNG ELECTRONICS CO",
-        "thesis": "Samsung Electronics is a global leader in semiconductor manufacturing, producing AI chips for Nvidia, Apple, and Tesla. Its advanced 3nm and 5nm foundry nodes let it charge premium prices amid the AI chip capacity crunch. With a 52% operating margin and low debt, it offers a safe play for a low‑risk, 10‑month investor.",
+        "thesis": "Samsung Electronics is a global leader in semiconductor manufacturing, producing AI chips for Nvidia, Apple, and Tesla. Its advanced 3nm and 5nm foundry nodes let it charge premium prices amid the AI chip capacity crunch. With a 52% operating margin and low debt, it offers a safe play for a low\u2011risk, 10\u2011month investor.",
         "exit_conditions": [
           {
             "condition": "Samsung reduces AI chip prices by more than 10% within six months.",
@@ -102,7 +103,7 @@
       {
         "ticker": "0981.HK",
         "name": "SMIC",
-        "thesis": "SMIC is China’s largest foundry that makes mature‑node chips used in AI processors. Its planned capacity expansion will let it supply more AI chips as demand surges, boosting its share of the market. Because it finances growth from its balance sheet, the company may not fit a low‑risk investor over a 10‑month horizon.",
+        "thesis": "SMIC is China\u2019s largest foundry that makes mature\u2011node chips used in AI processors. Its planned capacity expansion will let it supply more AI chips as demand surges, boosting its share of the market. Because it finances growth from its balance sheet, the company may not fit a low\u2011risk investor over a 10\u2011month horizon.",
         "exit_conditions": [
           {
             "condition": "SMIC's capacity utilization falls below 90%",
@@ -159,7 +160,7 @@
     "themes": [
       {
         "name": "AI Chip Capacity Crunch",
-        "why_it_matters": "Investor’s tech focus may see short‑term volatility as chip prices rise; understanding capacity constraints helps gauge AI chip price trends and potential impact on related tech stocks.",
+        "why_it_matters": "Investor\u2019s tech focus may see short\u2011term volatility as chip prices rise; understanding capacity constraints helps gauge AI chip price trends and potential impact on related tech stocks.",
         "industries": [
           "Technology"
         ],
@@ -174,7 +175,7 @@
           {
             "article_id": "78133eef-1b06-4fd6-846d-7ddc18af1d13",
             "stance": "supports",
-            "relevance": "SMIC plans capacity expansion due to high mature‑node chip demand."
+            "relevance": "SMIC plans capacity expansion due to high mature\u2011node chip demand."
           },
           {
             "article_id": "6a9bf61a-e428-4038-9c41-ef831931ba31",
@@ -185,7 +186,7 @@
       },
       {
         "name": "APAC Cloud Expansion",
-        "why_it_matters": "Cloud growth fuels demand for data‑center hardware; investor may consider exposure to cloud infrastructure providers that benefit from expanding capacity.",
+        "why_it_matters": "Cloud growth fuels demand for data\u2011center hardware; investor may consider exposure to cloud infrastructure providers that benefit from expanding capacity.",
         "industries": [
           "Technology"
         ],
@@ -200,13 +201,13 @@
           {
             "article_id": "821df302-a74f-4e39-bcc2-65fde17f1481",
             "stance": "weakens",
-            "relevance": "Alibaba’s profits fall as cloud expansion costs rise."
+            "relevance": "Alibaba\u2019s profits fall as cloud expansion costs rise."
           }
         ]
       },
       {
-        "name": "Back‑end Manufacturing Growth",
-        "why_it_matters": "Back‑end expansion supports the semiconductor supply chain; investor may watch for companies benefiting from increased packaging capacity as demand rises.",
+        "name": "Back\u2011end Manufacturing Growth",
+        "why_it_matters": "Back\u2011end expansion supports the semiconductor supply chain; investor may watch for companies benefiting from increased packaging capacity as demand rises.",
         "industries": [
           "Technology"
         ],
@@ -222,7 +223,7 @@
       },
       {
         "name": "Utility Demand Surge",
-        "why_it_matters": "Growing semiconductor and solar demand boosts utility services; investor’s utilities interest may benefit from increased energy consumption in these sectors.",
+        "why_it_matters": "Growing semiconductor and solar demand boosts utility services; investor\u2019s utilities interest may benefit from increased energy consumption in these sectors.",
         "industries": [
           "Utilities",
           "Technology"
@@ -239,7 +240,7 @@
       },
       {
         "name": "Digital Energy Services",
-        "why_it_matters": "Digital energy services expansion indicates rising demand for data‑center power; investor’s utilities focus may find opportunities in energy infrastructure supporting tech growth.",
+        "why_it_matters": "Digital energy services expansion indicates rising demand for data\u2011center power; investor\u2019s utilities focus may find opportunities in energy infrastructure supporting tech growth.",
         "industries": [
           "Utilities"
         ],
@@ -249,7 +250,7 @@
           {
             "article_id": "51787c88-b98a-429f-8160-cd452ecf6766",
             "stance": "supports",
-            "relevance": "Wasion Holdings reports doubled digital energy services and a 153% surge in data‑center orders."
+            "relevance": "Wasion Holdings reports doubled digital energy services and a 153% surge in data\u2011center orders."
           }
         ]
       }
@@ -271,8 +272,8 @@
       {
         "uuid": "78133eef-1b06-4fd6-846d-7ddc18af1d13",
         "title": "Chinese firm sees 93.7% capacity use as high demand drives chip shortages",
-        "description": "Chinese firm SMIC plans to expand its capacities in its factories, as customer demand for “mature-node chips” increases.",
-        "snippet": "Demand is high for mature-node chips for AI processors, and China’s Semiconductor Manufacturing International Corporation (SMIC) intends to raise the bar, acc...",
+        "description": "Chinese firm SMIC plans to expand its capacities in its factories, as customer demand for \u201cmature-node chips\u201d increases.",
+        "snippet": "Demand is high for mature-node chips for AI processors, and China\u2019s Semiconductor Manufacturing International Corporation (SMIC) intends to raise the bar, acc...",
         "url": "https://interestingengineering.com/ai-robotics/chinese-firm-smic-capacity-utilization-chip",
         "source": "interestingengineering.com",
         "published_at": "2026-08-16T23:08:13Z",

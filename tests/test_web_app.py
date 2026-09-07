@@ -35,7 +35,7 @@ from models.profile import InvestorProfile
 from models.research import ResearchFindings
 from models.risk import RiskFindings
 import render
-from web.app import app
+from web.app import app, read_recording
 
 
 # --- Driving the endpoint ----------------------------------------------------
@@ -423,7 +423,11 @@ def test_a_described_brief_survives_json(clean_user):
 
 
 def visit(steps):
-    """Run several requests as ONE browser, so the cookie survives between them."""
+    """Run several requests as ONE browser, so the cookie survives between them.
+
+    ``steps`` may be a plain lambda returning a coroutine, which is what the
+    single-request tests use.
+    """
 
     async def _go():
         transport = httpx.ASGITransport(app=app)
@@ -736,3 +740,137 @@ def test_the_estimate_never_refuses_a_run_by_itself(whole_pipeline, profile, mon
         return await client.post("/api/runs", json=profile, timeout=30)
 
     assert visit(steps).status_code == 200, "the estimate must not be the gate"
+
+
+# --- The gallery -------------------------------------------------------------
+#
+# What the site shows when the day's quota is gone. Untested when it was built,
+# which is how the traversal check below came to be verified by hand and pinned
+# by nothing.
+
+
+@pytest.fixture
+def gallery(tmp_path, monkeypatch, clean_user):
+    """A gallery of one known recording, so assertions do not depend on which
+    real runs happen to be committed."""
+    import json
+
+    import recordings
+    from models.decision import Decision
+    from models.research import ResearchFindings
+    from models.risk import RiskFindings
+
+    directory = tmp_path / "gallery"
+    directory.mkdir()
+
+    def write(name, decision):
+        (directory / f"{name}.json").write_text(
+            json.dumps(
+                {
+                    "profile": clean_user.model_dump(mode="json"),
+                    "decision": decision.model_dump(mode="json"),
+                    "research_findings": ResearchFindings(
+                        articles_retrieved=4
+                    ).model_dump(mode="json"),
+                    "risk_findings": RiskFindings().model_dump(mode="json"),
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    write("empty-run", Decision(no_recommendation_reason="Nothing cleared the bar."))
+
+    # A readable file NEXT TO the gallery, mirroring the real layout where
+    # demo/recorded_run.json sits beside demo/gallery/. Without a sibling to
+    # escape to, a traversal test passes whatever the endpoint does - which is
+    # how the first version of it went green against a naive path join.
+    (tmp_path / "recorded_run.json").write_text('{"profile": "escaped"}', encoding="utf-8")
+
+    monkeypatch.setattr(recordings, "GALLERY_DIR", directory)
+    return directory
+
+
+def test_the_gallery_lists_what_was_asked_as_well_as_what_came_back(gallery):
+    """The profile travels with the answer on purpose. "Narrower researches
+    better" is the most useful thing this system knows about how to ask it, and
+    a gallery of answers alone teaches none of it."""
+    body = visit(lambda c: c.get("/api/gallery"))
+    listed = body.json()["runs"][0]
+
+    assert listed["name"] == "empty-run"
+    assert listed["sectors"] == ["renewable energy"]
+    assert listed["experience"] == "intermediate"
+    assert listed["holding_period"] == "5+ years"
+    assert listed["headline"] == "Nothing is being recommended"
+
+
+def test_a_recording_is_described_exactly_as_a_live_run_is(gallery):
+    """Through render.describe_run, so a recording and a fresh run cannot
+    render differently - the reason the description was split out at all."""
+    body = visit(lambda c: c.get("/api/gallery/empty-run")).json()
+
+    assert body["brief"]["status"] == "ok"
+    assert body["brief"]["decision"]["recommended_nothing"] is True
+    assert body["brief"]["decision"]["no_recommendation_reason"]
+    assert body["brief"]["disclaimer"] == render.DISCLAIMER
+
+
+def test_an_unknown_recording_is_not_found(gallery):
+    assert visit(lambda c: c.get("/api/gallery/nope")).status_code == 404
+
+
+@pytest.mark.parametrize(
+    "name", ["../recorded_run", "../../.env", "..\recorded_run", "/etc/passwd"]
+)
+def test_a_name_cannot_walk_out_of_the_gallery(gallery, name):
+    """`name` arrives in a URL, and "../recorded_run" is a path too.
+
+    Called DIRECTLY rather than over HTTP, and that is the whole point of this
+    test. Driven through the client these names pass whatever the endpoint does,
+    because the client normalises "../" out of the URL before the request is
+    even sent - so the first version of this test went green against a
+    deliberately naive path join and was proving nothing. A guard has to be
+    broken on purpose before it counts as evidence.
+
+    "../recorded_run" is the one that matters: joined to the gallery directory
+    it resolves to demo/recorded_run.json, which exists.
+    """
+    response = asyncio.run(read_recording(name))
+
+    assert response.status_code == 404
+
+
+def test_an_empty_gallery_is_an_empty_list_rather_than_an_error(tmp_path, monkeypatch):
+    """A deployment whose recordings were not checked out must still serve the
+    page. Nothing about the gallery is load-bearing for running the pipeline."""
+    import recordings
+
+    monkeypatch.setattr(recordings, "GALLERY_DIR", tmp_path / "nothing-here")
+    body = visit(lambda c: c.get("/api/gallery"))
+
+    assert body.status_code == 200
+    assert body.json()["runs"] == []
+
+
+def test_showing_a_recording_never_opens_the_checkpoint_database(gallery, monkeypatch):
+    """The same rule --demo has followed since session 12: a recording exists so
+    the system can be seen with NO configuration, and opening the store builds
+    the graph, which imports every agent."""
+    import checkpoints
+
+    def refuse(*args, **kwargs):
+        raise AssertionError("the gallery opened the checkpoint store")
+
+    monkeypatch.setattr(checkpoints, "open_store", refuse)
+
+    assert visit(lambda c: c.get("/api/gallery")).status_code == 200
+    assert visit(lambda c: c.get("/api/gallery/empty-run")).status_code == 200
+
+
+def test_the_real_gallery_is_wired_up():
+    """The fixture above replaces the directory, so nothing else here would
+    notice if the committed recordings stopped being served."""
+    body = visit(lambda c: c.get("/api/gallery")).json()
+
+    assert body["runs"], "no committed recordings are being served"
+    assert any(r["recommended_nothing"] for r in body["runs"])
