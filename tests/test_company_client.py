@@ -449,3 +449,62 @@ def test_the_dangling_comma_goes_with_the_suffix(fake_search_by_query):
     C._search_raw("First Solar, Inc.", True)
 
     assert asked == ["First Solar, Inc.", "First Solar"]
+
+
+# --- Names the provider cut off ----------------------------------------------
+#
+# Found by a live run through the web front end, not by any test: two of four
+# candidates were named 'ASML Holding N.V. - New York Re' and 'ADVANCED
+# MICRO-FABRICATION EQUI', both exactly 31 characters, both cut mid-word - and
+# both returned ZERO bear-case articles while the two intact names returned
+# three and four. Measured, not inferred:
+#
+#     "ASML Holding N.V. - New York Re" lawsuit   ->  0 articles
+#     "ASML" lawsuit                              ->  2 articles
+
+
+@pytest.mark.parametrize(
+    "short, long, expected",
+    [
+        # Every truncated pair observed in the cache, verbatim.
+        ("ASML Holding N.V. - New York Re", "ASML Holding N.V.", "ASML Holding N.V."),
+        (
+            "ADVANCED MICRO-FABRICATION EQUI",
+            "Advanced Micro-Fabrication Equipment Inc. China",
+            "Advanced Micro-Fabrication Equipment Inc. China",
+        ),
+        ("Taiwan Semiconductor Manufactur",
+         "Taiwan Semiconductor Manufacturing Company Limited",
+         "Taiwan Semiconductor Manufacturing Company Limited"),
+        ("RWE AG                        I", "RWE Aktiengesellschaft", "RWE Aktiengesellschaft"),
+        ("Tencent Music Entertainment Gro", "Tencent Music Entertainment Group",
+         "Tencent Music Entertainment Group"),
+    ],
+)
+def test_a_name_cut_at_the_field_width_is_replaced_by_the_full_one(short, long, expected):
+    assert C.company_name(short, long) == expected
+
+
+def test_a_short_name_that_fits_is_kept(monkeypatch):
+    """NOT "always prefer longName". For most companies the short form is the
+    better one to search with, because every extra word is another word the
+    article must also contain."""
+    assert C.company_name("NVIDIA Corporation", "NVIDIA Corporation Inc.") == (
+        "NVIDIA Corporation"
+    )
+    assert C.company_name("Intel Corporation", None) == "Intel Corporation"
+
+
+def test_a_truncated_name_with_no_full_one_keeps_what_it_has():
+    """One cached company is truncated with no longName at all. Inventing a
+    shorter form would be guesswork; the honest record of the cost is the
+    articles_reviewed count Agent 4 already reports."""
+    assert C.company_name("TAIWAN SEMICONDUCTOR MANUFACTUR", None) == (
+        "TAIWAN SEMICONDUCTOR MANUFACTUR"
+    )
+
+
+def test_the_width_matches_what_the_provider_actually_does():
+    """Ten of 102 cached companies sit at exactly 31 characters and none are
+    longer. If that ever changes, this constant is the thing to re-measure."""
+    assert C.PROVIDER_NAME_WIDTH == 31

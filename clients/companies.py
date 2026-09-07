@@ -279,6 +279,52 @@ def _search_one(name: str, use_cache: bool) -> list[dict]:
     return quotes
 
 
+PROVIDER_NAME_WIDTH = 31
+"""Where yfinance cuts ``shortName``.
+
+A fixed-width field, not a coincidence: of 102 companies in the cache, ten are
+exactly 31 characters and NONE are longer. One of them reads
+``"RWE AG                        I"`` - space-padded, then a stray letter.
+
+The cut lands mid-word, and that is what makes it more than cosmetic. Agent 4
+searches for the bear case by wrapping the company name in quotes, so a phrase
+ending mid-word asks the provider for something no article can contain:
+
+    "ASML Holding N.V. - New York Re" lawsuit   ->  0 articles
+    "ASML" lawsuit                             ->  2 articles
+
+Zero articles means zero risks, which means the verdict is ``survives``, which
+a reader is shown as "we argued against this one and it held up" - and
+selection PREFERS that verdict, so the truncation actively promoted a company
+whose critique could never have run. Two of the four candidates in web-4d0d8c07
+were affected.
+
+``longName`` sits right beside it, uncut, for nine of the ten.
+"""
+
+
+def company_name(short: str | None, long: str | None) -> str:
+    """The name to carry forward, preferring one that was not cut off.
+
+    Not simply "always take longName": for most companies the short form is the
+    better one to search with and to show, because every extra word is another
+    word an article must also contain. This swaps only when the short form is
+    sitting exactly on the provider's field width, which is the observable
+    signature of a truncation.
+
+    One cached company (TSMC's Taiwanese listing) is truncated with no longName
+    at all. Nothing here can repair that, and inventing a shorter form would be
+    guesswork - so it keeps the name it has, and the honest record of what that
+    costs is the ``articles_reviewed`` count Agent 4 already reports.
+    """
+    short = (short or "").strip()
+    long = (long or "").strip()
+
+    if len(short) >= PROVIDER_NAME_WIDTH and long:
+        return long
+    return short or long
+
+
 def _search_raw(name: str, use_cache: bool) -> list[dict]:
     """Search hits for a company name, retrying once without its legal form.
 
@@ -317,7 +363,7 @@ def resolve_company(name: str, *, use_cache: bool = True) -> ResolvedCompany | N
             continue
 
         ticker = hit.get("symbol")
-        display = hit.get("shortname") or hit.get("longname") or ""
+        display = company_name(hit.get("shortname"), hit.get("longname"))
         if not ticker:
             continue
 
@@ -404,7 +450,7 @@ def _verified_info(ticker: str, use_cache: bool) -> dict | None:
         return None
 
     # Independent of the metadata, because the metadata proved unreliable.
-    display = info.get("shortName") or info.get("longName") or ""
+    display = company_name(info.get("shortName"), info.get("longName"))
     return None if _looks_like_a_fund(display) else info
 
 
