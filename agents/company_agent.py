@@ -270,9 +270,15 @@ matter how prominently the article named it. Where the article and the industry
 disagree, trust the industry.
 
 If the company's industry sits OUTSIDE the theme's sector, the highest grade
-available is incidental - unless the article shows it producing, supplying or
-building within that sector rather than using it. Size does not change this. A
-very large buyer is still a buyer.
+available is incidental - unless the article shows it producing or supplying
+within that sector FOR OTHERS, rather than making or installing something for
+its own use. Size does not change this. A very large buyer is still a buyer.
+
+THE VERB IN THE ARTICLE DOES NOT DECIDE THIS. "Builds", "installs", "launches",
+"expands" and "invests in" are written about buyers and sellers alike. A
+supermarket that BUILDS charging stations in its own car parks is paying for
+chargers, not selling them. Read who ends up with the money, not which verb the
+journalist chose.
 
 BUYING THE THING IS NOT EXPOSURE TO THE THING
 
@@ -292,8 +298,11 @@ answered with something they could have found without this system.
   Buyer, so incidental:  a data centre operator against a battery storage theme
   Buyer, so incidental:  a carmaker against a lithium mining theme
   Buyer, so incidental:  a retailer against a logistics automation theme
+  Buyer, so incidental:  a supermarket chain against an EV charging theme, even
+      where the article says it BUILDS the charging stations - they are in its
+      own car parks, for its own customers, and it paid for them
   Participant, so grade it: the company MAKING the batteries, mining the
-      lithium, or building the automation
+      lithium, or SELLING the automation to somebody else
 
 FOR EACH ROW
 
