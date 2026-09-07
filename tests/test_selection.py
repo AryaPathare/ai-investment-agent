@@ -175,10 +175,54 @@ def test_a_restriction_is_matched_against_themes_and_rationale_too():
 
 def test_generic_words_in_a_restriction_never_exclude_everything():
     """"No fossil fuel companies" must not match on "companies"."""
-    assert set(restriction_terms(["No fossil fuel companies"])) == {"fossil", "fuel"}
+    assert restriction_terms(["No fossil fuel companies"]) == ["fossil fuel"]
+    assert restriction_terms(["No semiconductor companies"]) == ["semiconductor"]
+
+
+def test_consecutive_words_stay_together_because_that_is_what_was_said():
+    """The live defect this rule exists for.
+
+    Split into single words, "No cryptocurrency or digital asset companies"
+    yielded 'digital', which excluded a regional bank whose rationale read
+    "QNB Indonesia's digital transformation directly aligns with the bank
+    digital transformation theme". A bank digitising is not a digital-asset
+    company. This log had predicted that failure and recorded it as not yet
+    observed; web-6ec0f651 observed it.
+    """
     assert restriction_terms(["No cryptocurrency or digital asset companies"]) == [
-        "cryptocurrency", "digital", "asset"
+        "cryptocurrency",
+        "digital asset",
     ]
+
+
+def test_a_restriction_naming_two_things_is_two_restrictions():
+    """"No coal, oil or gas" is three prohibitions, not one phrase that nothing
+    contains. This is what still catches an oil major whose every sentence is
+    about its solar division - its INDUSTRY says "Oil & Gas Integrated"."""
+    assert restriction_terms(["No coal, oil or gas"]) == ["coal", "oil", "gas"]
+
+
+def test_a_dropped_word_breaks_a_phrase_rather_than_being_skipped():
+    """Otherwise "No investment in tobacco" becomes "investment tobacco", which
+    no company description contains, and the restriction silently stops
+    restricting."""
+    assert restriction_terms(["No investment in tobacco"]) == ["tobacco"]
+
+
+def test_a_word_that_restricts_nothing_alone_still_restricts_in_a_phrase():
+    """The sharpest case in both directions at once. "investment" alone would
+    match almost any sentence about a company; dropped entirely, "No investment
+    banks" would become "no banks" and exclude every bank the investor asked
+    for."""
+    assert restriction_terms(["No investment banks"]) == ["investment banks"]
+    assert restriction_terms(["No asset managers"]) == ["asset managers"]
+    assert restriction_terms(["No investment in anything"]) == []
+
+
+def test_words_that_match_any_sentence_are_not_terms():
+    """"Nothing based in China" contributed "nothing" and "based" on a live run.
+    Either matches almost any sentence a model writes about a company."""
+    assert restriction_terms(["Nothing based in China"]) == ["china"]
 
 
 def test_an_investor_with_no_restrictions_excludes_nothing():

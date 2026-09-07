@@ -54,13 +54,39 @@ _VERDICT_RANK = {"survives": 0, "weakened": 1, "disqualified": 2}
 # Words that carry no exclusionary meaning inside a restriction. An investor
 # writes "No fossil fuel companies", and matching on "companies" would exclude
 # every company ever considered.
+#
+# The last row was added after a live run: "Nothing based in China" contributed
+# the terms "nothing" and "based", either of which matches almost any sentence
+# a model writes about a company. Nothing was wrongly excluded that time, and
+# only because the run produced a single candidate.
 _RESTRICTION_NOISE = {
     "no", "not", "none", "avoid", "exclude", "excluding", "without",
     "company", "companies", "business", "businesses", "stock", "stocks",
     "share", "shares", "firm", "firms", "sector", "sectors", "industry",
     "industries", "any", "all", "the", "and", "for", "with", "that",
     "related", "involved", "anything",
+    "nothing", "based",
 }
+
+# Words that restrict nothing ON THEIR OWN but do restrict in combination.
+# Kept inside a phrase, discarded as a lone term.
+#
+# "digital" is here because a live run excluded a regional bank on it: the
+# restriction said "digital asset", and the model had written "QNB Indonesia's
+# digital transformation". "asset" is here because "asset" alone would catch
+# half of financial services, while "digital asset" and "asset managers" are
+# both real restrictions. "investment" is the sharpest case in both directions -
+# useless alone, and the whole meaning of "No investment banks", which must not
+# become "no banks".
+_GENERIC_ALONE = {
+    "digital", "asset", "assets", "investment", "investments", "investing",
+    "new", "major", "large", "global", "international",
+}
+
+# Where one restriction becomes two. "No coal, oil or gas" is three separate
+# prohibitions, and joining them into one phrase would ask for a string no
+# article or industry label contains.
+_RESTRICTION_CLAUSE = re.compile(r"[,;/]|or|and")
 
 
 @dataclass(frozen=True)
@@ -73,21 +99,63 @@ class Selection:
 
 
 def restriction_terms(restrictions: list[str]) -> list[str]:
-    """The words in a restriction that actually restrict something.
+    """The terms in a restriction that actually restrict something.
 
-    "No fossil fuel companies" yields {fossil, fuel}. Naive on purpose and
-    consistent with how Agent 2 checks its themes: a substring match will
-    occasionally flag a company whose description says it has NO exposure to the
-    thing. That direction of error is the safe one here - a wrongly excluded
-    company is recorded with its reason and can be argued with, whereas a
-    wrongly included one reaches a person as a recommendation.
+    CONSECUTIVE meaningful words stay together, because that is what the
+    investor said. Splitting them changes the question:
+
+        "No cryptocurrency or digital asset companies"
+            was  ['cryptocurrency', 'digital', 'asset']
+            now  ['cryptocurrency', 'digital asset']
+
+    The old form excluded a regional bank on a live run - "digital" matched the
+    sentence "QNB Indonesia's digital transformation directly aligns with the
+    bank digital transformation theme". A bank digitising is not a digital-asset
+    company, and "asset" alone would have caught half of financial services.
+    This log predicted that exact failure and recorded it as not yet observed;
+    it was observed on 2026-09-07, and only visibly because an exclusion carries
+    the term that caused it.
+
+    A word that is dropped BREAKS a phrase rather than being skipped over, so
+    "No investment in tobacco" yields "tobacco" and never the phrase
+    "investment tobacco", which nothing would match.
+
+    Still naive on purpose, and still in the safe direction. A substring match
+    will occasionally flag a company whose description says it has NO exposure
+    to the thing. A wrongly excluded company is recorded with its reason and can
+    be argued with; a wrongly included one reaches a person as a recommendation.
+
+    What this gives up, stated rather than discovered later: a company described
+    as a "digital currency exchange" no longer matches a restriction written as
+    "digital asset". The narrower check answers the question that was asked, and
+    the broader one answered a different question badly.
     """
     terms: list[str] = []
     for restriction in restrictions:
-        for word in re.findall(r"[A-Za-z]+", restriction.lower()):
-            if len(word) > 2 and word not in _RESTRICTION_NOISE:
-                terms.append(word)
+        for clause in _RESTRICTION_CLAUSE.split(restriction.lower()):
+            run: list[str] = []
+            for word in re.findall(r"[A-Za-z]+", clause):
+                if len(word) > 2 and word not in _RESTRICTION_NOISE:
+                    run.append(word)
+                else:
+                    _keep(terms, run)
+                    run = []
+            _keep(terms, run)
     return terms
+
+
+def _keep(terms: list[str], run: list[str]) -> None:
+    """Record a run of consecutive meaningful words as one term.
+
+    A lone generic word is discarded: it would match almost any sentence a model
+    writes, and matching everything is the same as restricting nothing while
+    looking like the opposite.
+    """
+    if not run:
+        return
+    if len(run) == 1 and run[0] in _GENERIC_ALONE:
+        return
+    terms.append(" ".join(run))
 
 
 def _violates_restrictions(
