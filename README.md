@@ -90,12 +90,24 @@ Prints a real recorded run — same renderer, same models, same grounded exit
 conditions, no network call and nothing to sign up for. The fastest way to see
 what the project produces.
 
+Or in a browser, which also needs no key to look around:
+
+```
+python -m uvicorn web.app:app --port 8000
+```
+
+The page asks the same questions the CLI does, streams each stage as it lands
+rather than showing a spinner for three minutes, pauses to ask if two of your
+answers contradict each other, and lists **recorded runs** you can read without
+spending anything. Run it with ONE worker: the queue that stops two runs writing
+to the checkpoint file at once lives in a single process.
+
 ```
 python -m pytest
 ```
 
-**856 passed, 1 skipped** in a few seconds, no network and no credentials. If
-both of these work, your install is good.
+**1008 passed, 1 skipped** in about fifteen seconds, no network and no
+credentials. If those work, your install is good.
 
 ### 3. Add an API key
 
@@ -115,6 +127,7 @@ Then open `.env` and add:
 | `GROQ_API_KEY` | **Required** | 200k tokens/day | [console.groq.com/keys](https://console.groq.com/keys) |
 | `NEWS_API_KEY` | For Agents 2 and 4 | 100 requests/day | [thenewsapi.com](https://www.thenewsapi.com) |
 | `FMP_API_KEY` | For Agent 3 | 250 requests/day | [financialmodelingprep.com](https://site.financialmodelingprep.com) |
+| `WEB_SESSION_SECRET` | For a deployed site | — | `python -c "import secrets; print(secrets.token_hex(32))"` |
 
 Without the news key the pipeline cannot research anything, so it will not get
 far. Without the FMP key it still works — non-US companies fall back to
@@ -190,7 +203,7 @@ profile on a different day finds different companies.
 ## Tests and evals
 
 ```powershell
-python -m pytest                        # 856 passed, 1 skipped; seconds, no network
+python -m pytest                        # 1008 passed, 1 skipped; no network
 ```
 
 The evals make **real API calls** and are how the agents were developed. Start
@@ -245,16 +258,29 @@ list of what still goes wrong.
 ## Layout
 
 ```
-cli.py             The command line front end. The only way a person runs this.
+cli.py             The command line front end.
+web/               The web front end: one page, and the API behind it.
+render.py          What a reader is TOLD. Shared, so the two cannot disagree.
+recordings.py      Loads a recorded run. Used by --demo and by the gallery.
 checkpoints.py     Durable run state, so a stopped run can be resumed.
 config.py          All external configuration. The only place secrets are read.
 workflow.py        The LangGraph graph: nodes, edges, routing.
 models/            Pydantic schemas — the contracts between stages.
 agents/            One module per agent. Prompt + orchestration.
 evals/             Labelled cases and the scoring runners, one per agent.
-demo/              A recorded run, so --demo works with no key.
+demo/              Recorded runs, so --demo and the gallery work with no key.
+scripts/           Health check, log renderer, and the recording writer.
 tests/             Unit tests.
 docs/              Design notes and the project log.
+```
+
+`render.py` is the one worth knowing about. The CLI used to walk the models and
+print in the same breath; a second front end would have been a second set of
+decisions about what a reader is told, and two copies of those drift. Content
+lives there, layout stays in each front end, and the test of the line is whether
+changing it would tell a reader something different or only move the words.
+
+```
 ```
 
 ---

@@ -3760,3 +3760,346 @@ text - "18 months", "until my daughter starts university" - because a fixed menu
 would force every answer into it.
 
 814 passed to **856**, 857 collected.
+
+## Session 18 — 2026-09-07
+
+The project reopened to give it a web front end. It was built in the order the
+risk sat rather than the order it reads, and the four defects it turned up were
+all in the PIPELINE rather than in the web layer - found by running the thing
+under a new condition, which is now the fifth consecutive time that has beaten
+the test suite to something.
+
+### 98. One description of a run, for every front end that shows it
+
+The CLI walked the models and printed in the same breath. That was fine while
+printing was the only thing anyone did with a run, and a second front end makes
+it a second set of decisions about what a reader is TOLD: which of two article
+stores holds the cited piece, what to call `debt_to_equity` in English, whether
+an exclusion's stored detail is fit to show, what "nothing is being recommended"
+says.
+
+`render.py` holds the content and the front end keeps the layout. The test of
+the line: **if changing it would tell a reader something different it is
+content, and if it only moves the words on the page it is layout.**
+
+Two things made this more than a move.
+
+**A `model_dump` loses every computed PROPERTY, and this pipeline has fifteen.**
+`recommended_nothing`, `verdict`, `found_nothing`, `drop_summary`,
+`in_major_units` - exactly the judgments a reader needs. A front end handed a
+raw dump would re-derive "is this a recommendation of nothing?" from a list
+length, putting a rule that lives in the model into a second home that nothing
+tests. This is entry 27 at a new boundary: there an unregistered type crossed
+the checkpointer and came back a dict, failing far away on the first property
+access; here the boundary is JSON and the payload looks complete.
+
+**The question WORDING moved too**, with the option lists and numeric bounds
+read off `UserInput`. Entry 96 is about a question whose wording drifted from
+what the field meant, which switched off the only guard that would have caught
+the confusion. Two front ends asking one field two ways is that failure with a
+second copy of the mistake.
+
+**Verified by control, not by the green suite**, which only proves the
+assertions still hold. Six outputs were captured from the pre-split CLI covering
+every branch of the printing code and diffed against the same six after: 425
+lines, identical. The eight profile questions were driven with piped answers and
+diffed the same way, which caught the one real regression - the currency prompt
+had started lowercasing "USD".
+
+Two defects the work introduced, both found by tests written for it. `_price`
+dropped the check that the reader had actually STATED a currency, so a profile
+without one would have been shown a conversion the old CLI never printed, under
+the single figure a beginner might act on. And the profile summary carried
+`"\n  "` terminal indentation across the boundary, so a browser would have
+inherited 78-column formatting; the boundary test that caught it stays as a
+guard.
+
+### 99. A walking skeleton, and an instrument that lied about it
+
+One endpoint, before any HTML, to answer three questions no amount of reading
+settles.
+
+**Does the graph run inside an async handler?** Yes, in a worker thread.
+Awaiting `graph.stream` on the event loop would block it AND stop the frames
+flushing, so a browser would receive a three-minute run in one burst at the end
+- the failure streaming exists to prevent, and entry 26's argument for `stream`
+over `invoke` one layer out.
+
+**Do the per-node updates make usable events?** Yes. The first measurement said
+otherwise: every event appeared to arrive at once. That was `httpx.ASGITransport`
+buffering the response body, not the app. Against a real server over a socket,
+`started` lands at +0.3s and each stage as it completes. **The instrument was
+the finding, again** - and the tests therefore assert content only, with the
+limitation written into the module docstring, because a timing assertion that
+cannot fail through that transport is decoration.
+
+**Does the SQLite store behave when the caller is not a terminal?** Yes, and
+this was the one predicted to bite. Proved with the REAL `SqliteSaver` and the
+real graph, agents stubbed: a run written from a worker thread reads back
+`finished`, a paused one reads back `paused` and resumable. A fake store would
+have proved nothing about the question and a live run would have cost a day's
+quota to ask it.
+
+Then verified live - `web-4d0d8c07`, 197s, three recommendations. The strongest
+check was free: `python -m cli --resume web-4d0d8c07` prints the whole brief,
+because both front ends read one state through one description.
+
+### 100. The clarification, across three requests
+
+A run that pauses spans a POST, a GET and an answer, so something must say which
+thread an answer belongs to and - the half that is not obvious - **which threads
+this visitor may answer at all.** Without that a thread id is a bearer token,
+and a stranger's words would reach an agent deciding what to research on
+somebody else's behalf, indistinguishable from theirs.
+
+A signed cookie, not a session table. The ids already travel in the stream and
+the CLI prints them, so hiding them buys nothing; being unable to FORGE one is
+the property that matters. Stateless, so a restart strands nobody, and a
+tampered cookie reads as "no session" rather than an error a visitor cannot see
+or clear. Mutation-tested: remove the ownership check and a stranger's answer
+sails through with 200.
+
+The GET is not a convenience. Somebody who reloads has to see what CONFLICTED,
+not a bare "please clarify" - the argument `--resume` already settled.
+
+Verified live for **one Agent 1 call and no news requests**: the real agent
+interrupted at 1.9s, and owner-GET, stranger-GET, stranger-answer and blank
+answer returned 200, 404, 404, 422 against a genuinely paused run. The full
+round trip came later, out of a gallery run.
+
+### 101. A queue, because the position is the point
+
+Two runs at once means two writers on one SQLite file, and `checkpoints.py` was
+written for one person at a terminal. The offline test driving two concurrent
+requests passed, so this is not repairing an observed corruption; it is refusing
+to rely on a property nothing guarantees, on the file that holds work already
+paid for.
+
+Deliberately **not** an `asyncio.Semaphore`. A semaphore grants entry in an
+order nobody can observe, so there is no position to report - and "you are
+second in line" instead of "busy, try later" is the same argument as
+recommending nothing: a stated reason beats a blank screen. First come first
+served including resumes, because a queue whose order cannot be predicted from
+outside is one nobody can be told the truth about.
+
+The old concurrency test asserted the OPPOSITE - that the two runs overlapped -
+and said in its own docstring that if it ever failed, the queue would stop being
+a nicety about quota and become a correctness fix. It failed. Its subject
+changed deliberately rather than quietly.
+
+### 102. Which ceiling binds first, counted rather than assumed
+
+The handoff for this work said not to estimate which limit binds and to count
+entries per run across two live runs. Counted from the provenance block across
+16 full runs on disk:
+
+    news requests per run   7 at the low end, ~13 typical, 24 at the top
+    tokens per run          25-30k
+
+    news    100/day  ->  7.7 runs, and 4 on a candidate-heavy one
+    tokens  200k/day ->  7.4 runs
+
+**Neither binds first.** They land within one run of each other, and which one
+bites depends on how many candidates a run produces, because each candidate
+costs two bear-case searches. So there was no tighter constraint to pick: the
+counter uses the floor of both, counts whole runs rather than mixing one exact
+number with one unmeasurable one, and says "about".
+
+It never refuses anything. Groq does not report the daily budget, and entry 66
+is the probe that could not fail - 79 tokens left, a one-token probe, a success
+carrying no information. The refusal is the gate: it costs nothing and states
+Limit, Used and Requested exactly. A test asserts a run still starts with the
+estimate at zero.
+
+One run per visitor per rolling day, in the cookie, and documented as a speed
+bump rather than a control - a cookie can be cleared, and claiming otherwise is
+the kind of thing that gets walked back later.
+
+**The suite had been writing into the real quota ledger** - twenty-one phantom
+runs. `.state/` had two writers and only one was isolated. There is now a guard
+that walks the source for anything pointing into `.state/` and fails if it is
+still live during tests, plus a second test asserting the guard can SEE both
+writers, so a rename cannot quietly reduce it to a no-op.
+
+### 103. A name the provider cut off, and a critique that could never run
+
+The first live run through the web front end recommended ASML first, saying "we
+argued against this one and it held up". Its bear case had reviewed **zero
+articles**.
+
+yfinance's `shortName` is a fixed-width field. Ten of the 102 companies in the
+cache sit at exactly 31 characters and none are longer; one reads
+`"RWE AG                        I"`, space-padded with a stray letter. Agent 4
+wraps the company name in quotes to search, so a phrase ending mid-word asks for
+something no article can contain. Measured rather than inferred:
+
+    "ASML Holding N.V. - New York Re" lawsuit   ->  0 articles
+    "ASML" lawsuit                              ->  2 articles
+
+Zero articles is zero risks, which is the verdict `survives`, which reads to a
+person as an argument the company withstood - **and selection PREFERS that
+verdict**, so the truncation actively promoted the company whose critique could
+never have run. It is entry 78's shape: the one provably wrong input doing the
+most work to promote a company. Two of four candidates were affected.
+
+No test could have found it: every test names its own companies and none happened
+to exceed thirty characters. It is entry 53 wearing new clothes - a real company
+lost to the word "Ltd." - except the damage there was a company that could not be
+FOUND, and here it is a company that could not be ARGUED AGAINST.
+
+Not "always prefer longName": for most companies the short form is the better one
+to search with, because every extra word is another word the article must also
+contain. The swap happens only at the field width, which is the observable
+signature of the cut. Verified live afterwards - ASML resolved whole and its bear
+case reviewed five articles.
+
+What it does not fix, checked rather than assumed: AMEC's full name is six words
+and returns nothing under either phrasing, so its empty bear case is now an
+honest zero rather than an impossible query. The distinction matters for
+recordings: one is thin news, the other was a broken instrument.
+
+### 104. A restriction matched by its words separately
+
+`restriction_violation` fired on a live run nobody had arranged, and it was
+wrong. Bank QNB Indonesia was excluded against "No cryptocurrency or digital
+asset companies" on the term `digital`, matching the model's own sentence: "QNB
+Indonesia's digital transformation directly aligns with the bank digital
+transformation theme."
+
+**This log predicted it** - *"the exclusion check matches naive substrings; 'No
+crypto exposure' would register as a violation. Not yet observed."* Entry 57
+found the false-NEGATIVE direction, where an oil major passed a fossil-fuel
+restriction. This is the other one, and it took an unarranged live run to
+produce it. Entry 91 had verified the gate by SUBSTITUTING a restriction against
+real candidates, which was sound and never met an input nobody chose.
+
+It was visible only because an exclusion carries the term that caused it.
+Recorded silently, a legitimate company would have vanished from a thin brief
+with nothing to notice.
+
+Consecutive meaningful words stay together now, because that is what the
+investor said. Clauses split on commas, "or" and "and", so "No coal, oil or gas"
+stays three prohibitions rather than one phrase nothing contains - which is what
+still catches an oil major whose every sentence is about its solar division. A
+dropped word BREAKS a phrase rather than being skipped over, or "No investment in
+tobacco" becomes "investment tobacco" and silently stops restricting.
+
+**The first draft of the fix was worse than the bug.** Adding "investment" to the
+noise list turned "No investment banks" into "no banks", excluding every bank the
+investor asked for. Some words restrict nothing ALONE and carry the whole meaning
+in combination, so they are kept inside a phrase and discarded as a lone term.
+
+Given up, stated rather than found later: a "digital currency exchange" no longer
+matches a restriction written as "digital asset". The narrower check answers the
+question that was asked; the broader one answered a different question badly.
+
+### 105. A timeframe that is only a number
+
+"8" could mean eight months or eight years and nothing downstream can tell.
+Agent 2 renders the whole profile into its query prompt and Agent 5 writes the
+horizon into the brief in words, so a bare number is resolved independently,
+silently, and possibly differently by each of them.
+
+The project had already been bitten by this exact answer: `mine.json` carried a
+bare "8" in `investment_window`, and entry 96 deleted that field partly because
+of it. **The field went; the answer shape did not**, and `holding_period` is now
+the only timeframe there is.
+
+Digits with no letters are refused. Everything the field exists for -
+"18 months", "3-5 yrs", "long term", "until my daughter starts university" -
+passes untouched. On the MODEL rather than in the wording, for entry 97's
+reason: the restrictions prompt said "blank if none" and was answered "none"
+twice by two different people, and `--profile` and the HTTP layer both reach the
+model directly.
+
+Recorded rather than fixed: "about 8" is as ambiguous and is accepted, because
+the rule tests for a MISSING unit rather than parsing the answer.
+
+### 106. The verb in the article does not decide who is a buyer
+
+A live run for "Energy" recommended **Walmart**. Agent 3 graded it `direct` on an
+EV charging theme, and the rationale says why: "Walmart builds charging stations,
+core to theme."
+
+Entry 69's ceiling was in force and did not stop it. That rule caps a company
+outside the theme's sector at incidental "unless the article shows it producing,
+supplying or BUILDING within that sector", and its worked example of a
+participant ends "or BUILDING the automation". **The same word sat on both sides
+of the test.** A supermarket building chargers in its own car parks is paying for
+chargers; the money flows out.
+
+This is entry 48's shape in the press-release filter and entry 73's in the query
+prompt: a rule keyed on a word the model can honestly read the other way.
+
+Verified by replay, entry 69's own method, over the frozen research of the run
+being complained about - the exact four articles, at no news cost and with
+retrieval variance removed:
+
+    WMT   direct -> dropped, incidental_mention
+    TSLA  direct -> dropped, incidental_mention
+    PBK   direct -> direct        (a renewable utility that develops storage)
+
+Three candidates become one, exactly as entry 69 predicted and accepted when the
+same fix emptied a renewables brief.
+
+**And the broad word did the other half.** "Energy" produced themes about EV
+charging, flexible solar and Ontario battery storage - nothing about oil services
+or refining, which is the menu's own example for that sector. The run was a
+second renewables run wearing a label. Entry 83's finding, arriving from the
+other direction: narrow researches better, and a gallery organised by broad
+sector name invites the broad end.
+
+### 107. Real runs the repository can carry
+
+Every run this project has made lives in `.state/`, which is machine-local and
+untracked on purpose. So a visitor arriving from a link had seen exactly ONE run
+since session 12, however many were made here - and the recordings are also what
+the site shows when the day's quota is gone.
+
+`recordings.py` loads them, `scripts/record_run.py` writes them, and the writer
+refuses what it cannot honestly record: an unfinished run, a failed one, or any
+state that does not round-trip. Failed and interrupted runs are worth showing and
+are a different shape; dressing one as a brief would be the one kind of
+dishonesty this project has avoided. It verifies BEFORE writing, so a broken
+recording is never left on disk to be found by a visitor instead of by a test.
+
+`--demo` has loaded the shipped recording since session 12 and the gallery was
+about to be the second copy of "which keys become which models", so the CLI reads
+through the same loader now. The same split as entry 98, applied to reading.
+
+**The profile is shown beside each recording**, deliberately: "narrower
+researches better" is the most useful thing this system knows about how to ask
+it, and a gallery of answers alone teaches none of it.
+
+**Five, not eleven**, and the reason is entry 106. That fix changes grading for
+every run made before it, and an audit found `direct` grades on companies outside
+their theme's sector in several - Amazon in a healthcare brief, a farm-products
+company in a technology one. Recording those would ship behaviour the code no
+longer has, which is entry 95's "a picture of a system that never existed" with a
+new mechanism.
+
+### 108. Three guards that could not fail, in one day
+
+Worth collecting, because the same mistake arrived three times in different
+clothes and the log's own rule caught each one.
+
+**A concurrency test with nothing to be concurrent.** Two stubbed runs finish in
+under a millisecond, so they would almost never overlap and the test passed
+without testing anything. It holds a node open for 0.4s now and asserts the spans
+OVERLAP.
+
+**A traversal test the client defeated.** `/api/gallery/../recorded_run` is
+normalised out of the URL before the request is sent, so the case went green
+against a deliberately naive path join. It calls the endpoint directly now - and
+needed a second fix, because the temporary gallery had no sibling file to escape
+TO, mirroring `demo/recorded_run.json` sitting beside `demo/gallery/`.
+
+**A quota probe that had already been learned once.** Not repeated this time:
+entry 66's rule was followed, runs were attempted rather than probed for, and the
+refusal was left as the gate.
+
+The first two were written by the same person who wrote the code they guard, in
+the same hour, which is entry 48's condition exactly. **A test that cannot fail
+is not evidence, and the only way to find out is to break the thing on purpose.**
+
+856 passed to **1008**, 1009 collected.
