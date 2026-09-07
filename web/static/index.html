@@ -1,0 +1,469 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Investment research agent</title>
+
+<!--
+  One page, no build step, no framework.
+
+  Everything it displays comes from the server: the questions and their allowed
+  answers from /api/form, the per-stage counts and the finished brief from the
+  run's own event stream. Nothing about what a reader is TOLD is written here,
+  because a second copy of that would drift from the one the CLI prints - which
+  is the defect category this project has recorded most often.
+
+  The stream is read with fetch and a ReadableStream rather than EventSource,
+  because EventSource can only issue GET requests and starting a run is a POST
+  carrying the profile.
+-->
+
+<style>
+  :root {
+    --ink: #1a1a1a; --muted: #5f5f5f; --line: #d8d4cc;
+    --paper: #faf8f5; --panel: #fff; --accent: #1f4d3d; --warn: #7a3b1f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1.25rem 4rem; background: var(--paper); color: var(--ink);
+    font: 16px/1.55 ui-serif, Georgia, "Times New Roman", serif;
+  }
+  main { max-width: 46rem; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin: 0 0 .3rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.05rem; margin: 2rem 0 .6rem; letter-spacing: .02em; text-transform: uppercase; }
+  h3 { font-size: 1.1rem; margin: 1.6rem 0 .2rem; }
+  p { margin: .5rem 0; }
+  .sub { color: var(--muted); margin-bottom: 1.5rem; }
+  .panel { background: var(--panel); border: 1px solid var(--line); padding: 1.1rem 1.25rem; margin: 1rem 0; }
+  label { display: block; font-weight: 600; margin: 1rem 0 .25rem; font-size: .95rem; }
+  .help { color: var(--muted); font-size: .85rem; margin: .1rem 0 .35rem; }
+  input[type=text], input[type=number], select {
+    width: 100%; padding: .5rem .6rem; border: 1px solid var(--line);
+    background: #fff; font: inherit; font-size: .95rem;
+  }
+  button {
+    font: inherit; font-weight: 600; padding: .6rem 1.1rem; cursor: pointer;
+    background: var(--accent); color: #fff; border: 0;
+  }
+  button[disabled] { background: #9aa5a0; cursor: not-allowed; }
+  .sectors { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .3rem; }
+  .sectors label { font-weight: 400; margin: 0; display: flex; gap: .45rem; align-items: baseline; font-size: .9rem; }
+  .sectors .eg { color: var(--muted); font-size: .8rem; }
+  ol.stages { list-style: none; padding: 0; margin: .5rem 0; }
+  ol.stages li { padding: .45rem 0; border-bottom: 1px dotted var(--line); }
+  ol.stages .name { font-weight: 600; }
+  ol.stages .counts { color: var(--muted); font-size: .87rem; display: block; }
+  ol.stages li.pending { opacity: .45; }
+  .cond { margin: .6rem 0; }
+  .cond .check { color: var(--muted); font-size: .87rem; margin-left: 1rem; }
+  .cond .check a { color: var(--muted); }
+  .nothing { border-left: 4px solid var(--warn); }
+  .failed { border-left: 4px solid var(--warn); }
+  .disclaimer { border-top: 2px solid var(--ink); margin-top: 2.5rem; padding-top: .7rem; font-weight: 600; }
+  .quota { color: var(--muted); font-size: .85rem; }
+  code { font: .85em ui-monospace, Menlo, Consolas, monospace; }
+  [hidden] { display: none !important; }
+</style>
+
+<main>
+  <h1>Investment research agent</h1>
+  <p class="sub">
+    Five agents read current news for the parts of the market you name, find
+    listed companies genuinely exposed to what they find, argue against each
+    one, and write up to three of them in plain language &mdash; or recommend
+    nothing, and say why.
+  </p>
+
+  <p class="disclaimer" id="disclaimer"></p>
+
+  <section id="intro" class="panel">
+    <p class="quota" id="quota">Checking what is left today&hellip;</p>
+    <form id="profile"></form>
+    <p style="margin-top:1.4rem">
+      <button id="start" type="submit" form="profile">Run the research</button>
+    </p>
+    <p class="help">A run takes two to four minutes. You can close the tab &mdash;
+      the run is saved and can be picked up again.</p>
+  </section>
+
+  <section id="progress" hidden>
+    <h2>Running</h2>
+    <p class="quota" id="runid"></p>
+    <p id="queued" hidden></p>
+    <ol class="stages" id="stages"></ol>
+  </section>
+
+  <section id="clarify" class="panel" hidden>
+    <h2>One thing first</h2>
+    <p id="clarify-intro"></p>
+    <p><strong id="clarify-reason"></strong></p>
+    <p id="clarify-prompt"></p>
+    <form id="answer-form">
+      <input type="text" id="answer" autocomplete="off">
+      <p class="help" id="answer-help"></p>
+      <p><button type="submit">Send</button></p>
+    </form>
+  </section>
+
+  <section id="result" hidden></section>
+</main>
+
+<script>
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, text, cls) => {
+  const node = document.createElement(tag);
+  if (text !== undefined && text !== null) node.textContent = text;
+  if (cls) node.className = cls;
+  return node;
+};
+
+let FIELDS = [];
+let THREAD = null;
+
+// --- The form, built from the server's field definitions ---------------------
+
+async function loadForm() {
+  const body = await (await fetch("/api/form")).json();
+  FIELDS = body.fields;
+  $("disclaimer").textContent = body.disclaimer;
+
+  const form = $("profile");
+  for (const field of FIELDS) {
+    const label = el("label", field.label);
+    label.htmlFor = field.name;
+    form.append(label);
+    if (field.help) form.append(el("p", field.help, "help"));
+
+    if (field.kind === "choice") {
+      const select = el("select");
+      select.id = field.name;
+      for (const option of field.options) select.append(new Option(option, option));
+      form.append(select);
+    } else if (field.kind === "number") {
+      const input = el("input");
+      input.type = "number";
+      input.id = field.name;
+      // Bounds come from the model, never retyped here.
+      if (field.min !== null) input.min = field.min;
+      if (field.max !== null) input.max = field.max;
+      if (field.name === "investment_amount") input.step = "any";
+      form.append(input);
+    } else if (field.kind === "sectors") {
+      const grid = el("div", null, "sectors");
+      for (const option of field.options) {
+        const box = el("label");
+        const input = el("input");
+        input.type = "checkbox";
+        input.value = option.name;
+        input.dataset.sector = "1";
+        box.append(input, el("span", option.name), el("span", "e.g. " + option.example, "eg"));
+        grid.append(box);
+      }
+      form.append(grid);
+      const own = el("input");
+      own.type = "text";
+      own.id = "sectors_own";
+      own.placeholder = "or type your own, comma separated — e.g. grid storage";
+      form.append(own);
+    } else if (field.kind === "list") {
+      const input = el("input");
+      input.type = "text";
+      input.id = field.name;
+      form.append(input);
+    } else {
+      const input = el("input");
+      input.type = "text";
+      input.id = field.name;
+      form.append(input);
+    }
+  }
+}
+
+function readProfile() {
+  const profile = {};
+  for (const field of FIELDS) {
+    if (field.kind === "sectors") {
+      const picked = [...document.querySelectorAll("[data-sector]:checked")].map((b) => b.value);
+      // Typed text is kept EXACTLY as written and never corrected towards a menu
+      // entry: somebody who types "grid storage" has given something better than
+      // anything on the list.
+      const typed = ($("sectors_own").value || "").split(",").map((s) => s.trim()).filter(Boolean);
+      profile[field.name] = picked.concat(typed);
+    } else if (field.kind === "list") {
+      profile[field.name] = ($(field.name).value || "").split(",").map((s) => s.trim()).filter(Boolean);
+    } else if (field.kind === "number") {
+      profile[field.name] = Number($(field.name).value);
+    } else {
+      profile[field.name] = $(field.name).value;
+    }
+  }
+  return profile;
+}
+
+// --- Reading the stream ------------------------------------------------------
+
+async function stream(url, body, onEvent) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    onEvent("refused", await response.json());
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let name = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let cut;
+    while ((cut = buffer.indexOf("\n")) >= 0) {
+      const line = buffer.slice(0, cut).replace(/\r$/, "");
+      buffer = buffer.slice(cut + 1);
+      if (line.startsWith("event:")) name = line.slice(6).trim();
+      else if (line.startsWith("data:") && name) {
+        onEvent(name, JSON.parse(line.slice(5).trim()));
+        name = null;
+      }
+    }
+  }
+}
+
+// --- Progress ----------------------------------------------------------------
+
+const STAGE_COUNT = 5;
+
+function resetStages() {
+  const list = $("stages");
+  list.replaceChildren();
+  for (let n = 1; n <= STAGE_COUNT; n++) {
+    const item = el("li", null, "pending");
+    item.id = "stage-" + n;
+    item.append(el("span", n + ". waiting", "name"));
+    list.append(item);
+  }
+}
+
+// The counts, said in words. These are the same numbers the evaluations score:
+// a run that examines eleven companies and produces no candidates looks
+// identical to a broken one until the drop reasons are on screen.
+function describeCounts(node, detail) {
+  if (node === "profile_agent") return detail.needs_clarification ? "your answers appear to conflict" : "profile valid";
+  if (node === "research") {
+    const themes = (detail.themes || []).map((t) => t.name + " (" + t.confidence + ")").join(", ");
+    return detail.themes.length + " theme(s), " + detail.articles_cited +
+      " cited article(s) from " + detail.articles_retrieved + " retrieved" +
+      (themes ? " — " + themes : "");
+  }
+  if (node === "companies") {
+    const dropped = Object.entries(detail.drop_summary || {}).map(([why, n]) => n + " " + why).join(", ");
+    return detail.candidates.length + " candidate(s) from " + detail.companies_examined +
+      " examined" + (detail.candidates.length ? ": " + detail.candidates.join(", ") : "") +
+      (dropped ? " — dropped: " + dropped : "");
+  }
+  if (node === "risk_critic") {
+    return (detail.critiques || []).map((c) => {
+      if (!c.was_critiqued) return c.ticker + ": not critiqued — " + c.skipped_reason;
+      let line = c.ticker + ": " + c.verdict + " (" + c.risks + " risk(s) from " + c.articles_reviewed + " article(s))";
+      if (c.press_releases_withheld) line += ", " + c.press_releases_withheld + " press release(s) withheld";
+      // A filter that removes evidence without saying so is its own kind of
+      // unreliable narrator, so what was held back travels with what was kept.
+      if (c.sources_withheld.length) line += ", " + c.sources_withheld_count + " withheld from " + c.sources_withheld.join(", ");
+      return line;
+    }).join(" · ");
+  }
+  if (node === "decide") return detail.recommendations.length + " recommendation(s)";
+  return "";
+}
+
+function showStage(data) {
+  if (!data.stage) return;
+  const item = $("stage-" + data.stage);
+  if (!item) return;
+  item.className = "";
+  item.replaceChildren(el("span", data.stage + ". " + data.label, "name"));
+  const counts = describeCounts(data.node, data.detail || {});
+  if (counts) item.append(el("span", counts, "counts"));
+}
+
+// --- The brief ---------------------------------------------------------------
+
+function groundsLine(ground) {
+  if (ground.kind === "article") {
+    const wrap = el("div", null, "check");
+    wrap.append(document.createTextNode("Check: “" + ground.title + "” — " + ground.source + ", " + ground.published_on + " "));
+    const link = el("a", "open");
+    link.href = ground.url;
+    link.rel = "noopener noreferrer";
+    link.target = "_blank";
+    wrap.append(link);
+    return wrap;
+  }
+  return el("div", "Check: " + ground.text, "check");
+}
+
+function showBrief(brief) {
+  const out = $("result");
+  out.replaceChildren();
+  out.hidden = false;
+
+  if (brief.status === "failed") {
+    const panel = el("section", null, "panel failed");
+    panel.append(el("h2", "The run could not finish"));
+    panel.append(el("p", brief.error));
+    panel.append(el("p", brief.error_hint, "help"));
+    out.append(panel);
+    return;
+  }
+  if (brief.status !== "ok") {
+    const panel = el("section", null, "panel failed");
+    panel.append(el("h2", "The run ended without a decision"));
+    out.append(panel);
+    return;
+  }
+
+  const decision = brief.decision;
+
+  if (decision.recommended_nothing) {
+    // The loudest thing on the page, deliberately. Everywhere else an empty
+    // result is a legitimate outcome; this is the one place a person sees it,
+    // and a blank screen reads as a crash.
+    const panel = el("section", null, "panel nothing");
+    panel.append(el("h2", decision.nothing_headline));
+    panel.append(el("p", decision.nothing_explanation));
+    panel.append(el("h3", "Why"));
+    panel.append(el("p", decision.no_recommendation_reason));
+    out.append(panel);
+  } else {
+    out.append(el("h2", decision.headline));
+    for (const rec of decision.recommendations) {
+      const panel = el("section", null, "panel");
+      panel.append(el("h3", rec.index + ". " + rec.name + " (" + rec.ticker + ")"));
+      if (rec.themes.length) panel.append(el("p", "Came up because of: " + rec.themes.join(", "), "help"));
+      if (rec.verdict_text) panel.append(el("p", rec.verdict_text, "help"));
+
+      panel.append(el("h3", "Why it might be worth a look"));
+      panel.append(el("p", rec.thesis));
+
+      panel.append(el("h3", "What would mean the idea has stopped working"));
+      for (const condition of rec.exit_conditions) {
+        const block = el("div", null, "cond");
+        block.append(el("div", "• " + condition.condition));
+        for (const ground of condition.grounds) block.append(groundsLine(ground));
+        panel.append(block);
+      }
+
+      if (rec.known_risks.length) {
+        panel.append(el("h3", "Worth knowing"));
+        for (const risk of rec.known_risks) panel.append(el("div", "• " + risk));
+      }
+
+      if (rec.price) {
+        let line = rec.price.currency + " " + rec.price.amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) + " per share";
+        if (rec.price.in_investor_currency !== null) {
+          line += " (about " + rec.price.investor_currency + " " +
+            rec.price.in_investor_currency.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ")";
+        }
+        line += " — as of " + rec.price.as_of_on;
+        panel.append(el("p", line, "help"));
+        if (rec.affordable) panel.append(el("p", rec.affordable));
+      }
+      out.append(panel);
+    }
+  }
+
+  if (decision.excluded.length) {
+    out.append(el("h2", "Also considered, but not recommended"));
+    const panel = el("section", null, "panel");
+    for (const item of decision.excluded) {
+      panel.append(el("div", item.name + " (" + item.ticker + ")"));
+      panel.append(el("div", item.reason_text, "help"));
+      if (item.detail) panel.append(el("div", item.detail, "help"));
+    }
+    out.append(panel);
+  }
+
+  if (!decision.recommended_nothing) {
+    out.append(el("h2", "What to do next"));
+    out.append(el("p", "Look at this again on " + decision.next_review_on +
+      ", about three months from now — roughly one set of results. What to check is listed under each company above."));
+  }
+
+  for (const note of decision.footnotes) out.append(el("p", note, "help"));
+  out.append(el("p", brief.disclaimer, "disclaimer"));
+}
+
+// --- Driving a run -----------------------------------------------------------
+
+function handle(name, data) {
+  if (name === "started") {
+    THREAD = data.thread_id;
+    $("runid").textContent = "Run " + THREAD + " — saved as it goes, so closing this tab loses nothing.";
+  } else if (name === "queued") {
+    $("queued").hidden = false;
+    $("queued").textContent = data.position === 1
+      ? "Someone else is running right now. You are next in line."
+      : "You are number " + (data.position + 1) + " in line.";
+  } else if (name === "stage") {
+    $("queued").hidden = true;
+    showStage(data);
+  } else if (name === "interrupt") {
+    $("clarify").hidden = false;
+    $("clarify-intro").textContent = data.intro;
+    $("clarify-reason").textContent = data.reason;
+    $("clarify-prompt").textContent = data.prompt + "  (attempt " + data.attempt + " of " + data.max_attempts + ")";
+    $("answer-help").textContent = data.blank_answer_hint;
+    $("answer").focus();
+  } else if (name === "failed") {
+    showBrief({ status: "failed", error: data.message, error_hint: "" });
+  } else if (name === "done") {
+    showBrief(data.brief);
+  } else if (name === "refused") {
+    // A stated reason, never a blank screen. Same rule as recommending nothing.
+    const out = $("result");
+    out.hidden = false;
+    const panel = el("section", null, "panel nothing");
+    panel.append(el("h2", data.error || "That could not be started"));
+    if (data.reason) panel.append(el("p", data.reason));
+    if (data.hint) panel.append(el("p", data.hint));
+    if (data.quota) panel.append(el("p", data.quota.note, "help"));
+    out.replaceChildren(panel);
+    $("start").disabled = false;
+  }
+}
+
+$("profile").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  $("start").disabled = true;
+  $("intro").hidden = true;
+  $("progress").hidden = false;
+  resetStages();
+  await stream("/api/runs", readProfile(), handle);
+});
+
+$("answer-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const answer = $("answer").value.trim();
+  if (!answer) return;                       // refused server-side too
+  $("clarify").hidden = true;
+  await stream("/api/runs/" + THREAD + "/answer", { answer }, handle);
+});
+
+async function loadQuota() {
+  const q = await (await fetch("/api/quota")).json();
+  $("quota").textContent = q.you_may_start
+    ? q.note
+    : "You have already had a run today. " + q.note;
+  $("start").disabled = !q.you_may_start;
+}
+
+loadForm().then(loadQuota);
+</script>

@@ -18,6 +18,19 @@ python-dotenv==1.2.3       # Reads .env into environment variables
 requests==2.34.2           # HTTP client for TheNewsAPI (Agent 2)
 yfinance==1.6.0            # Global exchange fundamentals fallback (Agent 3)
 
+# --- Web front end ----------------------------------------------------------
+# The HTTP layer. The CLI, the demo and every agent run without these; they are
+# here rather than in a separate requirements-web.txt so that `pip install -r
+# requirements.txt` followed by `python -m pytest` reports ONE test count on
+# every machine. A split file would make the count depend on which file you
+# installed, and this project quotes that number in four documents - the exact
+# hazard that produced four copies of a stale figure once already.
+
+fastapi==0.141.1           # ASGI framework: routing, request validation
+uvicorn==0.52.4            # ASGI server that actually runs it
+sse-starlette==3.4.11      # Server-sent events, so a 2-4 minute run can report
+                           # each stage as it lands rather than going silent
+
 # --- Development only -------------------------------------------------------
 # Not needed to run the app, only to test it. Kept here for simplicity; larger
 # projects split these into a separate requirements-dev.txt.

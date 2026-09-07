@@ -122,6 +122,24 @@ def isolated_cache(tmp_path, monkeypatch):
     monkeypatch.setattr(news, "CACHE_DIR", tmp_path / "news-cache")
 
 
+@pytest.fixture(autouse=True)
+def isolated_quota(tmp_path, monkeypatch):
+    """Point the quota ledger at a throwaway file.
+
+    Same reasoning as ``isolated_cache`` and ``isolated_checkpoints``, and found
+    the same way: the suite quietly wrote twenty-one runs into the developer's
+    real ledger, which is the file that decides how many runs the site believes
+    it has left today.
+
+    ``.state/`` now has two writers. ``test_test_isolation`` checks that every
+    one of them is redirected here, so the third does not have to be found by
+    noticing a wrong number.
+    """
+    from web import quota
+
+    monkeypatch.setattr(quota, "LEDGER", tmp_path / "runs_served.json")
+
+
 @pytest.fixture
 def research_profile(clean_user) -> InvestorProfile:
     """A validated profile suitable for Agent 2."""

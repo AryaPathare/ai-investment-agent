@@ -71,3 +71,68 @@ def test_the_suite_does_not_depend_on_a_dotenv_file():
     assert not (PROJECT_ROOT / ".env").is_dir()
     # The fixture must win over the file, whether or not the file exists.
     assert config.get_settings().groq_api_key.get_secret_value() == "test-key-never-used"
+
+
+# --- Anything that writes into .state/ ---------------------------------------
+#
+# Found twice now. `checkpoints.DB_PATH` was redirected when the checkpoint
+# database was built, because the risk was obvious: it holds runs a person has
+# not finished. `web/quota.py` then added a second file there and nothing
+# redirected it, so the suite wrote twenty-one runs into the ledger that decides
+# how many runs the site believes it has left - and it was noticed by reading
+# the file, not by anything failing.
+#
+# A third writer should not have to be found that way.
+
+
+def _state_paths() -> dict[str, str]:
+    """Every module-level constant pointing into .state/, as module -> name."""
+    found = {}
+    for source in PROJECT_ROOT.rglob("*.py"):
+        if any(part in {".venv", "tests", "__pycache__"} for part in source.parts):
+            continue
+        for name in re.findall(
+            r'^([A-Z_]+)\s*=\s*PROJECT_ROOT\s*/\s*"\.state"', 
+            source.read_text(encoding="utf-8"),
+            re.MULTILINE,
+        ):
+            module = str(source.relative_to(PROJECT_ROOT).with_suffix("")).replace(
+                "\\", "."
+            ).replace("/", ".")
+            found[f"{module}.{name}"] = name
+    return found
+
+
+def test_every_state_file_is_redirected_during_tests():
+    """THE regression guard, and the reason this section exists.
+
+    A path still pointing inside the real .state/ while the suite runs means
+    some test is writing to a file a real run depends on. The failure is silent
+    both ways: the test passes, and the damage shows up later as a wrong number
+    or a lost run.
+    """
+    import importlib
+
+    live = []
+    for dotted in _state_paths():
+        module_name, _, attribute = dotted.rpartition(".")
+        value = getattr(importlib.import_module(module_name), attribute)
+        if PROJECT_ROOT in value.parents:
+            live.append(dotted)
+
+    assert not live, (
+        f"{live} still point inside the real .state/ during tests. Add an "
+        f"autouse fixture in conftest.py redirecting each at tmp_path."
+    )
+
+
+def test_the_guard_above_is_actually_looking_at_something():
+    """A guard that found nothing to check would pass forever and prove nothing.
+
+    Both known writers must be visible to it, so a rename that hides one from
+    the regex fails here rather than quietly reducing the guard to a no-op.
+    """
+    found = set(_state_paths())
+
+    assert "checkpoints.DB_PATH" in found
+    assert "web.quota.LEDGER" in found

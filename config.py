@@ -258,6 +258,19 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- Web front end ------------------------------------------------------
+
+    web_session_secret: SecretStr | None = Field(
+        default=None,
+        description=(
+            "Signs the cookie that says which runs a visitor started. Set "
+            "WEB_SESSION_SECRET in .env for any deployment. Left unset, the "
+            "server generates one per process, which means a restart stops "
+            "visitors resuming a paused run - the runs themselves survive in "
+            "the checkpoint database either way."
+        ),
+    )
+
     # --- Observability ------------------------------------------------------
     # These are read directly from os.environ by the LangSmith library, not by
     # this class. They are declared here only so the app can REPORT whether
