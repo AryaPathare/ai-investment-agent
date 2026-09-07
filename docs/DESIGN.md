@@ -19,6 +19,25 @@ clarification may revise. Python assembles the final `InvestorProfile` by
 copying everything else from the user's own validated input. The model has no
 channel through which to alter an age or an amount.
 
+**One description of a run, and two front ends that lay it out.** `render.py`
+holds what a reader is TOLD — which of two article stores holds a cited piece,
+what to call `debt_to_equity` in English, whether an exclusion's stored detail is
+worth showing, what "nothing is being recommended" says. The CLI and the web
+layer decide only where those words sit. The test of the line: if changing it
+would tell a reader something *different* it is content; if it only moves the
+words on the page it is layout. It exists because two copies of those decisions
+drift, and this project has recorded that failure often enough to treat it as a
+certainty — a rendered log stale within four minutes of being committed, a
+handoff believed four sessions after it stopped being true, a front page
+describing a system that no longer existed.
+
+**Everything computed is stated explicitly at the boundary.** A Pydantic dump
+silently loses every computed property, and this pipeline keeps fifteen —
+`recommended_nothing`, `verdict`, `found_nothing`, `drop_summary`. Those are
+exactly the judgments a reader needs, so anything handed a raw dump would
+re-derive "is this a recommendation of nothing?" from a list length, putting a
+rule that lives in the model into a second home that nothing tests.
+
 **LLM output is untrusted input.** It steers control flow, so it is validated as
 strictly as anything arriving from outside. `ProfileAssessment` rejects
 incoherent combinations, such as "needs clarification" with no reason given.
@@ -114,12 +133,34 @@ that would close it and why it was not built; where something was fixed,
   numbers. With a five-theme cap and most runs producing three to five, **that
   cap is the ceiling** on how many companies can ever be examined, and lifting
   it is a design decision rather than an edit.
+- **Broad sector names research badly, and the site now shows it.** Asked for
+  "Energy", the pipeline produced themes about EV charging, flexible solar and
+  battery storage — nothing about oil services or refining, which is the menu's
+  own example for that sector. The question's own help already says narrower
+  researches better ("semiconductors" produced this project's best brief;
+  "renewable energy" produced an empty one), and a gallery organised by broad
+  sector name pulls in the opposite direction. Accepted for now, because a
+  visitor needs to see which sector a recorded run belongs to.
 - **A failed run cannot be resumed.** The graph records the error in state and
   finishes cleanly, by design, so a traceback never reaches a reader. `--list`
   and `--resume` now read it as `failed` rather than finished (entry 88), but
-  the four stages already paid for still cannot be picked up from the CLI.
-  Recoverable by replaying `decide()` over the checkpoint by hand. Ending
-  cleanly and being recoverable turn out to be different properties.
+  the four stages already paid for still cannot be picked up — from the CLI or
+  the web. Recoverable by replaying `decide()` over the checkpoint by hand.
+  Ending cleanly and being recoverable turn out to be different properties.
+- **The web layer serialises runs in one process, and that is a deployment
+  constraint rather than a fixed problem.** Two runs at once would mean two
+  writers on one SQLite checkpoint file, so a queue allows one at a time and
+  tells everybody else their position. It lives in a single process: two workers
+  means two queues, and the argument for having one comes straight back. Run one
+  worker.
+- **The runs-left figure is an estimate and says so.** Groq does not report the
+  daily budget, and a probe small enough to succeed carries no information — 79
+  tokens once remained, and a one-token probe could not have failed. So the
+  counter counts whole runs served in a rolling day, and the provider's refusal
+  is the real gate: it costs nothing and states Limit, Used and Requested
+  exactly. Nothing refuses a visitor on the strength of the estimate. Counted
+  across 16 full runs, news (100/day at ~13 a run) and tokens (200k at 25–30k a
+  run) land within one run of each other, so neither is *the* constraint.
 - **No forecast, and that is deliberate.** Nothing here predicts a price, names
   a sell date or says how much to invest. There is no valuation model, no price
   target and no expected-return estimate, so any of those would be the only
