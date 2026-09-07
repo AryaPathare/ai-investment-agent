@@ -285,6 +285,28 @@ changing it would tell a reader something different or only move the words.
 
 ---
 
+## Deploying it
+
+`render.yaml` is a working blueprint; `Procfile` covers hosts that read one
+instead. Two things are not preferences:
+
+**One worker.** The queue that stops two runs writing to the same SQLite
+checkpoint file lives in a single process. Two workers means two queues, and the
+runs-left counter and the queue position would each be counting half the traffic.
+
+**`WEB_SESSION_SECRET` must persist across deploys.** It signs the cookie saying
+which runs a visitor may answer; a value that changed on every deploy would stop
+anyone resuming a run they had paused.
+
+And one thing to know before it is reported as a bug: on an ephemeral
+filesystem, `.state/checkpoints.sqlite` goes with the container, so a paused run
+cannot be resumed after a redeploy and the runs-served ledger resets. Nothing a
+reader was given is lost — the gallery's recordings are committed files — but a
+persistent disk mounted at `.state/` is the first thing to add if it ever gets
+real traffic.
+
+---
+
 ## Known limitations
 
 The short version — [`docs/DESIGN.md`](docs/DESIGN.md) has all of them with

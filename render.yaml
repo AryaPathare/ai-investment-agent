@@ -1,0 +1,48 @@
+# Deploying the web front end on Render.
+#
+#   https://render.com/docs/blueprint-spec
+#
+# ONE WORKER, and it is not a performance choice. The queue that stops two runs
+# writing to the same SQLite checkpoint file lives in a single process, so two
+# workers means two queues and the reason for having one comes straight back.
+# It also means the runs-left counter and the "you are second in line" position
+# would each be counting half the traffic.
+#
+# WHAT DOES NOT SURVIVE A DEPLOY, and it is worth knowing before somebody
+# reports it as a bug. Render's filesystem is ephemeral: .state/checkpoints.sqlite
+# goes with the container, so a visitor who had paused at a clarification cannot
+# resume it after a redeploy, and the runs-served ledger resets - which hands
+# out a fresh day's allowance early. Neither loses anything a reader was given:
+# the recordings the gallery shows are committed files, and a completed brief has
+# already been delivered. Attaching a persistent disk mounted at /opt/render/
+# project/src/.state fixes both, and is the first thing to add if this ever gets
+# real traffic.
+
+services:
+  - type: web
+    name: ai-investment-agent
+    runtime: python
+    plan: free
+    # Pinned, because every dependency is pinned exactly and CI has only ever
+    # run this version.
+    pythonVersion: "3.14"
+    buildCommand: pip install -r requirements.txt
+    # --workers is stated even though 1 is the default, so that raising it is a
+    # deliberate act by somebody who has read the comment above.
+    startCommand: python -m uvicorn web.app:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/health
+    envVars:
+      # Signs the cookie saying which runs a visitor may answer. generateValue
+      # makes Render mint one and keep it across deploys; a value that changed
+      # on every deploy would stop visitors resuming a paused run.
+      - key: WEB_SESSION_SECRET
+        generateValue: true
+      # The three provider keys stay server-side and never reach the browser.
+      # sync: false means Render asks for them once rather than storing them in
+      # this file, which is committed.
+      - key: GROQ_API_KEY
+        sync: false
+      - key: NEWS_API_KEY
+        sync: false
+      - key: FMP_API_KEY
+        sync: false
