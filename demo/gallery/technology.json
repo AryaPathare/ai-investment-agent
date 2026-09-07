@@ -1,0 +1,444 @@
+{
+  "profile": {
+    "age": 22,
+    "investment_experience": "beginner",
+    "risk_tolerance": "moderate",
+    "investment_amount": 500.0,
+    "investment_currency": "GBP",
+    "holding_period": "10+ years",
+    "sectors_of_interest": [
+      "semiconductors",
+      "chip manufacturing equipment"
+    ],
+    "restrictions": []
+  },
+  "decision": {
+    "recommendations": [
+      {
+        "ticker": "ASML",
+        "name": "ASML Holding N.V.",
+        "thesis": "ASML builds lithography machines that let chip makers make smaller, faster chips. Japan's planned 40% workforce expansion will increase demand for those machines. ASML's high operating margin and low debt give it room to grow.",
+        "exit_conditions": [
+          {
+            "condition": "ASML fails to expand its Japan workforce to 700 employees by 2030.",
+            "article_ids": [
+              "fcaa749c-7067-4b4e-a40b-922a2641d076"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "revenue_growth turns negative",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          }
+        ],
+        "screen_score": 0.7248,
+        "price": {
+          "amount": 1714.88,
+          "currency": "USD",
+          "as_of": "2026-09-07T16:53:34.785615Z"
+        },
+        "shares_affordable": 0,
+        "price_in_investor_currency": 1265.8730551249155,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "ASML Japan workforce growth"
+        ],
+        "evidence_article_ids": [
+          "fcaa749c-7067-4b4e-a40b-922a2641d076"
+        ],
+        "known_risks": []
+      },
+      {
+        "ticker": "688825.SS",
+        "name": "CXMT CORPORATION",
+        "thesis": "CXMT makes DRAM memory chips used in computers and smartphones. Its large scale and advanced manufacturing give it a competitive edge in the global memory market. Despite export\u2011control risks, its strong revenue growth and low debt make it a resilient long\u2011term play for moderate\u2011risk investors.",
+        "exit_conditions": [
+          {
+            "condition": "The US imposes new export controls or sanctions on CXMT.",
+            "article_ids": [
+              "4ef6602e-60b2-4b14-a2b0-ccffb250e636"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "CXMT's revenue_growth turns negative.",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          }
+        ],
+        "screen_score": 0.4983,
+        "price": {
+          "amount": 58.47,
+          "currency": "CNY",
+          "as_of": "2026-09-07T16:53:34.127034Z"
+        },
+        "shares_affordable": 77,
+        "price_in_investor_currency": 6.430079619935777,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Export\u2011control pressure on Chinese chip makers"
+        ],
+        "evidence_article_ids": [
+          "c806fc91-420c-4749-9f4e-0b2e22eed669"
+        ],
+        "known_risks": [
+          "Designation as a Chinese military company could trigger export controls and sanctions that restrict CXMT\u2019s ability to sell chips internationally."
+        ]
+      },
+      {
+        "ticker": "PLAB",
+        "name": "Photronics, Inc.",
+        "thesis": "Photronics sells high\u2011precision photomasks used to print integrated circuits. Its Texas and Korea expansions give it the capacity to meet the growing demand for advanced masks in reshored U.S. fabs.",
+        "exit_conditions": [
+          {
+            "condition": "Class\u2011action lawsuit results in a settlement or judgment exceeding $50 million.",
+            "article_ids": [
+              "18f286ea-5a7b-4d6c-81f7-4c433739332e"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "debt_to_equity rises above 3.0.",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          },
+          {
+            "condition": "revenue_growth turns negative.",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          }
+        ],
+        "screen_score": 0.4238,
+        "price": {
+          "amount": 29.13,
+          "currency": "USD",
+          "as_of": "2026-09-07T16:53:33.676819Z"
+        },
+        "shares_affordable": 23,
+        "price_in_investor_currency": 21.502893552778495,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Mask\u2011making capacity expansion"
+        ],
+        "evidence_article_ids": [
+          "463798ec-84e8-416a-8ad5-6349810263a8"
+        ],
+        "known_risks": [
+          "A class-action lawsuit filed against Photronics could lead to significant legal costs and potential liability."
+        ]
+      }
+    ],
+    "excluded": [],
+    "no_recommendation_reason": null,
+    "conditions_discarded": 0,
+    "notes": null
+  },
+  "research_findings": {
+    "themes": [
+      {
+        "name": "Mask\u2011making capacity expansion",
+        "why_it_matters": "Higher\u2011end masks are critical for advanced nodes; expanding capacity signals continued demand for equipment and offers a long\u2011term growth tail for the sector.",
+        "industries": [
+          "semiconductors",
+          "chip manufacturing equipment"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "463798ec-84e8-416a-8ad5-6349810263a8",
+            "stance": "supports",
+            "relevance": "Photronics plans higher\u2011end mask capacity in Texas and Korea."
+          }
+        ]
+      },
+      {
+        "name": "Equipment demand surge",
+        "why_it_matters": "Strong billings growth indicates sustained capital spending on fabs, benefiting equipment makers over a decade\u2011plus horizon.",
+        "industries": [
+          "semiconductors",
+          "chip manufacturing equipment"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "c6a7e592-621f-4370-8671-2452886331d4",
+            "stance": "supports",
+            "relevance": "SEMI reports 23% YoY rise in semiconductor equipment billings."
+          }
+        ]
+      },
+      {
+        "name": "Export\u2011control pressure on Chinese chip makers",
+        "why_it_matters": "Ongoing U.S. restrictions could shift global supply chains, creating opportunities for U.S. equipment suppliers and altering long\u2011term demand dynamics.",
+        "industries": [
+          "semiconductors",
+          "chip manufacturing equipment"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "high",
+        "evidence": [
+          {
+            "article_id": "2e229ff0-e2ff-4894-abef-02368ece81c5",
+            "stance": "supports",
+            "relevance": "US licensing regime hurts U.S. chip businesses."
+          },
+          {
+            "article_id": "c806fc91-420c-4749-9f4e-0b2e22eed669",
+            "stance": "supports",
+            "relevance": "Chinese memory maker CXMT sues Pentagon to remove military designation."
+          }
+        ]
+      },
+      {
+        "name": "AI\u2011driven fab efficiency",
+        "why_it_matters": "Adoption of AI in fabs boosts throughput and reduces costs, potentially increasing the value of equipment that supports AI\u2011enabled manufacturing.",
+        "industries": [
+          "semiconductors",
+          "chip manufacturing equipment"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "bbe3c000-0c96-48d8-96b9-21915498c642",
+            "stance": "supports",
+            "relevance": "AI can improve semiconductor fab operations and productivity."
+          }
+        ]
+      },
+      {
+        "name": "ASML Japan workforce growth",
+        "why_it_matters": "Expanding local talent supports higher demand for advanced lithography tools, aligning with the investor\u2019s long\u2011term focus on chip equipment.",
+        "industries": [
+          "semiconductors",
+          "chip manufacturing equipment"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "fcaa749c-7067-4b4e-a40b-922a2641d076",
+            "stance": "supports",
+            "relevance": "ASML plans 40% workforce expansion in Japan by 2030."
+          }
+        ]
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "2e229ff0-e2ff-4894-abef-02368ece81c5",
+        "title": "America\u2019s China Licensing Regime Now Helps Beijing",
+        "description": "The Commerce Department is trying to keep computer chips out of the hands, but it's only succeeding in hurting U.S. business.",
+        "snippet": "The Commerce Department is trying to keep computer chips out of the hands, but it's only succeeding in hurting U.S. business.\n\nMany U.S. companies are experienc...",
+        "url": "https://fpif.org/americas-china-licensing-regime-now-helps-beijing/",
+        "source": "fpif.org",
+        "published_at": "2026-08-28T12:21:35Z",
+        "categories": [
+          "politics",
+          "general"
+        ]
+      },
+      {
+        "uuid": "463798ec-84e8-416a-8ad5-6349810263a8",
+        "title": "Photronics Eyes Advanced Mask Growth With Texas, Korea Capacity Push",
+        "description": "Photronics (NASDAQ:PLAB) is positioning its investment program around higher-end photomask production, U.S. semiconductor reshoring and expanding demand for adv...",
+        "snippet": "High-end semiconductor products represented 44% of Photronics' semiconductor business in its most recent quarter, Moreau said, the company's highest such percen...",
+        "url": "https://finance.yahoo.com/technology/articles/photronics-eyes-advanced-mask-growth-040100463.html",
+        "source": "finance.yahoo.com",
+        "published_at": "2026-08-29T04:01:00Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "c806fc91-420c-4749-9f4e-0b2e22eed669",
+        "title": "Chinese memory maker CXMT sues Pentagon to get off US list",
+        "description": "CXMT has sued the US Defense Department over its Chinese military company designation. Europe buys the memory, has no DRAM fab, and no equivalent list.",
+        "snippet": "CXMT has sued the US Department of Defense in Washington seeking removal from the list identifying it as a Chinese military company, a designation that blocks d...",
+        "url": "https://thenextweb.com/news/cxmt-sues-pentagon-1260h-list-europe-memory-dram",
+        "source": "thenextweb.com",
+        "published_at": "2026-08-29T15:48:09Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "bbe3c000-0c96-48d8-96b9-21915498c642",
+        "title": "Revolutionizing semiconductor fab operations with AI",
+        "description": "AI has the potential to improve build semiconductor fab processes and operations. Early adopters could see significant cost improvement and productivity gains.",
+        "snippet": "The demand for semiconductors is rising, with the total semiconductor device market expected to reach $1.6 trillion by 2030. As production ramps up, stakeholder...",
+        "url": "https://www.mckinsey.com/industries/semiconductors/our-insights/revolutionizing-semiconductor-fab-operations-with-ai",
+        "source": "mckinsey.com",
+        "published_at": "2026-08-31T00:00:00Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "c6a7e592-621f-4370-8671-2452886331d4",
+        "title": "Global Semiconductor Equipment Billings Increased 23% Year-Over-Year in Q2 2026, SEMI Reports",
+        "description": "**media[1202740]**Ongoing AI Investment Momentum Drove Back-to-Back Quarters of Record Results",
+        "snippet": "MILPITAS, Calif., Sept. 4, 2026 /PRNewswire/ -- SEMI, the industry association advancing the global semiconductor and electronics design and manufacturing suppl...",
+        "url": "https://www.manilatimes.net/2026/09/04/tmt-newswire/pr-newswire/global-semiconductor-equipment-billings-increased-23-year-over-year-in-q2-2026-semi-reports/2418446",
+        "source": "manilatimes.net",
+        "published_at": "2026-09-03T22:23:47Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "fcaa749c-7067-4b4e-a40b-922a2641d076",
+        "title": "ASML Plans 40% Japan Workforce Expansion to Support Chip Boom",
+        "description": "ASML about to expand its Japan workforce to about 700 employees by 2030 as demand for advanced semiconductor equipment grows across the country. The Dutch chip",
+        "snippet": "ASML about to expand its Japan workforce to about 700 employees by 2030 as demand for advanced semiconductor equipment grows across the country.\n\nThe Dutch chip...",
+        "url": "https://www.gurufocus.com/news/9068563/asml-plans-40-japan-workforce-expansion-to-support-chip-boom",
+        "source": "gurufocus.com",
+        "published_at": "2026-09-04T18:35:14Z",
+        "categories": [
+          "business"
+        ]
+      }
+    ],
+    "queries_used": [
+      "semiconductor manufacturing equipment expansion",
+      "chip fabrication equipment orders",
+      "semiconductor equipment supply chain",
+      "chip manufacturing equipment contracts",
+      "semiconductor equipment financing deals"
+    ],
+    "articles_retrieved": 15,
+    "notes": null
+  },
+  "risk_findings": {
+    "critiques": [
+      {
+        "ticker": "ASML",
+        "name": "ASML Holding N.V.",
+        "risks": [],
+        "queries_used": [
+          "\"ASML\" lawsuit",
+          "\"ASML\" workforce"
+        ],
+        "articles_reviewed": 5,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "688825.SS",
+        "name": "CXMT CORPORATION",
+        "risks": [
+          {
+            "ticker": "688825.SS",
+            "risk_type": "regulatory",
+            "severity": "material",
+            "claim": "Designation as a Chinese military company could trigger export controls and sanctions that restrict CXMT\u2019s ability to sell chips internationally.",
+            "article_ids": [
+              "4ef6602e-60b2-4b14-a2b0-ccffb250e636",
+              "4374e5ea-9a4b-4165-a5b2-d42e909aff4b",
+              "dea30c60-5ab8-415b-bab0-7fdc0b140292"
+            ],
+            "metric": null,
+            "metric_value": null
+          }
+        ],
+        "queries_used": [
+          "\"CXMT\" lawsuit",
+          "\"CXMT\" pressure"
+        ],
+        "articles_reviewed": 6,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "PLAB",
+        "name": "Photronics, Inc.",
+        "risks": [
+          {
+            "ticker": "PLAB",
+            "risk_type": "regulatory",
+            "severity": "material",
+            "claim": "A class-action lawsuit filed against Photronics could lead to significant legal costs and potential liability.",
+            "article_ids": [
+              "18f286ea-5a7b-4d6c-81f7-4c433739332e"
+            ],
+            "metric": null,
+            "metric_value": null
+          }
+        ],
+        "queries_used": [
+          "\"Photronics,\" lawsuit",
+          "\"Photronics,\" capacity"
+        ],
+        "articles_reviewed": 4,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "4ef6602e-60b2-4b14-a2b0-ccffb250e636",
+        "title": "Chinese memory chipmaker CXMT sues Pentagon over 'Chinese military company' designation",
+        "description": "The company was designated a Chinese military company by the US Defense Department under the Biden administration and was retained on the list by \u200cthe Trump ?...",
+        "snippet": "China's top memory chipmaker ChangXin Memory Technologies , sued the Pentagon on Friday over being placed on a list of companies the United States believes are ...",
+        "url": "https://economictimes.indiatimes.com/tech/technology/chinese-memory-chipmaker-cxmt-sues-pentagon-over-chinese-military-company-designation/articleshow/133602438.cms",
+        "source": "economictimes.indiatimes.com",
+        "published_at": "2026-08-29T02:25:37Z",
+        "categories": [
+          "tech",
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "4374e5ea-9a4b-4165-a5b2-d42e909aff4b",
+        "title": "Chinese company that Apple made a 'special request' to the US government for has sued Pentagon",
+        "description": "Tech News News: China's largest memory chipmaker, ChangXin Memory Technologies (CXMT), has sued the Pentagon. According to a report by the news agency Reuters, ...",
+        "snippet": "\"CXMT is not affiliated with the Chinese military,\"\n\nCXMT designs, produces, and sells its DRAM chips for civilian and commercial use, not for military use.\" Th...",
+        "url": "https://timesofindia.indiatimes.com/technology/tech-news/chinese-company-that-apple-made-a-special-request-to-the-us-government-for-has-sued-pentagon/articleshow/133608402.cms",
+        "source": "timesofindia.indiatimes.com",
+        "published_at": "2026-08-29T09:17:22Z",
+        "categories": [
+          "general"
+        ]
+      },
+      {
+        "uuid": "dea30c60-5ab8-415b-bab0-7fdc0b140292",
+        "title": "Pentagon faces CXMT lawsuit over 'incorrect' military label",
+        "description": "China\u2019s largest DRAM manufacturer, CXMT, is suing the Pentagon over its designation as a Chinese military company, arguing that the label lacks factual eviden...",
+        "snippet": "China\u2019s largest DRAM manufacturer, CXMT, is suing the Pentagon over its designation as a Chinese military company, arguing that the label lacks factual eviden...",
+        "url": "https://www.notebookcheck.net/Pentagon-faces-CXMT-lawsuit-over-incorrect-military-label.1385007.0.html",
+        "source": "notebookcheck.net",
+        "published_at": "2026-09-01T12:47:00Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "18f286ea-5a7b-4d6c-81f7-4c433739332e",
+        "title": "Class Action Lawsuit Filed Against Photronics (PLAB): What Investors Need to Know by September 4 Lead Plaintiff Deadline",
+        "description": "Hagens Berman Urges Investors with Significant Losses to Contact the FirmKEY DATES AND FIGURESClass Period: Dec. 10, 2025 \u2013 May 27, 2026Lead Plaintiff Deadlin...",
+        "snippet": "Class Action Lawsuit Filed Against Photronics (PLAB): What Investors Need to Know by September 4 Lead Plaintiff Deadline\n\nHagens Berman Urges Investors with Sig...",
+        "url": "https://bubblear.com/class-action-lawsuit-filed-against-photronics-plab-what-investors-need-to-know-by-september-4-lead-plaintiff-deadline/33207/",
+        "source": "thebubble.com",
+        "published_at": "2026-09-03T19:38:00Z",
+        "categories": [
+          "general"
+        ]
+      }
+    ],
+    "articles_retrieved": 15,
+    "risks_discarded": 0,
+    "notes": null
+  }
+}

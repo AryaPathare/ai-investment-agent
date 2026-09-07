@@ -1,0 +1,318 @@
+{
+  "profile": {
+    "age": 34,
+    "investment_experience": "intermediate",
+    "risk_tolerance": "low",
+    "investment_amount": 400000.0,
+    "investment_currency": "INR",
+    "holding_period": "7 years",
+    "sectors_of_interest": [
+      "Industrials"
+    ],
+    "restrictions": [
+      "No defence companies"
+    ]
+  },
+  "decision": {
+    "recommendations": [
+      {
+        "ticker": "004020.KS",
+        "name": "HYUNDAI STEEL",
+        "thesis": "Hyundai Steel is building a new electric furnace in Louisiana to make more steel. The mill will help it meet growing U.S. demand for cars and buildings. The company has a solid balance sheet and is part of a larger trend of U.S. manufacturing growth.",
+        "exit_conditions": [
+          {
+            "condition": "The Louisiana EAF steel mill project is delayed or cancelled.",
+            "article_ids": [
+              "76153662-0da3-42d1-9cd6-418f9f61c12d"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "operating_margin turns negative.",
+            "article_ids": [],
+            "metric": "operating_margin"
+          },
+          {
+            "condition": "debt_to_equity rises above 1.5.",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          }
+        ],
+        "screen_score": 0.2207,
+        "price": {
+          "amount": 32400.0,
+          "currency": "KRW",
+          "as_of": "2026-09-07T20:36:52.603957Z"
+        },
+        "shares_affordable": 175,
+        "price_in_investor_currency": 2276.3999156888917,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Steel Capacity Expansion"
+        ],
+        "evidence_article_ids": [
+          "76153662-0da3-42d1-9cd6-418f9f61c12d"
+        ],
+        "known_risks": [
+          "Operations are profitable but the company still loses money overall, so the cost sits below the operating line.",
+          "Gross margin is thin, which usually means the product competes on price and has little room to absorb cost increases."
+        ]
+      },
+      {
+        "ticker": "7201.T",
+        "name": "NISSAN MOTOR CO",
+        "thesis": "Nissan Motor Co. builds and sells passenger cars and commercial vehicles. Its Smyrna plant now uses AI robots that lift heavy parts. The automation cuts labor costs and speeds production, helping Nissan compete on price.",
+        "exit_conditions": [
+          {
+            "condition": "If Nissan's Smyrna plant fails to complete the remaining AI robot deployment phases.",
+            "article_ids": [
+              "94c92f2d-5250-4ce7-ab0c-c637999a1ac7"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "If revenue_growth turns negative.",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          }
+        ],
+        "screen_score": 0.1788,
+        "price": {
+          "amount": 316.6,
+          "currency": "JPY",
+          "as_of": "2026-09-07T20:36:51.941162Z"
+        },
+        "shares_affordable": 2060,
+        "price_in_investor_currency": 194.10213966035192,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Automation in Automotive Manufacturing"
+        ],
+        "evidence_article_ids": [
+          "94c92f2d-5250-4ce7-ab0c-c637999a1ac7"
+        ],
+        "known_risks": [
+          "Operations are profitable but the company still loses money overall, so the cost sits below the operating line.",
+          "Leverage is above the level at which it starts to constrain choices.",
+          "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business.",
+          "Gross margin is thin, which usually means the product competes on price and has little room to absorb cost increases."
+        ]
+      }
+    ],
+    "excluded": [],
+    "no_recommendation_reason": null,
+    "conditions_discarded": 0,
+    "notes": null
+  },
+  "research_findings": {
+    "themes": [
+      {
+        "name": "Steel Capacity Expansion",
+        "why_it_matters": "The investor\u2019s focus on industrials and a 7\u2011year horizon aligns with long\u2011term growth in steel demand. Rising capacity in both Africa and the U.S. signals a global upturn that could support stable returns in a low\u2011risk portfolio.",
+        "industries": [
+          "Steel",
+          "Manufacturing"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "high",
+        "evidence": [
+          {
+            "article_id": "06e8d567-1064-4614-8bd1-144c5aac79de",
+            "stance": "supports",
+            "relevance": "Dinson Steel plans to triple output at its Manhize plant."
+          },
+          {
+            "article_id": "76153662-0da3-42d1-9cd6-418f9f61c12d",
+            "stance": "supports",
+            "relevance": "Hyundai Steel launches a $5.8B EAF mill in Louisiana, boosting U.S. steel capacity."
+          }
+        ]
+      },
+      {
+        "name": "Automation in Automotive Manufacturing",
+        "why_it_matters": "Automation reduces labor costs and improves efficiency, offering a low\u2011risk, long\u2011term upside for industrial companies. The investor\u2019s low risk tolerance is compatible with gradual productivity gains in established automakers.",
+        "industries": [
+          "Automotive",
+          "Manufacturing Automation"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "94c92f2d-5250-4ce7-ab0c-c637999a1ac7",
+            "stance": "supports",
+            "relevance": "Nissan deploys AI\u2011powered mobile robots that haul heavy loads in its Tennessee plant."
+          }
+        ]
+      },
+      {
+        "name": "EV Supply Chain Development in Indonesia",
+        "why_it_matters": "Emerging EV supply chains can drive industrial growth in Southeast Asia. For a 7\u2011year investor, early exposure to this developing sector may yield moderate, risk\u2011adjusted returns while staying within the industrial focus.",
+        "industries": [
+          "Automotive",
+          "EV Supply Chain"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "56665d15-b775-49f3-be6c-5cb1802626f1",
+            "stance": "supports",
+            "relevance": "Indonesia\u2019s minister highlights potential for a full domestic EV supply chain."
+          }
+        ]
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "06e8d567-1064-4614-8bd1-144c5aac79de",
+        "title": "Dinson Steel Targets Threefold Output Increase as Zimbabwe Pushes to Expand Regional Footprint - The Zimbabwe Mail Dinson Steel Targets Threefold Output Increase as Zimbabwe Pushes to Expand Regional ",
+        "description": "Latest Zimbabwe news, politics, economy, and breaking updates from trusted national reporting.",
+        "snippet": "HARARE \u2014 Dinson Iron and Steel Company (Disco) plans to raise annual steel production at its Manhize plant to about 1.8 million tonnes, nearly three times its...",
+        "url": "https://thezimbabwemail.com/main-headline/dinson-steel-targets-threefold-output-increase-as-zimbabwe-pushes-to-expand-regional-footprint/",
+        "source": "thezimbabwemail.com",
+        "published_at": "2026-08-25T11:18:39Z",
+        "categories": [
+          "general"
+        ]
+      },
+      {
+        "uuid": "56665d15-b775-49f3-be6c-5cb1802626f1",
+        "title": "Indonesia sees strong EV industry chain potential, minister says",
+        "description": "Industry Minister Agus Gumiwang Kartasasmita said Indonesia has the resources to build a complete domestic electric vehicle industry chain, from raw materials ....",
+        "snippet": "Indonesia sees strong EV industry chain potential, minister says\n\nSubang, West Java (ANTARA) - Industry Minister Agus Gumiwang Kartasasmita said Indonesia has t...",
+        "url": "https://en.antaranews.com/news/429709/indonesia-sees-strong-ev-industry-chain-potential-minister-says",
+        "source": "en.antaranews.com",
+        "published_at": "2026-09-03T09:07:59Z",
+        "categories": []
+      },
+      {
+        "uuid": "94c92f2d-5250-4ce7-ab0c-c637999a1ac7",
+        "title": "Nissan's AI-powered factory robots can haul 4,000 pounds \u2014 and call each other for backup",
+        "description": "Nissan's Smyrna, Tennessee, assembly plant is completing the first of six deployment phases for new AI robots. They carry around heavy stuff.",
+        "snippet": "Robots can get stuck in traffic, too.\n\nNissan learned that while deploying a fleet of AI-powered robots, called autonomous mobile robots, or AMRs, at its sprawl...",
+        "url": "https://www.businessinsider.com/nissans-ai-robots-smyrna-tennessee-2026-9",
+        "source": "businessinsider.com",
+        "published_at": "2026-09-04T09:26:01Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "76153662-0da3-42d1-9cd6-418f9f61c12d",
+        "title": "Hyundai Steel Celebrates Louisiana EAF Steel Mill Project Launch, Driving Growth for U.S. Manufacturing",
+        "description": "$5.8 billion investment\u00a0part of Hyundai Motor Group's $26 billion U.S. commitment, strengthening local supply chain and industrial resilienceCommercial product...",
+        "snippet": "$ 5.8 billion investment part of Hyundai Motor Group's $26 billion U.S. commitment, strengthening local supply chain and industrial resilience\n\nCommercial produ...",
+        "url": "https://www.manilatimes.net/2026/09/05/tmt-newswire/pr-newswire/hyundai-steel-celebrates-louisiana-eaf-steel-mill-project-launch-driving-growth-for-us-manufacturing/2419088",
+        "source": "manilatimes.net",
+        "published_at": "2026-09-05T01:10:37Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      }
+    ],
+    "queries_used": [
+      "steel production capacity expansion",
+      "automotive supply chain expansion",
+      "industrial robotics contract awards",
+      "construction equipment leasing contracts",
+      "heavy machinery manufacturing expansion",
+      "industrial automation software rollout"
+    ],
+    "articles_retrieved": 16,
+    "notes": null
+  },
+  "risk_findings": {
+    "critiques": [
+      {
+        "ticker": "004020.KS",
+        "name": "HYUNDAI STEEL",
+        "risks": [
+          {
+            "ticker": "004020.KS",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Operations are profitable but the company still loses money overall, so the cost sits below the operating line.",
+            "article_ids": [],
+            "metric": "net_income_is_negative",
+            "metric_value": -1.0
+          },
+          {
+            "ticker": "004020.KS",
+            "risk_type": "competitive",
+            "severity": "minor",
+            "claim": "Gross margin is thin, which usually means the product competes on price and has little room to absorb cost increases.",
+            "article_ids": [],
+            "metric": "gross_margin",
+            "metric_value": 0.06507
+          }
+        ],
+        "queries_used": [
+          "\"HYUNDAI STEEL\" lawsuit",
+          "\"HYUNDAI STEEL\" Capacity"
+        ],
+        "articles_reviewed": 2,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "7201.T",
+        "name": "NISSAN MOTOR CO",
+        "risks": [
+          {
+            "ticker": "7201.T",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Operations are profitable but the company still loses money overall, so the cost sits below the operating line.",
+            "article_ids": [],
+            "metric": "net_income_is_negative",
+            "metric_value": -1.0
+          },
+          {
+            "ticker": "7201.T",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Leverage is above the level at which it starts to constrain choices.",
+            "article_ids": [],
+            "metric": "debt_to_equity",
+            "metric_value": 1.7241499999999998
+          },
+          {
+            "ticker": "7201.T",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business.",
+            "article_ids": [],
+            "metric": "free_cash_flow_is_negative",
+            "metric_value": -1.0
+          },
+          {
+            "ticker": "7201.T",
+            "risk_type": "competitive",
+            "severity": "minor",
+            "claim": "Gross margin is thin, which usually means the product competes on price and has little room to absorb cost increases.",
+            "article_ids": [],
+            "metric": "gross_margin",
+            "metric_value": 0.14456001
+          }
+        ],
+        "queries_used": [
+          "\"NISSAN MOTOR\" lawsuit",
+          "\"NISSAN MOTOR\" Manufacturing"
+        ],
+        "articles_reviewed": 3,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      }
+    ],
+    "articles": [],
+    "articles_retrieved": 5,
+    "risks_discarded": 0,
+    "notes": null
+  }
+}

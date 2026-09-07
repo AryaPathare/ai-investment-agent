@@ -1,0 +1,334 @@
+{
+  "profile": {
+    "age": 45,
+    "investment_experience": "intermediate",
+    "risk_tolerance": "moderate",
+    "investment_amount": 12000.0,
+    "investment_currency": "USD",
+    "holding_period": "3 years",
+    "sectors_of_interest": [
+      "cryptocurrency",
+      "banking"
+    ],
+    "restrictions": [
+      "No cryptocurrency or digital asset companies"
+    ]
+  },
+  "decision": {
+    "recommendations": [
+      {
+        "ticker": "FLYW",
+        "name": "Flywire Corporation - Voting",
+        "thesis": "Flywire sells software that lets banks and merchants accept payments directly from customers\u2019 bank accounts. Its platform plugs into open\u2011banking APIs, giving banks a new revenue stream and cutting card\u2011network fees. Flywire partners with Trustly, expanding reach in the US and Canada, and is poised to grow as open banking spreads.",
+        "exit_conditions": [
+          {
+            "condition": "Flywire's partnership with Trustly ends.",
+            "article_ids": [
+              "c0881051-d656-49ad-8c81-251befb3624b"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "revenue_growth turns negative.",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          },
+          {
+            "condition": "debt_to_equity rises above 3.0.",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          }
+        ],
+        "screen_score": 0.5073,
+        "price": {
+          "amount": 18.55,
+          "currency": "USD",
+          "as_of": "2026-09-07T18:24:57.384323Z"
+        },
+        "shares_affordable": 646,
+        "price_in_investor_currency": 18.55,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Digital Payment Integration"
+        ],
+        "evidence_article_ids": [
+          "c0881051-d656-49ad-8c81-251befb3624b"
+        ],
+        "known_risks": [
+          "The core business loses money before financing and one-off items, so scale alone does not fix it."
+        ]
+      },
+      {
+        "ticker": "INDIANB.NS",
+        "name": "INDIAN BANK",
+        "thesis": "Indian Bank is expanding its branch network, driving retail deposits and loan growth. The bank's strong operating margin of 48% shows efficient cost control. Over the next three years, its branch expansion should continue to lift revenue, making it a solid moderate\u2011risk play.",
+        "exit_conditions": [
+          {
+            "condition": "Indian Bank cancels its 100-branch expansion plan.",
+            "article_ids": [
+              "4c68e6b2-8ff1-471b-8cc7-78d134d75024"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "revenue_growth turns negative.",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          },
+          {
+            "condition": "operating_margin falls below 0.3.",
+            "article_ids": [],
+            "metric": "operating_margin"
+          }
+        ],
+        "screen_score": 0.3015,
+        "price": {
+          "amount": 869.4,
+          "currency": "INR",
+          "as_of": "2026-09-07T18:24:56.142912Z"
+        },
+        "shares_affordable": 1304,
+        "price_in_investor_currency": 9.202434506483197,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "India Branch Expansion"
+        ],
+        "evidence_article_ids": [
+          "4c68e6b2-8ff1-471b-8cc7-78d134d75024"
+        ],
+        "known_risks": []
+      }
+    ],
+    "excluded": [],
+    "no_recommendation_reason": null,
+    "conditions_discarded": 0,
+    "notes": null
+  },
+  "research_findings": {
+    "themes": [
+      {
+        "name": "India Branch Expansion",
+        "why_it_matters": "Expanding branch networks signals growth in retail deposits and loan origination, offering a moderate-risk avenue for banking exposure over a 3\u2011year horizon.",
+        "industries": [
+          "Banking",
+          "Financial Services"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "4c68e6b2-8ff1-471b-8cc7-78d134d75024",
+            "stance": "supports",
+            "relevance": "Indian Bank plans 100 new branches and hires 2,500 staff."
+          }
+        ]
+      },
+      {
+        "name": "Trade Finance Lending Growth",
+        "why_it_matters": "A shift toward trade finance can boost interest income and diversify loan portfolios, aligning with the investor\u2019s banking focus and moderate risk tolerance.",
+        "industries": [
+          "Banking",
+          "Trade Finance"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "9f7c2568-70f6-4323-ad43-2edd82538f31",
+            "stance": "supports",
+            "relevance": "First Capital channels two\u2011thirds of new lending into trade and services."
+          }
+        ]
+      },
+      {
+        "name": "Digital Payment Integration",
+        "why_it_matters": "Banks adopting open\u2011banking and digital payment solutions can capture new revenue streams and improve customer experience, offering a growth path within the investor\u2019s banking sector.",
+        "industries": [
+          "Banking",
+          "Payments",
+          "FinTech"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "high",
+        "evidence": [
+          {
+            "article_id": "a76e6c6b-6de3-4e86-9738-e736d38c1eeb",
+            "stance": "supports",
+            "relevance": "AsiaPay partners with PGA Insurance to enhance digital payment acceptance."
+          },
+          {
+            "article_id": "c0881051-d656-49ad-8c81-251befb3624b",
+            "stance": "supports",
+            "relevance": "Flywire expands partnership with Trustly to offer Pay\u2011by\u2011Bank open banking payments."
+          }
+        ]
+      },
+      {
+        "name": "Post\u2011Quantum Security",
+        "why_it_matters": "Early adoption of quantum\u2011resistant protocols can reduce cyber risk and regulatory exposure, positioning banks favorably over the next 3 years.",
+        "industries": [
+          "Banking",
+          "Cybersecurity"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "9ea03e0d-8ea2-498d-bd3c-f6cb636df1f1",
+            "stance": "supports",
+            "relevance": "Post\u2011quantum security is essential for future financial infrastructure."
+          }
+        ]
+      },
+      {
+        "name": "Bancassurance Partnerships",
+        "why_it_matters": "Cross\u2011selling insurance through banks diversifies revenue and enhances customer retention, fitting the investor\u2019s moderate\u2011risk banking focus.",
+        "industries": [
+          "Banking",
+          "Insurance"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "0105a8a9-3fb9-4f1e-b96f-30487e6e7cf2",
+            "stance": "supports",
+            "relevance": "InLife partners with banks to reshape insurance distribution."
+          }
+        ]
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "a76e6c6b-6de3-4e86-9738-e736d38c1eeb",
+        "title": "AsiaPay and PGA Insurance Forge a Partnership to Enhance Digital Payment Acceptance to Improve Policyholder Payment Experience",
+        "description": "**media[1189019]**MANILA, Philippines, Aug. 25, 2026 /PRNewswire/ -- AsiaPay, a leading digital payment service and technology provider in Asia, has partnered w...",
+        "snippet": "MANILA, Philippines\n\nAug. 25, 2026\n\n/PRNewswire/ -- AsiaPay, a leading digital payment service and technology provider in Asia, has partnered with PGA Insurance...",
+        "url": "https://www.manilatimes.net/2026/08/25/tmt-newswire/pr-newswire/asiapay-and-pga-insurance-forge-a-partnership-to-enhance-digital-payment-acceptance-to-improve-policyholder-payment-experience/2411479",
+        "source": "manilatimes.net",
+        "published_at": "2026-08-25T08:29:08Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "9f7c2568-70f6-4323-ad43-2edd82538f31",
+        "title": "First Capital Channels Nearly Two-Thirds of New Lending Into Trade and Services - The Zimbabwe Mail First Capital Channels Nearly Two-Thirds of New Lending Into Trade and Services",
+        "description": "Latest Zimbabwe news, politics, economy, and breaking updates from trusted national reporting.",
+        "snippet": "HARARE \u2014 First Capital Bank significantly expanded its lending in the first half of 2026, but the composition of that growth shows a marked shift towards trad...",
+        "url": "https://thezimbabwemail.com/banking/first-capital-channels-nearly-two-thirds-of-new-lending-into-trade-and-services/",
+        "source": "thezimbabwemail.com",
+        "published_at": "2026-08-26T11:08:07Z",
+        "categories": [
+          "general"
+        ]
+      },
+      {
+        "uuid": "4c68e6b2-8ff1-471b-8cc7-78d134d75024",
+        "title": "Indian Bank to add 100 branches, hire 2,500 as expansion shifts west",
+        "description": "Indian Bank plans to open approximately one hundred new branches this year.  The bank will also increase its workforce by about two thousand five hundred person...",
+        "snippet": "Live Events\n\n\n\nas a Reliable and Trusted News Source Addas a Reliable and Trusted News Source Add Now!\n\n(You can now subscribe to our\n\n(You can now subscribe to...",
+        "url": "https://economictimes.indiatimes.com/industry/banking/finance/banking/indian-bank-to-add-100-branches-hire-2500-as-expansion-shifts-west/articleshow/133626487.cms",
+        "source": "economictimes.indiatimes.com",
+        "published_at": "2026-08-30T09:00:27Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "0105a8a9-3fb9-4f1e-b96f-30487e6e7cf2",
+        "title": "InLife rewrites the insurance playbook with digital power and bank partnerships",
+        "description": "**media[1195603]**",
+        "snippet": "Insular Life, the nation's first and largest Filipino life insurance company, is aggressively reshaping the country's financial landscape by turning the histori...",
+        "url": "https://www.manilatimes.net/2026/08/31/supplements/inlife-rewrites-the-insurance-playbook-with-digital-power-and-bank-partnerships/2414790",
+        "source": "manilatimes.net",
+        "published_at": "2026-08-31T00:13:19Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "9ea03e0d-8ea2-498d-bd3c-f6cb636df1f1",
+        "title": "Guest Post: Why Financial Infrastructure Needs Post-Quantum Security",
+        "description": "Quantum computing could threaten financial infrastructure built on RSA and ECC, making post-quantum security a key requirement for new payment systems.",
+        "snippet": "Guest Post By Ryan Kirkley, Founder & CEO, Global Settlement Holdings.\n\nA temporal asymmetry lies at the heart of financial infrastructure. Settlement systems a...",
+        "url": "https://thequantuminsider.com/2026/09/02/financial-systems-quantum-risks/",
+        "source": "thequantumdaily.com",
+        "published_at": "2026-09-02T11:28:14Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "c0881051-d656-49ad-8c81-251befb3624b",
+        "title": "Flywire (FLYW) Bets On Open Banking To Widen Its Payment Moat",
+        "description": "On August 12, Flywire (NASDAQ:FLYW) expanded its partnership with Trustly, bringing \"Pay by Bank\" open banking payments to customers across the US and Canada.",
+        "snippet": "On August 12, Flywire (NASDAQ:FLYW) expanded its partnership with Trustly, bringing \u201cPay by Bank\u201d open banking payments to customers across the US and Canad...",
+        "url": "https://www.insidermonkey.com/blog/flywire-flyw-bets-on-open-banking-to-widen-its-payment-moat-1826892/",
+        "source": "insidermonkey.com",
+        "published_at": "2026-09-03T14:55:55Z",
+        "categories": [
+          "business"
+        ]
+      }
+    ],
+    "queries_used": [
+      "banking regulatory capital adequacy update",
+      "banking digital transformation partnership",
+      "banking loan portfolio expansion",
+      "banking ESG reporting initiative",
+      "banking payment infrastructure upgrade"
+    ],
+    "articles_retrieved": 13,
+    "notes": null
+  },
+  "risk_findings": {
+    "critiques": [
+      {
+        "ticker": "FLYW",
+        "name": "Flywire Corporation - Voting",
+        "risks": [
+          {
+            "ticker": "FLYW",
+            "risk_type": "financial",
+            "severity": "material",
+            "claim": "The core business loses money before financing and one-off items, so scale alone does not fix it.",
+            "article_ids": [],
+            "metric": "operating_margin",
+            "metric_value": -0.01354
+          }
+        ],
+        "queries_used": [
+          "\"Flywire Corporation - Voting\" lawsuit",
+          "\"Flywire Corporation - Voting\" Integration"
+        ],
+        "articles_reviewed": 0,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "INDIANB.NS",
+        "name": "INDIAN BANK",
+        "risks": [],
+        "queries_used": [
+          "\"INDIAN BANK\" lawsuit",
+          "\"INDIAN BANK\" Branch"
+        ],
+        "articles_reviewed": 3,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      }
+    ],
+    "articles": [],
+    "articles_retrieved": 3,
+    "risks_discarded": 0,
+    "notes": null
+  }
+}

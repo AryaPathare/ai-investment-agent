@@ -60,6 +60,11 @@
   .failed { border-left: 4px solid var(--warn); }
   .disclaimer { border-top: 2px solid var(--ink); margin-top: 2.5rem; padding-top: .7rem; font-weight: 600; }
   .quota { color: var(--muted); font-size: .85rem; }
+  .card { background: var(--panel); border: 1px solid var(--line); padding: .7rem .9rem; margin: .5rem 0; cursor: pointer; }
+  .card:hover { border-color: var(--accent); }
+  .card .asked { font-weight: 600; }
+  .card .who, .card .got { color: var(--muted); font-size: .85rem; }
+  .card .got { margin-top: .15rem; }
   code { font: .85em ui-monospace, Menlo, Consolas, monospace; }
   [hidden] { display: none !important; }
 </style>
@@ -105,6 +110,12 @@
   </section>
 
   <section id="result" hidden></section>
+
+  <section id="gallery">
+    <h2>Runs it has already made</h2>
+    <p class="help" id="gallery-note"></p>
+    <div id="gallery-list"></div>
+  </section>
 </main>
 
 <script>
@@ -465,5 +476,39 @@ async function loadQuota() {
   $("start").disabled = !q.you_may_start;
 }
 
-loadForm().then(loadQuota);
+// --- Runs it has already made ------------------------------------------------
+//
+// What the site shows when the day's quota is gone, and not a consolation
+// prize: every one is a real run, replayed from a recording that ships with the
+// code. The PROFILE is shown next to each, because "narrower researches better"
+// is the most useful thing this system knows about how to ask it, and a gallery
+// of answers alone teaches none of that.
+
+async function loadGallery() {
+  const body = await (await fetch("/api/gallery")).json();
+  $("gallery-note").textContent = body.note;
+  const list = $("gallery-list");
+  list.replaceChildren();
+
+  for (const run of body.runs) {
+    const card = el("div", null, "card");
+    card.append(el("div", run.sectors.join(", "), "asked"));
+    const money = run.currency ? run.currency + " " + run.amount.toLocaleString() : String(run.amount);
+    card.append(el("div", `${run.experience}, ${run.risk_tolerance} risk, ${money}, ${run.holding_period}`, "who"));
+    card.append(el("div", run.headline + (run.recommendations.length ? " — " + run.recommendations.join(", ") : ""), "got"));
+    card.addEventListener("click", () => showRecording(run.name));
+    list.append(card);
+  }
+}
+
+async function showRecording(name) {
+  const body = await (await fetch("/api/gallery/" + encodeURIComponent(name))).json();
+  $("intro").hidden = true;
+  $("progress").hidden = true;
+  showBrief(body.brief);
+  $("result").prepend(el("p", "A recorded run. No API key, no network call and no quota were used to show it.", "help"));
+  $("result").scrollIntoView({ behavior: "smooth" });
+}
+
+loadForm().then(loadQuota).then(loadGallery);
 </script>

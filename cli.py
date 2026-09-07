@@ -55,6 +55,7 @@ from langgraph.types import Command
 from pydantic import ValidationError
 
 import checkpoints
+import recordings
 import render
 from models.decision import Decision
 from models.user_input import UserInput
@@ -865,32 +866,14 @@ def run_demo(path: Path | str = DEMO_PATH) -> int:
     the first time the schemas changed - this one cannot, because it is loaded
     through the same Pydantic models the graph writes.
     """
-    path = Path(path)
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        print(f"\nThe demo recording is missing: {path}")
+        state = recordings.load(path)
+    except recordings.RecordingError as exc:
+        print(f"\n{exc}")
         print("It ships with the repository; re-clone or check it out again.")
         return 1
 
-    # Imported here rather than at module scope: only this path needs them, and
-    # keeping the import local documents that the demo touches no agent code.
-    from models.research import ResearchFindings
-    from models.risk import RiskFindings
-
-    user = UserInput.model_validate(payload["profile"])
-
-    # user_input belongs in the state, not just in the header above: the
-    # next-steps section reads the amount and its currency from it to say what
-    # the money would buy. Left out, the demo silently loses that line.
-    state = {
-        "user_input": user,
-        "decision": Decision.model_validate(payload["decision"]),
-        "research_findings": ResearchFindings.model_validate(
-            payload["research_findings"]
-        ),
-        "risk_findings": RiskFindings.model_validate(payload["risk_findings"]),
-    }
+    user = state["user_input"]
 
     _banner("A RECORDED RUN")
     print()
@@ -900,7 +883,7 @@ def run_demo(path: Path | str = DEMO_PATH) -> int:
         "were used to print it.",
         indent="  ",
     ))
-    recorded = payload.get("recorded_on")
+    recorded = state.get("recorded_on")
     if recorded:
         print_as_of_notice(datetime.fromisoformat(recorded), "It was recorded")
     print()

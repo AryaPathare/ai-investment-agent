@@ -49,6 +49,7 @@ from pydantic import ValidationError
 from sse_starlette.sse import EventSourceResponse
 
 import checkpoints
+import recordings
 import render
 from models.user_input import UserInput
 from web import quota, runqueue, session
@@ -417,6 +418,50 @@ async def read_form() -> dict:
     CLI reads the same definitions - see render.form_fields.
     """
     return {"fields": render.form_fields(), "disclaimer": render.DISCLAIMER}
+
+
+@app.get("/api/gallery")
+async def read_gallery() -> dict:
+    """Recorded runs, listed.
+
+    This is what the site has when the day's quota is gone, and it is not a
+    consolation prize: every one is a real run through the real pipeline, with
+    the same renderer and the same grounded exit conditions. Only the API calls
+    are absent.
+
+    The profile is listed beside each one deliberately. "Narrower researches
+    better" is the most useful thing this system knows about how to ask it -
+    'semiconductors' produced its best brief and 'renewable energy' an empty one
+    - and a gallery that shows only answers teaches none of that.
+    """
+    return {
+        "runs": [recordings.summarise(path) for path in recordings.available()],
+        "note": (
+            "Real runs, replayed from recordings that ship with the code. No "
+            "API key, no network call and no quota were used to show them."
+        ),
+    }
+
+
+@app.get("/api/gallery/{name}")
+async def read_recording(name: str):
+    """One recorded run, described exactly as a live one is.
+
+    Through render.describe_run, so a recording and a fresh run cannot render
+    differently - which is the whole reason the description was split out.
+    """
+    # Resolved against the gallery directory rather than joined to it: `name`
+    # comes from a URL, and "../../.env" is a path too.
+    match = next((p for p in recordings.available() if p.stem == name), None)
+    if match is None:
+        return JSONResponse(status_code=404, content={"error": "no such recording"})
+
+    state = recordings.load(match)
+    return {
+        "name": name,
+        "recorded_on": state.get("recorded_on"),
+        "brief": render.describe_run(state),
+    }
 
 
 @app.get("/api/health")

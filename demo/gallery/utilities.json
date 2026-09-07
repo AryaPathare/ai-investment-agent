@@ -1,0 +1,291 @@
+{
+  "profile": {
+    "age": 67,
+    "investment_experience": "beginner",
+    "risk_tolerance": "low",
+    "investment_amount": 3000.0,
+    "investment_currency": "EUR",
+    "holding_period": "5 years",
+    "sectors_of_interest": [
+      "renewable energy",
+      "wind power"
+    ],
+    "restrictions": [
+      "No fossil fuel companies",
+      "Nothing based in China"
+    ]
+  },
+  "decision": {
+    "recommendations": [
+      {
+        "ticker": "PBK",
+        "name": "PowerBank Corporation",
+        "thesis": "PowerBank builds battery storage systems for renewable power. It supplies large\u2011scale batteries that smooth grid supply. The company fits a low\u2011risk, five\u2011year investor.",
+        "exit_conditions": [
+          {
+            "condition": "PowerBank's Ontario battery storage development agreement is cancelled",
+            "article_ids": [
+              "487ac07e-9315-43b4-9071-eb05e695c4a2"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "revenue_growth turns negative",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          }
+        ],
+        "screen_score": 0.0605,
+        "price": {
+          "amount": 0.3797,
+          "currency": "USD",
+          "as_of": "2026-09-07T17:00:16.302021Z"
+        },
+        "shares_affordable": 9190,
+        "price_in_investor_currency": 0.3264281079274317,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Battery Storage Expansion"
+        ],
+        "evidence_article_ids": [
+          "487ac07e-9315-43b4-9071-eb05e695c4a2"
+        ],
+        "known_risks": [
+          "Leverage is above the level at which it starts to constrain choices.",
+          "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business."
+        ]
+      }
+    ],
+    "excluded": [],
+    "no_recommendation_reason": null,
+    "conditions_discarded": 0,
+    "notes": null
+  },
+  "research_findings": {
+    "themes": [
+      {
+        "name": "Offshore Wind Commissioning",
+        "why_it_matters": "The investor\u2019s focus on wind power aligns with a newly operational 913\u202fMW German offshore farm, indicating a growing, stable market. Over a 5\u2011year horizon, such projects offer predictable cash flows suitable for a low\u2011risk portfolio.",
+        "industries": [
+          "Wind Energy",
+          "Renewable Energy"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "high",
+        "evidence": [
+          {
+            "article_id": "0ce28042-9b00-4019-9ac2-2e2fc7cddd7b",
+            "stance": "supports",
+            "relevance": "Borkum Riffgrund 3 offshore wind farm commissioned in Germany."
+          },
+          {
+            "article_id": "128020f6-8e2e-4f21-949c-7e2b5c36d154",
+            "stance": "supports",
+            "relevance": "Hamburg Declaration fuels offshore wind financing in Europe."
+          }
+        ]
+      },
+      {
+        "name": "EU Offshore Wind Financing",
+        "why_it_matters": "Policy\u2011backed financing signals lower project risk and potential for early returns, matching the investor\u2019s 5\u2011year horizon and low\u2011risk appetite.",
+        "industries": [
+          "Wind Energy",
+          "Renewable Energy"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "128020f6-8e2e-4f21-949c-7e2b5c36d154",
+            "stance": "supports",
+            "relevance": "Hamburg Declaration outlines policy support for offshore wind."
+          }
+        ]
+      },
+      {
+        "name": "Battery Storage Expansion",
+        "why_it_matters": "Storage projects complement wind generation, enhancing grid reliability and offering stable returns\u2014ideal for a low\u2011risk, 5\u2011year investment.",
+        "industries": [
+          "Energy Storage",
+          "Renewable Energy"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "high",
+        "evidence": [
+          {
+            "article_id": "487ac07e-9315-43b4-9071-eb05e695c4a2",
+            "stance": "supports",
+            "relevance": "PowerBank announces battery storage projects in Ontario."
+          },
+          {
+            "article_id": "45d4cdc2-55a7-4028-9219-474c49715ac8",
+            "stance": "supports",
+            "relevance": "Energy Vault accelerates 125\u202fMW BESS construction in Australia."
+          }
+        ]
+      },
+      {
+        "name": "Energy Vault Sardinia",
+        "why_it_matters": "AI\u2011driven storage represents next\u2011generation technology that could yield higher reliability and returns, fitting the investor\u2019s renewable focus.",
+        "industries": [
+          "Energy Storage",
+          "Renewable Energy"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "a0ef297b-2f8f-49f7-9c8f-726464913866",
+            "stance": "supports",
+            "relevance": "Energy Vault\u2019s 100\u202fMW AI infrastructure project in Sardinia designated as strategic."
+          }
+        ]
+      },
+      {
+        "name": "Drought Impact on Renewables",
+        "why_it_matters": "Climate\u2011induced reliability concerns could affect wind project performance; monitoring this risk aligns with the investor\u2019s low\u2011risk tolerance.",
+        "industries": [
+          "Wind Energy",
+          "Renewable Energy"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "b7ccfac5-dfc2-4bd3-ac60-77e224257953",
+            "stance": "supports",
+            "relevance": "EU drought exposes reliability risks for renewable grids."
+          }
+        ]
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "487ac07e-9315-43b4-9071-eb05e695c4a2",
+        "title": "PowerBank Corporation Announces Development Agreement for the Development of Battery Energy Storage Projects in Ontario",
+        "description": "PowerBank Corporation (Nasdaq: PBK) (Cboe CA: PBK) (FSE: 103) (",
+        "snippet": "PowerBank Corporation (Nasdaq: PBK) (Cboe CA: PBK) (FSE: 103) (\"PowerBank\" or the \"Company\") a leader in independent energy development and asset ownership in N...",
+        "url": "https://globalrenewablenews.com/article/energy/category/ev-storage/143/1216034/powerbank-corporation-announces-development-agreement-for-the-development-of-battery-energy-storage-projects-in-ontario.html",
+        "source": "globalrenewablenews.com",
+        "published_at": "2026-09-01T04:00:00Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "b7ccfac5-dfc2-4bd3-ac60-77e224257953",
+        "title": "The EU wanted a green revolution. It may get a rust belt instead \u2014 RT Business News",
+        "description": "Europe\u2019s 2026 drought has exposed the energy risks facing Central Europe\u2019s factories, power grids and nuclear plants under the EU Green Deal",
+        "snippet": "Central European factories are trapped between unreliable renewables, vanishing rivers, and Brussels\u2019 decarbonization demands\n\nThe extreme drought of the summ...",
+        "url": "https://www.rt.com/business/644915-if-you-see-me-cry/",
+        "source": "rt.com",
+        "published_at": "2026-09-01T13:56:52Z",
+        "categories": [
+          "general",
+          "politics"
+        ]
+      },
+      {
+        "uuid": "a0ef297b-2f8f-49f7-9c8f-726464913866",
+        "title": "Energy Vault's 100 MW AI Infrastructure Project in Sardinia Receives Italian Government Designation as Project of Pre-Eminent National Strategic Interest",
+        "description": "Energy Vault Holdings, Inc. (NYSE: NRGV) (",
+        "snippet": "Energy Vault Holdings, Inc. (NYSE: NRGV) (\"Energy Vault\" or the \"Company\"), a global energy infrastructure company supporting grid reliability and next-generati...",
+        "url": "https://globalrenewablenews.com/article/energy/category/ev-storage/143/1216288/energy-vault-s-100-mw-ai-infrastructure-project-in-sardinia-receives-italian-government-designation-as-project-of-pre-eminent-national-strategic-interest.html",
+        "source": "globalrenewablenews.com",
+        "published_at": "2026-09-02T04:00:00Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "0ce28042-9b00-4019-9ac2-2e2fc7cddd7b",
+        "title": "Borkum Riffgrund 3 enters commercial operation, strengthening Germany's energy security with home-grown renewable power",
+        "description": "\u00d8rsted and Nuveen Infrastructure's German offshore wind farm Borkum Riffgrund 3 has been commissioned and is now in commercial operation. With an installed cap...",
+        "snippet": "The offshore wind farm Borkum Riffgrund 3, jointly owned by \u00d8rsted and Nuveen Infrastructure, is in commercial operation. With an installed capacity of 913 MW,...",
+        "url": "https://globalrenewablenews.com/article/energy/category/wind/141/1216494/borkum-riffgrund-3-enters-commercial-operation-strengthening-germany-s-energy-security-with-home-grown-renewable-power-.html",
+        "source": "globalrenewablenews.com",
+        "published_at": "2026-09-03T04:00:00Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "128020f6-8e2e-4f21-949c-7e2b5c36d154",
+        "title": "Financing Europe\u2019s race for energy sovereignty",
+        "description": "Europe\u2019s offshore wind ambitions are colliding with the realities of capital, risk and regulation. As energy security takes priority, the financial architectu...",
+        "snippet": "\n\nThe signing of the Hamburg Declaration in January 2026 was intended to be a steady, decades-long roadmap toward transforming the North Sea into a 100 GW offsh...",
+        "url": "https://www.worldfinance.com/strategy/financing-europes-race-for-energy-sovereignty",
+        "source": "worldfinance.com",
+        "published_at": "2026-09-03T09:41:12Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "45d4cdc2-55a7-4028-9219-474c49715ac8",
+        "title": "Energy Vault Accelerates 125 MW / 1 GWh Stoney Creek BESS Toward Construction with Full Project Land Acquisition Milestone in Australia",
+        "description": "Energy Vault Holdings, Inc. (NYSE: NRGV) (",
+        "snippet": "Energy Vault Holdings, Inc. (NYSE: NRGV) (\"Energy Vault\" or the \"Company\"), a global energy infrastructure company supporting grid reliability and next-generati...",
+        "url": "https://globalrenewablenews.com/article/energy/category/ev-storage/143/1216715/energy-vault-accelerates-125-mw-1-gwh-stoney-creek-bess-toward-construction-with-full-project-land-acquisition-milestone-in-australia.html",
+        "source": "globalrenewablenews.com",
+        "published_at": "2026-09-04T04:00:00Z",
+        "categories": [
+          "tech"
+        ]
+      }
+    ],
+    "queries_used": [
+      "wind turbine manufacturing expansion Europe",
+      "offshore wind farm contracts Europe",
+      "wind power battery storage integration",
+      "renewable energy portfolio expansion utilities",
+      "wind turbine supply chain expansion Germany",
+      "wind power project financing EU"
+    ],
+    "articles_retrieved": 13,
+    "notes": null
+  },
+  "risk_findings": {
+    "critiques": [
+      {
+        "ticker": "PBK",
+        "name": "PowerBank Corporation",
+        "risks": [
+          {
+            "ticker": "PBK",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Leverage is above the level at which it starts to constrain choices.",
+            "article_ids": [],
+            "metric": "debt_to_equity",
+            "metric_value": 2.7001600000000003
+          },
+          {
+            "ticker": "PBK",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business.",
+            "article_ids": [],
+            "metric": "free_cash_flow_is_negative",
+            "metric_value": -1.0
+          }
+        ],
+        "queries_used": [
+          "\"PowerBank\" lawsuit",
+          "\"PowerBank\" Battery"
+        ],
+        "articles_reviewed": 2,
+        "press_releases_withheld": 0,
+        "sources_withheld": [
+          "dealigg.com"
+        ],
+        "skipped_reason": null
+      }
+    ],
+    "articles": [],
+    "articles_retrieved": 2,
+    "risks_discarded": 0,
+    "notes": null
+  }
+}
