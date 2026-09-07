@@ -19,6 +19,7 @@ from datetime import date, datetime, timezone
 import pytest
 
 import cli
+import render
 import workflow
 from config import get_settings
 from models.companies import CompanyFindings
@@ -201,7 +202,7 @@ def test_every_shipped_example_profile_loads():
 
 def test_a_metric_condition_names_the_metric():
     condition = ExitCondition(condition="debt_to_equity rises above 3", metric="debt_to_equity")
-    assert cli._grounds(condition, {}).strip() == (
+    assert cli._grounds(render.grounds_for(condition, {})).strip() == (
         "Check: the company's reported debt-to-equity"
     )
 
@@ -212,7 +213,7 @@ def test_a_citation_lines_up_under_itself():
     article = make_article("u9", "Regulator opens probe", source="reuters.com")
     condition = ExitCondition(condition="the probe results in a fine", article_ids=["u9"])
 
-    lines = cli._grounds(condition, {"risk_findings": RiskFindings(articles=[article])})
+    lines = cli._grounds(render.grounds_for(condition, {"risk_findings": RiskFindings(articles=[article])}))
     indents = {len(ln) - len(ln.lstrip()) for ln in lines.split("\n")[1:]}
     assert len(indents) == 1, "continuation lines must share one indent"
     assert indents.pop() == lines.index("Check:") + len("Check: ")
@@ -223,7 +224,7 @@ def test_a_cited_bear_case_article_is_shown_with_its_source():
     state = {"risk_findings": RiskFindings(articles=[article])}
     condition = ExitCondition(condition="the probe results in a fine", article_ids=["u9"])
 
-    grounds = cli._grounds(condition, state)
+    grounds = cli._grounds(render.grounds_for(condition, state))
     assert "Regulator opens probe" in grounds
     assert "reuters.com" in grounds
     assert article.url in grounds
@@ -236,13 +237,13 @@ def test_a_theme_article_is_found_too(articles):
         "research_findings": ResearchFindings(articles=articles),
     }
     condition = ExitCondition(condition="the order is cancelled", article_ids=["u1"])
-    assert "Battery order won by Waaree" in cli._grounds(condition, state)
+    assert "Battery order won by Waaree" in cli._grounds(render.grounds_for(condition, state))
 
 
 def test_an_unresolvable_citation_says_so_rather_than_printing_a_hex_string():
     """Silence here would look identical to a citation that worked."""
     condition = ExitCondition(condition="something happens", article_ids=["deadbeefcafe"])
-    grounds = cli._grounds(condition, {"risk_findings": RiskFindings()})
+    grounds = cli._grounds(render.grounds_for(condition, {"risk_findings": RiskFindings()}))
     assert "was not kept" in grounds
 
 
@@ -785,7 +786,7 @@ def test_a_long_url_is_printed_whole(articles):
     )
     condition = ExitCondition(condition="the probe concludes", article_ids=["u9"])
 
-    rendered = cli._grounds(condition, {"research_findings": ResearchFindings(articles=[article])})
+    rendered = cli._grounds(render.grounds_for(condition, {"research_findings": ResearchFindings(articles=[article])}))
     assert long_url in rendered, "the URL must survive intact on one line"
 
 
@@ -872,7 +873,7 @@ def test_the_demo_never_builds_the_graph(monkeypatch):
 
 
 def _affordable(rec, user):
-    return cli._affordable_shares(rec, user)
+    return render.affordable_sentence(rec, user)
 
 
 def _priced(currency="USD", amount=100.0, shares=None, own=None, **kw):
@@ -929,7 +930,7 @@ def test_no_stated_currency_says_nothing():
 def test_the_review_date_is_three_months_out_not_the_holding_period():
     """Deliberately not derived from holding_period: it is free text, and
     someone holding for five years should not first check back in five years."""
-    assert cli._next_review(date(2026, 8, 26)) == date(2026, 11, 25)
+    assert render.next_review(date(2026, 8, 26)) == date(2026, 11, 25)
 
 
 def test_a_replayed_run_says_its_prices_are_old(capsys):
@@ -1062,3 +1063,49 @@ def test_a_failed_run_is_listed_as_failed_not_finished(
     assert cli.main(["--db", str(db), "--list"]) == 0
     out = capsys.readouterr().out
     assert "failed at the last stage" in out
+
+
+# --- The clarification prompt ------------------------------------------------
+#
+# Untested until the HTTP layer needed the same words. The wording lives in
+# render.py now, so a change to it reaches a terminal and a browser at once -
+# which is the point, and also the reason it is worth pinning here.
+
+
+def test_the_prompt_says_what_conflicted_and_which_attempt_this_is(monkeypatch, capsys):
+    """"Please clarify" with no statement of the conflict is useless to somebody
+    who has lost the page, and the attempt count matters because the loop is
+    bounded and gives up."""
+    monkeypatch.setattr("builtins.input", lambda prompt="": "drop the restriction")
+
+    answer = cli.ask_clarification(
+        {
+            "reason": "You asked for technology and also forbade it.",
+            "question": "Please clarify your preference.",
+            "attempt": 2,
+            "max_attempts": 3,
+        }
+    )
+    out = capsys.readouterr().out
+
+    assert answer == "drop the restriction"
+    assert "attempt 2 of 3" in out
+    assert render.CLARIFICATION_INTRO in out
+    assert "You asked for technology and also forbade it." in out
+
+
+def test_a_blank_answer_is_refused_rather_than_spending_an_attempt(monkeypatch, capsys):
+    """It would consume one of three attempts and tell the agent nothing."""
+    # `input` rather than `_read`, so the real strip() runs. Replacing _read
+    # would test the double: whitespace only counts as blank BECAUSE _read
+    # strips, and a stub that returns "   " untouched proves nothing.
+    replies = iter(["", "   ", "keep sports"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(replies))
+
+    answer = cli.ask_clarification(
+        {"reason": "x", "attempt": 1, "max_attempts": 3}
+    )
+    out = capsys.readouterr().out
+
+    assert answer == "keep sports"
+    assert out.count(render.BLANK_CLARIFICATION) == 2

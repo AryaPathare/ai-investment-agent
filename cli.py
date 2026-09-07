@@ -43,20 +43,19 @@ runners already persist results for analysis; this prints for a reader.
 """
 
 import argparse
-from datetime import date, datetime, timedelta
+from datetime import datetime
 import json
-import re
 import sys
 import textwrap
 import time
 import uuid
 from pathlib import Path
-from typing import get_args
 
 from langgraph.types import Command
 from pydantic import ValidationError
 
 import checkpoints
+import render
 from models.decision import Decision
 from models.user_input import UserInput
 
@@ -180,32 +179,10 @@ def _ask_list(question: str) -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
-# The eleven sectors the market is conventionally divided into, in the wording
-# the company data provider itself reports - "Consumer Cyclical" and "Financial
-# Services" are Yahoo's names, not GICS's. Taking the provider's vocabulary
-# means a sector the user picks here is the same string Agent 3 later sees on a
-# resolved company, rather than something that has to be translated.
-#
-# EACH ONE CARRIES A NARROWER EXAMPLE, and that is the point of the list rather
-# than decoration. This answer is the highest-signal input in the whole run -
-# Agent 2 turns it straight into search queries - and narrower researches
-# better: "semiconductors" produced this project's best brief, "renewable
-# energy" produced an empty one. A bare menu of eleven broad sectors would push
-# every beginner to the broad end, which is the opposite of what helps them. The
-# examples teach the narrowing at the moment the choice is made.
-SECTORS: tuple[tuple[str, str], ...] = (
-    ("Technology", "semiconductors, cloud software"),
-    ("Healthcare", "biotechnology, medical devices"),
-    ("Financial Services", "regional banks, payments"),
-    ("Energy", "oil services, refining"),
-    ("Utilities", "solar, grid storage"),
-    ("Industrials", "aerospace, electrical equipment"),
-    ("Consumer Cyclical", "carmakers, online retail"),
-    ("Consumer Defensive", "food producers, household goods"),
-    ("Communication Services", "streaming, telecoms"),
-    ("Basic Materials", "lithium mining, chemicals"),
-    ("Real Estate", "data-centre REITs, logistics"),
-)
+# One name for render.py's menu rather than a second copy. Both front ends show
+# the same eleven sectors with the same narrowing examples, because the examples
+# are what stop everybody picking from the broad end.
+SECTORS = render.SECTORS
 
 
 def _ask_sectors() -> list[str]:
@@ -223,13 +200,13 @@ def _ask_sectors() -> list[str]:
     """
     width = max(len(name) for name, _ in SECTORS)
     print()
-    print("  Which parts of the market interest you?")
+    print(f"  {_label('sectors_of_interest')}")
     print()
     for index, (name, example) in enumerate(SECTORS, start=1):
         print(f"    {index:2d}  {name.ljust(width)}   e.g. {example}")
     print()
     print("  Pick numbers, or type something of your own.")
-    print("  Narrower researches better - 'grid storage' beats 'utilities'.")
+    print(f"  {render.SECTOR_GUIDANCE}")
 
     raw = _read("  Your answer, comma separated: ")
 
@@ -248,49 +225,51 @@ def _ask_sectors() -> list[str]:
     return chosen
 
 
-# The allowed words come from UserInput's own Literal types rather than being
-# retyped here, so adding a risk level in one place cannot leave the CLI
-# offering the old three.
-EXPERIENCE = get_args(UserInput.model_fields["investment_experience"].annotation)
-RISK = get_args(UserInput.model_fields["risk_tolerance"].annotation)
-# The annotation is `Literal[...] | None`, so the codes sit one level in. USD
-# leads because 39 of the 48 companies in the cache trade in it, and the share
-# count is only shown when the investor's currency matches the share's.
-CURRENCIES = get_args(
-    get_args(UserInput.model_fields["investment_currency"].annotation)[0]
-)
+# The questions, in the order they are asked, each paired with how this terminal
+# asks it. The WORDING and the allowed answers come from render.py, which the
+# web form reads too: entry 96 is about exactly this - a question whose wording
+# drifted away from what the field meant, disabling the only guard that would
+# have caught the confusion. Two front ends wording it two ways is that failure
+# with a second copy of the mistake.
+_FIELDS = {field["name"]: field for field in render.form_fields()}
+
+EXPERIENCE = tuple(_FIELDS["investment_experience"]["options"])
+RISK = tuple(_FIELDS["risk_tolerance"]["options"])
+CURRENCIES = tuple(_FIELDS["investment_currency"]["options"])
+
+
+def _label(name: str) -> str:
+    return _FIELDS[name]["label"]
+
 
 QUESTIONS: list[tuple[str, object]] = [
-    ("age", lambda: _ask_int("Your age")),
-    ("investment_experience", lambda: _ask_choice("Investment experience", EXPERIENCE)),
-    ("risk_tolerance", lambda: _ask_choice("Risk tolerance", RISK)),
-    ("investment_amount", lambda: _ask_float("Amount you want to invest")),
+    ("age", lambda: _ask_int(_label("age"))),
+    (
+        "investment_experience",
+        lambda: _ask_choice(_label("investment_experience"), EXPERIENCE),
+    ),
+    ("risk_tolerance", lambda: _ask_choice(_label("risk_tolerance"), RISK)),
+    ("investment_amount", lambda: _ask_float(_label("investment_amount"))),
     (
         "investment_currency",
         lambda: _ask_choice(
-            "Currency of that amount\n"
-            "     (most companies this finds trade in USD)",
+            f"{_label('investment_currency')}\n"
+            f"     ({_FIELDS['investment_currency']['help'].rstrip('.')[0].lower() + _FIELDS['investment_currency']['help'].rstrip('.')[1:]})",
             CURRENCIES,
         ),
     ),
-    # ONE time question, not two. This used to ask "When do you need the money
-    # back" and then "How long do you expect to hold", which for a retail user
-    # are the same question - and the first one contradicted what the profile
-    # agent believed the field held. See models/user_input.py.
-    (
-        "holding_period",
-        lambda: _ask_text("How long do you plan to keep this money invested"),
-    ),
+    ("holding_period", lambda: _ask_text(_label("holding_period"))),
     # The single highest-signal answer in the whole run: Agent 2 turns this
     # straight into search queries, so it gets a menu of its own rather than a
-    # one-line prompt. See SECTORS: the list exists to stop a beginner facing a
-    # blank, and its examples exist to stop the menu making everyone broader.
+    # one-line prompt. See render.SECTORS: the list exists to stop a beginner
+    # facing a blank, and its examples exist to stop the menu making everyone
+    # broader.
     ("sectors_of_interest", _ask_sectors),
     (
         "restrictions",
         lambda: _ask_list(
-            "Anything you will not invest in, comma separated\n"
-            "     (e.g. no fossil fuels, no tobacco - blank if none)"
+            f"{_label('restrictions').rstrip('?')}, comma separated\n"
+            f"     (e.g. no fossil fuels, no tobacco - blank if none)"
         ),
     ),
 ]
@@ -344,32 +323,28 @@ def load_profile(path: Path | str) -> UserInput:
 
 
 def describe_profile(user: UserInput) -> str:
-    sectors = ", ".join(user.sectors_of_interest) or "no sectors given"
-    limits = ", ".join(user.restrictions) or "no restrictions"
+    """What the system believes the user said, read back to them.
+
+    The WORDS are render.py's, because this same summary heads the demo, the
+    loaded-profile line and anything the HTTP layer shows: "will not hold: no
+    restrictions" is a statement about their answer, not a layout choice. The
+    newlines and the two-space indent are this terminal's, and stay here.
+    """
+    parts = render.profile_parts(user)
     return (
-        f"age {user.age}, {user.investment_experience}, "
-        f"{user.risk_tolerance} risk, {user.investment_amount:,.0f} "
-        f"held for {user.holding_period}\n"
-        f"  interested in: {sectors}\n"
-        f"  will not hold: {limits}"
+        f"{parts['headline']}\n"
+        f"  interested in: {parts['sectors']}\n"
+        f"  will not hold: {parts['restrictions']}"
     )
 
 
 # --- Running the graph -------------------------------------------------------
 
-# What each graph node is called on screen, and which of the five stages it is.
-# Kept in one table because it is needed in two places that must agree: the
-# progress display announcing the next stage, and the resume path working out
-# where a saved run stopped. Two copies would drift the moment a node is added.
-STAGE_LABELS: dict[str, tuple[int, str]] = {
-    "profile_agent": (1, "Checking your profile makes sense"),
-    "clarification": (1, "Waiting for your clarification"),
-    "clarification_exhausted": (1, "Giving up on the profile"),
-    "research": (2, "Researching current themes in your sectors"),
-    "companies": (3, "Finding companies genuinely exposed to those themes"),
-    "risk_critic": (4, "Stress-testing each candidate against bad news"),
-    "decide": (5, "Writing the brief"),
-}
+# One name for render.py's table rather than a second copy of it. Three places
+# have to agree on what a stage is called: the progress display announcing the
+# next one, the resume path working out where a saved run stopped, and the HTTP
+# layer's stage events.
+STAGE_LABELS = render.STAGE_LABELS
 
 
 class Progress:
@@ -382,7 +357,7 @@ class Progress:
     right now rather than what already happened.
     """
 
-    STAGES = 5
+    STAGES = render.STAGES
 
     def __init__(self) -> None:
         self._started = time.monotonic()
@@ -402,14 +377,20 @@ class Progress:
 
 
 def _report(progress: Progress, node: str, update: dict) -> None:
-    """Turn one node's state update into a line or two on screen."""
+    """Turn one node's state update into a line or two on screen.
+
+    The COUNTS come from ``render.stage_detail``, which the HTTP layer also
+    reads, so the two front ends cannot end up reporting different numbers for
+    the same run. What is left here is the sentence they are written into.
+    """
     if update.get("error"):
         progress.failed(update["error"])
         return
 
+    detail = render.stage_detail(node, update)
+
     if node == "profile_agent":
-        profile = update["investor_profile"]
-        if profile.needs_clarification:
+        if detail["needs_clarification"]:
             progress.detail("your answers appear to conflict")
         else:
             progress.detail("profile valid")
@@ -420,75 +401,74 @@ def _report(progress: Progress, node: str, update: dict) -> None:
         progress.stage(1, "Re-checking your profile")
 
     elif node == "research":
-        found = update["research_findings"]
         progress.detail(
-            f"{len(found.themes)} theme(s), {len(found.articles)} cited article(s) "
-            f"from {found.articles_retrieved} retrieved"
+            f"{len(detail['themes'])} theme(s), {detail['articles_cited']} cited "
+            f"article(s) from {detail['articles_retrieved']} retrieved"
         )
-        for theme in found.themes:
-            progress.detail(f"  - {theme.name} ({theme.confidence} confidence)")
+        for theme in detail["themes"]:
+            progress.detail(f"  - {theme['name']} ({theme['confidence']} confidence)")
         progress.stage(*STAGE_LABELS["companies"])
 
     elif node == "companies":
-        found = update["company_findings"]
         progress.detail(
-            f"{len(found.candidates)} candidate(s) from "
-            f"{found.companies_examined} companies examined"
+            f"{len(detail['candidates'])} candidate(s) from "
+            f"{detail['companies_examined']} companies examined"
         )
-        if found.candidates:
-            progress.detail("  " + ", ".join(c.ticker for c in found.candidates))
-        if found.drop_summary:
-            dropped = ", ".join(f"{n} {why}" for why, n in found.drop_summary.items())
+        if detail["candidates"]:
+            progress.detail("  " + ", ".join(detail["candidates"]))
+        if detail["drop_summary"]:
+            dropped = ", ".join(
+                f"{n} {why}" for why, n in detail["drop_summary"].items()
+            )
             progress.detail(f"  dropped: {dropped}")
         progress.stage(*STAGE_LABELS["risk_critic"])
 
     elif node == "risk_critic":
-        found = update["risk_findings"]
-        for critique in found.critiques:
-            if critique.was_critiqued:
+        for critique in detail["critiques"]:
+            if critique["was_critiqued"]:
                 progress.detail(
-                    f"  {critique.ticker}: {critique.verdict} "
-                    f"({len(critique.risks)} risk(s) from "
-                    f"{critique.articles_reviewed} article(s))"
+                    f"  {critique['ticker']}: {critique['verdict']} "
+                    f"({critique['risks']} risk(s) from "
+                    f"{critique['articles_reviewed']} article(s))"
                 )
             else:
                 progress.detail(
-                    f"  {critique.ticker}: not critiqued - {critique.skipped_reason}"
+                    f"  {critique['ticker']}: not critiqued - "
+                    f"{critique['skipped_reason']}"
                 )
-            if critique.press_releases_withheld:
+            if critique["press_releases_withheld"]:
                 progress.detail(
-                    f"    withheld {critique.press_releases_withheld} company "
+                    f"    withheld {critique['press_releases_withheld']} company "
                     f"press release(s)"
                 )
-            if critique.sources_withheld:
+            if critique["sources_withheld"]:
                 # A filter that removes evidence without saying so is its own
                 # kind of unreliable narrator. Recording it in state and then
                 # not printing it would move the silence rather than end it.
-                withheld = ", ".join(sorted(set(critique.sources_withheld)))
                 progress.detail(
-                    f"    withheld {len(critique.sources_withheld)} article(s) "
-                    f"from: {withheld}"
+                    f"    withheld {critique['sources_withheld_count']} article(s) "
+                    f"from: {', '.join(critique['sources_withheld'])}"
                 )
         progress.stage(*STAGE_LABELS["decide"])
 
     elif node == "decide":
-        decision = update["decision"]
-        progress.detail(f"{len(decision.recommendations)} recommendation(s)")
+        progress.detail(f"{len(detail['recommendations'])} recommendation(s)")
 
 
 def ask_clarification(payload: dict) -> str:
     """Agent 1 has stopped to ask a question. Get an answer to resume with."""
+    question = render.describe_question(payload)
     _banner(
         f"CLARIFICATION NEEDED  "
-        f"(attempt {payload['attempt']} of {payload['max_attempts']})",
+        f"(attempt {question['attempt']} of {question['max_attempts']})",
         char="-",
     )
     print()
-    print(_wrap("Two of your answers appear to contradict each other:", indent="  "))
+    print(_wrap(question["intro"], indent="  "))
     print()
-    print(_wrap(payload["reason"], indent="    "))
+    print(_wrap(question["reason"], indent="    "))
     print()
-    print(_wrap(payload.get("question", "Please clarify your preference."), indent="  "))
+    print(_wrap(question["prompt"], indent="  "))
     print()
 
     while True:
@@ -497,7 +477,7 @@ def ask_clarification(payload: dict) -> str:
             return answer
         # A blank answer would consume one of a small number of attempts and
         # tell the agent nothing, so it is not accepted as an answer.
-        print("     Please say which of the two you would rather keep.")
+        print(f"     {question['blank_answer_hint']}")
 
 
 def run(graph, thread_id: str, start, opening: tuple[int, str]) -> dict:
@@ -543,112 +523,39 @@ def run(graph, thread_id: str, start, opening: tuple[int, str]) -> dict:
 
 
 # --- Printing the result -----------------------------------------------------
+#
+# LAYOUT ONLY. What a reader is TOLD lives in render.py and is shared with the
+# HTTP layer; everything below decides where those words sit on a 78-column
+# terminal. The line between the two: if changing it would tell a reader
+# something different it belongs in render.py, and if it only moves the words on
+# the page it belongs here.
 
 
-def _find_article(article_id: str, state: dict):
-    """Look an article id up in both stores that could hold it.
+def _grounds(entries: list[dict], indent: str = "           ") -> str:
+    """Lay out what a reader could go and check, already indented.
 
-    Exit conditions cite bear-case articles from Agent 4 OR theme articles from
-    Agent 2, and neither store knows about the other.
-    """
-    for findings in (state.get("risk_findings"), state.get("research_findings")):
-        if findings is not None:
-            article = findings.article_by_id(article_id)
-            if article is not None:
-                return article
-    return None
-
-
-# The machine names for the four metrics, and what to call them to a person.
-# The model writes conditions containing the raw field name because that is what
-# it was given and what Python validates against; the reader gets English.
-_METRIC_WORDS = {
-    "revenue_growth": "revenue growth",
-    "operating_margin": "operating margin",
-    "gross_margin": "gross margin",
-    "debt_to_equity": "debt-to-equity",
-    "net_income_is_negative": "net income",
-    "free_cash_flow_is_negative": "free cash flow",
-}
-
-# What the risk critic concluded, said in words rather than as a status.
-_VERDICT_WORDS = {
-    "survives": "We argued against this one and it held up.",
-    "weakened": "We argued against this one and it mostly held up.",
-    "disqualified": "We argued against this one and it did not hold up.",
-}
-
-# Why a company was considered and then not recommended. The stored values are
-# enum names for code to branch on; nobody should have to read one.
-_EXCLUSION_WORDS = {
-    "outside_top_three": "Ranked just outside the top three.",
-    "not_critiqued": "Only a few companies are examined closely each run, and "
-                     "this one fell outside that.",
-    "restriction_violation": "It runs into something you said you wanted to avoid.",
-    "disqualified_by_risk": "A serious problem we found ruled it out.",
-}
-
-
-# Exclusions whose stored detail describes the COMPANY rather than the run's
-# bookkeeping, and is therefore worth a reader's attention.
-_DETAIL_WORTH_SHOWING = {"disqualified_by_risk", "restriction_violation"}
-
-
-def _plain(text: str) -> str:
-    """Make model-written text fit for a reader.
-
-    Two substitutions, both of internal plumbing the model was legitimately
-    given and had no way to know was not for publication.
-
-    Field names, because a condition is validated against `debt_to_equity` and
-    so that is what the model writes back.
-
-    Citation labels, because articles are numbered [A1], [A2] in the prompt so
-    the model can refer to one reliably - a 36-character uuid it cannot copy.
-    Python maps the label back to the real article, and the source is then
-    printed underneath in full. By the time a person reads it, "[A1]" names
-    nothing on their screen.
-    """
-    for machine, human in _METRIC_WORDS.items():
-        text = text.replace(machine, human)
-
-    text = re.sub(r"\s*\[A\d+\]", "", text)
-    return re.sub(r"\s{2,}", " ", text).strip()
-
-
-def _grounds(condition, state: dict, indent: str = "           ") -> str:
-    """Say what a reader could go and check to see whether a condition has hit.
-
-    Returned as a block already indented, because a source runs to three lines -
-    headline, publisher and date, link - and they have to line up under each
-    other or the citation stops looking like one thing.
-
-    An id that resolves in neither store is reported as such rather than printed
-    as a bare uuid: "the source was not retained" is information, and a hex
-    string on its own is not.
+    A source runs to three lines - headline, publisher and date, link - and they
+    have to line up under each other or the citation stops looking like one
+    thing. ``render.grounds_for`` decides WHICH source and what to call a metric;
+    this decides the shape.
     """
     lead = f"{indent}Check: "
     cont = " " * len(lead)
 
-    if condition.metric:
-        metric = _METRIC_WORDS.get(condition.metric, condition.metric)
-        return f"{lead}the company's reported {metric}"
+    if entries and entries[0]["kind"] == "metric":
+        return f"{lead}{entries[0]['text']}"
 
-    lines: list[str] = []
-    for article_id in condition.article_ids:
-        article = _find_article(article_id, state)
-        if article is None:
-            lines.append(f"the source for this was not kept ({article_id[:8]})")
-            continue
-        lines.append(f'"{article.title}"')
-        lines.append(f"{article.source}, {article.published_at:%d %b %Y}")
-        # Appended AFTER wrapping, below: textwrap breaks a long URL mid-token,
-        # which makes it uncopyable - and a link the reader cannot follow
-        # defeats the only reason this block exists.
-        lines.append(("url", article.url))
-
-    if not lines:
-        lines = ["nothing you could go and look up"]
+    lines: list = []
+    for entry in entries:
+        if entry["kind"] == "article":
+            lines.append('"' + entry["title"] + '"')
+            lines.append(f"{entry['source']}, {entry['published_on']}")
+            # Appended AFTER wrapping, below: textwrap breaks a long URL
+            # mid-token, which makes it uncopyable - and a link the reader
+            # cannot follow defeats the only reason this block exists.
+            lines.append(("url", entry["url"]))
+        else:
+            lines.append(entry["text"])
 
     block = []
     for index, line in enumerate(lines):
@@ -663,22 +570,6 @@ def _grounds(condition, state: dict, indent: str = "           ") -> str:
     return "\n".join(block)
 
 
-def _as_datetime(value):
-    """Accept either a datetime or an ISO string, or give up quietly.
-
-    LangGraph stores a checkpoint's timestamp as an ISO STRING while the demo
-    recording and MarketPrice both carry real datetimes. The notice is a
-    courtesy, so an unparseable value returns None and the caller stays silent
-    rather than failing a whole run over a date it could not format.
-    """
-    if value is None or hasattr(value, "strftime"):
-        return value
-    try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    except ValueError:
-        return None
-
-
 def print_as_of_notice(when, what: str) -> None:
     """Say, before anything else, that these numbers are from a past moment.
 
@@ -687,7 +578,7 @@ def print_as_of_notice(when, what: str) -> None:
     next to a share count - so a reader arriving at an old run needs to know
     that BEFORE they read a number, not in a footnote after it.
     """
-    when = _as_datetime(when)
+    when = render.as_datetime(when)
     if when is None:
         return
     print()
@@ -698,94 +589,50 @@ def print_as_of_notice(when, what: str) -> None:
     ))
 
 
-# How far ahead to point the reader. Deliberately NOT derived from the stated
-# holding period, for two reasons. It is free text - "3-5 years", "a while",
-# "until I need it" - so parsing it is guesswork. And even parsed it is the
-# wrong number: someone holding for five years should not first check in five
-# years, because the conditions above are things that could happen next quarter.
-# Three months is roughly one earnings cycle, which is when the metric-based
-# conditions could actually move.
-REVIEW_AFTER_DAYS = 91
-
-
-def _next_review(today: date | None = None) -> date:
-    return (today or date.today()) + timedelta(days=REVIEW_AFTER_DAYS)
-
-
-def _affordable_shares(rec, user) -> str | None:
-    """"Your money would buy about N shares", when that can be said honestly.
-
-    The arithmetic is NOT done here. It is computed in Agent 5 alongside the
-    price it derives from and stored on the recommendation, so this layer never
-    touches the network - the demo and a resumed run both print without one.
-
-    Absent when there was no price, no stated currency, or no exchange rate,
-    which is the same outcome as before conversion existed.
-    """
-    shares = getattr(rec, "shares_affordable", None)
-    currency = getattr(user, "investment_currency", None)
-    if shares is None or not currency:
-        return None
-
-    # ZERO is a computed answer, not a missing one, and saying so is more use
-    # than silence: one share costing more than the whole amount is exactly the
-    # thing a beginner has no way to work out from a price in another currency.
-    if shares == 0:
-        return (
-            f"One share costs more than your {currency} "
-            f"{user.investment_amount:,.0f}."
-        )
-
-    return (
-        f"Your {currency} {user.investment_amount:,.0f} would buy about "
-        f"{shares:,} share{'' if shares == 1 else 's'}."
-    )
-
-
-def print_next_steps(decision: Decision, state: dict) -> None:
+def print_next_steps(described: dict) -> None:
     """Turn the brief into something a reader can actually act on.
 
     Prices, what the stated amount would buy, and a date to look again. No
     forecast and no allocation: nothing here predicts a price or suggests how
     much to put anywhere, because nothing in this pipeline models either.
     """
-    user = state.get("user_input")
-    priced = [r for r in decision.recommendations if getattr(r, "price", None)]
-    if not priced and not decision.recommendations:
+    if not described["recommendations"]:
         return
 
     _banner("WHAT TO DO NEXT", char="-")
     print()
 
-    for rec in decision.recommendations:
-        price = getattr(rec, "price", None)
+    for rec in described["recommendations"]:
+        price = rec["price"]
         if price is None:
-            print(f"  {rec.ticker}: no price was available from the data provider.")
+            print(f"  {rec['ticker']}: no price was available from the data provider.")
             continue
-        amount, code = price.in_major_units
-        line = f"  {rec.ticker}  {code} {amount:,.2f} per share"
+        line = (
+            f"  {rec['ticker']}  {price['currency']} "
+            f"{price['amount']:,.2f} per share"
+        )
         # The price in THEIR money, when the share trades in something else.
         # "CNY 373.00" tells a reader almost nothing on its own.
-        own = getattr(rec, "price_in_investor_currency", None)
-        currency = getattr(user, "investment_currency", None)
-        if own is not None and currency and currency != code:
-            line += f"  (about {currency} {own:,.2f})"
-        print(f"{line}   (as of {price.as_of:%d %b %Y})")
+        if price["in_investor_currency"] is not None:
+            line += (
+                f"  (about {price['investor_currency']} "
+                f"{price['in_investor_currency']:,.2f})"
+            )
+        print(f"{line}   (as of {price['as_of_on']})")
 
-        affordable = _affordable_shares(rec, user) if user else None
-        if affordable:
-            print(_wrap(affordable, indent="        "))
+        if rec["affordable"]:
+            print(_wrap(rec["affordable"], indent="        "))
 
     print()
     print(_wrap(
-        f"Look at this again on {_next_review():%d %b %Y}, about three months "
-        "from now - roughly one set of results. What to check is listed under "
-        "each company above.",
+        f"Look at this again on {described['next_review_on']}, about three "
+        "months from now - roughly one set of results. What to check is listed "
+        "under each company above.",
         indent="  ",
     ))
 
 
-def print_recommendation(index: int, rec, state: dict) -> None:
+def print_recommendation(rec: dict) -> None:
     """One company, written for someone who has not invested before.
 
     The screen score is deliberately NOT printed. It is a ranking number, and
@@ -796,135 +643,100 @@ def print_recommendation(index: int, rec, state: dict) -> None:
     shows it.
     """
     print()
-    print(f" {index}. {rec.name} ({rec.ticker})")
-    if rec.themes:
-        print(_wrap(f"Came up because of: {', '.join(rec.themes)}", indent="     "))
-    verdict = _VERDICT_WORDS.get(rec.verdict)
-    if verdict:
-        print(f"     {verdict}")
+    print(f" {rec['index']}. {rec['name']} ({rec['ticker']})")
+    if rec["themes"]:
+        print(_wrap(f"Came up because of: {', '.join(rec['themes'])}", indent="     "))
+    if rec["verdict_text"]:
+        print(f"     {rec['verdict_text']}")
 
     print()
     print("     Why it might be worth a look")
-    print(_wrap(_plain(rec.thesis), indent="       "))
+    print(_wrap(rec["thesis"], indent="       "))
 
     print()
     print("     What would mean the idea has stopped working")
-    for condition in rec.exit_conditions:
-        print(_bullet(_plain(condition.condition)))
-        print(_grounds(condition, state))
+    for condition in rec["exit_conditions"]:
+        print(_bullet(condition["condition"]))
+        print(_grounds(condition["grounds"]))
 
-    if rec.known_risks:
+    if rec["known_risks"]:
         print()
         print("     Worth knowing")
-        for risk in rec.known_risks:
-            print(_bullet(_plain(risk)))
+        for risk in rec["known_risks"]:
+            print(_bullet(risk))
 
 
 def print_decision(decision: Decision, state: dict) -> None:
     """Print the Decision. An empty one is a result, and is printed like one."""
-    if decision.recommended_nothing:
+    described = render.describe_decision(decision, state, state.get("user_input"))
+
+    if described["recommended_nothing"]:
         # Deliberately the loudest thing on screen. Everywhere else in this
-        # project an empty result is a legitimate answer that must not read as
+        # project an empty result is a legitimate outcome that must not read as
         # a crash; this is the one place a person actually sees it, so it gets
         # the banner and the reason rather than silence.
-        _banner("NOTHING IS BEING RECOMMENDED")
+        _banner(described["nothing_headline"].upper())
         print()
-        print(
-            _wrap(
-                "This is a real answer, not a failure. Everything ran, and "
-                "nothing it found was good enough to put in front of you.",
-                indent="  ",
-            )
-        )
+        print(_wrap(described["nothing_explanation"], indent="  "))
         print()
         print("  Why")
-        print(
-            _wrap(_plain(decision.no_recommendation_reason or "no reason recorded"),
-                  indent="    ")
-        )
+        print(_wrap(described["no_recommendation_reason"], indent="    "))
     else:
-        count = len(decision.recommendations)
-        _banner(f"{count} {'COMPANY' if count == 1 else 'COMPANIES'} WORTH A LOOK")
-        for index, rec in enumerate(decision.recommendations, start=1):
-            print_recommendation(index, rec, state)
+        _banner(described["headline"].upper())
+        for rec in described["recommendations"]:
+            print_recommendation(rec)
 
-    if decision.excluded:
+    if described["excluded"]:
         _banner("ALSO CONSIDERED, BUT NOT RECOMMENDED", char="-")
         print()
         # Every candidate is accounted for here on purpose: a company that
         # simply vanished between the ranking and the output would be the one
         # failure a reader could never detect. The stored reason is an enum for
-        # code to branch on, so it is translated rather than printed raw.
-        for item in decision.excluded:
-            print(f"  {item.name} ({item.ticker})")
-            print(_wrap(_EXCLUSION_WORDS.get(item.reason, item.reason),
-                        indent="      "))
-            # The detail is worth showing for the two reasons that say
-            # something ABOUT THE COMPANY - a risk that ruled it out, a limit it
-            # ran into. For the ranking reasons it is internal bookkeeping
-            # ("ranked 4 of 5 eligible (weakened, score 0.997)"), and that score
-            # is the number agents/screening.py says cannot be read as a grade.
-            if item.detail and item.reason in _DETAIL_WORTH_SHOWING:
-                print(_wrap(_plain(item.detail), indent="      "))
+        # code to branch on, so render.py translates it rather than printing it.
+        for item in described["excluded"]:
+            print(f"  {item['name']} ({item['ticker']})")
+            print(_wrap(item["reason_text"], indent="      "))
+            if item["detail"]:
+                print(_wrap(item["detail"], indent="      "))
 
-    if not decision.recommended_nothing:
-        print_next_steps(decision, state)
+    if not described["recommended_nothing"]:
+        print_next_steps(described)
 
     # Observability, kept small and at the bottom. A conditions_discarded count
     # that climbs means the model is writing conditions grounded in nothing,
     # and the briefs above would still read perfectly well.
-    footnotes = []
-    if decision.conditions_discarded:
-        footnotes.append(
-            f"{decision.conditions_discarded} thing(s) to watch for were left "
-            "out, because nothing was given that you could go and check."
-        )
-    if decision.notes:
-        footnotes.append(decision.notes)
-    if footnotes:
+    if described["footnotes"]:
         print()
         print("-" * WIDTH)
-        for note in footnotes:
+        for note in described["footnotes"]:
             print(_wrap(note, indent="  "))
 
     print()
     print("=" * WIDTH)
-    print(
-        _wrap(
-            "This is research, not advice. It does not tell you what to buy, "
-            "or how much.",
-            indent=" ",
-        )
-    )
+    print(_wrap(render.DISCLAIMER, indent=" "))
     print("=" * WIDTH)
 
 
 def print_outcome(state: dict) -> int:
     """Print whatever the run ended with. Returns the process exit code."""
-    if state.get("error"):
+    described = render.describe_run(state)
+
+    if described["status"] == "failed":
         _banner("THE RUN COULD NOT FINISH")
         print()
-        print(_wrap(state["error"], indent="  "))
+        print(_wrap(described["error"], indent="  "))
         print()
-        print(
-            _wrap(
-                "If this mentions a rate limit or a quota, the daily ceiling has "
-                "been reached; try again later. Run python -m scripts.check_setup "
-                "to tell a configuration problem from an outage.",
-                indent="  ",
-            )
-        )
+        print(_wrap(described["error_hint"], indent="  "))
         return 1
 
-    decision = state.get("decision")
-    if decision is None:
+    if described["status"] == "no_decision":
         # Should be unreachable: every path either sets a decision or an error.
         # Saying so is better than printing nothing and exiting 0.
         _banner("THE RUN ENDED WITHOUT A DECISION OR AN ERROR")
-        print(f"\n  State reached: {sorted(state)}")
+        print(f"\n  State reached: {described['state_reached']}")
         return 1
 
-    print_decision(decision, state)
+    print_decision(state["decision"], state)
     # Recommending nothing exits 0. It is an answer, and a non-zero code would
     # tell every script wrapping this that the run had failed.
     return 0
