@@ -70,10 +70,11 @@ class UserInput(BaseModel):
     answers a person actually gives, and a fixed menu would force the last one
     onto all three.
 
-    So the only check is that SOMETHING was said. The CLI already re-asks on an
-    empty answer, but ``--profile file.json`` goes straight to this model, and
-    since this is now the only timeframe in the profile a blank one would reach
-    Agent 2's query prompt and Agent 5's brief with nothing in it.
+    So there are two checks, and both are about the answer being READABLE rather
+    than about its shape. The CLI already re-asks on an empty answer, but
+    ``--profile file.json`` and the HTTP layer go straight to this model, and
+    since this is the only timeframe in the profile a bad one reaches Agent 2's
+    query prompt and Agent 5's brief unchallenged.
     """
 
     @field_validator("holding_period", mode="before")
@@ -81,6 +82,43 @@ class UserInput(BaseModel):
     def _strip_holding_period(cls, value: object) -> object:
         """Trim first, so "   " fails ``min_length`` instead of passing it."""
         return value.strip() if isinstance(value, str) else value
+
+    @field_validator("holding_period")
+    @classmethod
+    def _a_number_needs_a_unit(cls, value: str) -> str:
+        """Refuse "8", because nothing downstream can tell months from years.
+
+        This project has already been bitten by this exact answer. The comment
+        above records that ``investment_window`` was deleted partly because
+        ``mine.json`` held a bare "8" - written when the two timeframe questions
+        were confusing enough that a number looked like a plausible reply to
+        whichever was being asked. The field went; the answer shape did not.
+
+        A bare number is not a small ambiguity. Agent 2 renders the whole
+        profile into its query prompt and Agent 5 writes the horizon into the
+        brief in words, so "8" is resolved independently, silently, and possibly
+        differently by each of them - and a beginner told a ten-month idea suits
+        their eight-YEAR plan has been given the wrong answer confidently.
+
+        The rule is deliberately narrow: digits with no letters anywhere. "8",
+        "3-5" and "10+" are refused; "8 years", "18 months", "3-5 yrs", "long
+        term" and "until my daughter starts university" all pass untouched. The
+        free text this field exists for is not narrowed at all.
+
+        It lives here rather than in the question's wording because wording does
+        not fix this. The restrictions prompt said "blank if none" and was
+        answered "none" twice by two different people, and the help beside this
+        question already offers "18 months" and "3-5 years" as examples.
+        """
+        if any(char.isdigit() for char in value) and not any(
+            char.isalpha() for char in value
+        ):
+            raise ValueError(
+                f"holding period {value!r} could mean months or years, and "
+                "nothing downstream can tell which; say which one, as in "
+                f"'{value} months' or '{value} years'"
+            )
+        return value
 
     sectors_of_interest: list[str] = Field(
         default_factory=list,

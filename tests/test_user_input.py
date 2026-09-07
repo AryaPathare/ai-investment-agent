@@ -175,3 +175,58 @@ def test_the_shipped_recording_no_longer_carries_a_no_op_restriction():
     )
     assert payload["profile"]["restrictions"] == ["no"]
     assert UserInput.model_validate(payload["profile"]).restrictions == []
+
+
+# --- A timeframe with no unit -------------------------------------------------
+#
+# "8" is the answer this project has already been bitten by once: mine.json
+# carried a bare "8" in investment_window, written when two timeframe questions
+# were confusing enough that a number looked like a plausible reply to whichever
+# was being asked. Entry 96 deleted that field. The answer shape survived it.
+
+
+@pytest.mark.parametrize("answer", ["8", "3-5", "10+", "12", "5 - 7", "2026"])
+def test_a_timeframe_that_is_only_a_number_is_refused(answer):
+    """Nothing downstream can tell eight months from eight years.
+
+    Agent 2 renders the whole profile into its query prompt and Agent 5 writes
+    the horizon into the brief in words, so a bare number is resolved
+    independently, silently, and possibly differently by each of them.
+    """
+    with pytest.raises(ValidationError, match="could mean months or years"):
+        UserInput(**_fields(holding_period=answer))
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "8 years", "18 months", "3-5 yrs", "5+ years", "10+ years",
+        "long term", "until my daughter starts university", "a while",
+    ],
+)
+def test_the_free_text_this_field_exists_for_is_untouched(answer):
+    """The rule is digits with no letters ANYWHERE, deliberately narrow. This
+    field is free text because "18 months", "3-5 years" and "until my daughter
+    starts university" are all answers a person actually gives."""
+    assert UserInput(**_fields(holding_period=answer)).holding_period == answer
+
+
+def test_the_check_is_on_the_model_not_the_question():
+    """--profile and the HTTP layer both go straight to this model, so a guard
+    living in the CLI's re-ask would be walked around by both. Same reasoning as
+    the "none" restriction filter."""
+    import inspect
+
+    from models.user_input import UserInput
+
+    source = inspect.getsource(UserInput)
+    assert "could mean months or years" in source
+
+
+def test_an_ambiguous_answer_with_words_still_passes():
+    """Recorded rather than fixed: "about 8" is as ambiguous as "8" and is
+    accepted, because the rule tests for a MISSING unit rather than trying to
+    parse the answer. Parsing free text is the guesswork this field avoids on
+    purpose, and the common case - a person typing just a number - is the one
+    that was actually observed."""
+    assert UserInput(**_fields(holding_period="about 8")).holding_period == "about 8"
