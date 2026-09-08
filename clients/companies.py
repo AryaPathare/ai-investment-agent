@@ -300,7 +300,51 @@ whose critique could never have run. Two of the four candidates in web-4d0d8c07
 were affected.
 
 ``longName`` sits right beside it, uncut, for nine of the ten.
+
+THE WIDTH IS NOT THE ONLY SIGNATURE, and on 2026-09-08 a live Energy run found
+the other one. ``"BHARAT PETROLEUM CORPORATION L"`` is THIRTY characters and cut
+mid-word - the ``L`` starts ``LIMITED`` - so the width test let it through, its
+bear case reviewed zero articles, and the brief told a reader "we argued against
+this one and it held up" about a company in its own top three.
+
+Length cannot separate it. Four other cached names sit at exactly thirty and are
+complete: ``Ultragenyx Pharmaceutical Inc.``, ``SolarWindow Technologies, Inc.``,
+``HOYMILES POWER ELECTRONICS INC``, ``Fujiyama Power Systems Limited``. Lowering
+the constant would take all four with it.
+
+What separates them is the LONG name, not the short one. See ``_cut_mid_word``.
 """
+
+
+def _cut_mid_word(short: str, long: str) -> bool:
+    """Whether ``short`` is ``long`` stopped in the middle of a word.
+
+    The second signal, and it fails differently from the width - which is the
+    whole reason for having it. This project has been taught once already that a
+    check resting on a single external signal breaks when that signal moves: a
+    fund filter keyed on ``quoteType`` was defeated by the provider reporting a
+    different value for the same ticker an hour later.
+
+    Neither test subsumes the other, measured over the 125 distinct names in the
+    cache:
+
+        width only     ASML, RWE, Carl Zeiss, Vox Valor - the short form carries
+                       text the long form does not, so it is no prefix of it
+        mid-word only  BHARAT PETROLEUM CORPORATION L, at thirty characters
+        both           Tencent Music, TSMC, Advanced Micro-Fabrication
+
+    The mid-word test is narrow on purpose. ``HOYMILES POWER ELECTRONICS INC``
+    is also a prefix of its long name and is NOT flagged, because what follows
+    the cut there is ``.`` rather than a letter - the name ended on a word
+    boundary and is complete. Zero false positives across all 125 names.
+    """
+    if not long or len(short) >= len(long):
+        return False
+    if not long.lower().startswith(short.lower()):
+        return False
+    # A letter after the cut means a word was severed. A space or a full stop
+    # means the short form simply stopped early, which is not a truncation.
+    return long[len(short)].isalpha()
 
 
 def company_name(short: str | None, long: str | None) -> str:
@@ -308,9 +352,10 @@ def company_name(short: str | None, long: str | None) -> str:
 
     Not simply "always take longName": for most companies the short form is the
     better one to search with and to show, because every extra word is another
-    word an article must also contain. This swaps only when the short form is
-    sitting exactly on the provider's field width, which is the observable
-    signature of a truncation.
+    word an article must also contain. This swaps only on an observable
+    signature of a truncation: the short form sitting on the provider's field
+    width, or being the long form stopped in the middle of a word. Two signals,
+    because each one alone misses truncations the other catches.
 
     One cached company (TSMC's Taiwanese listing) is truncated with no longName
     at all. Nothing here can repair that, and inventing a shorter form would be
@@ -320,7 +365,7 @@ def company_name(short: str | None, long: str | None) -> str:
     short = (short or "").strip()
     long = (long or "").strip()
 
-    if len(short) >= PROVIDER_NAME_WIDTH and long:
+    if long and (len(short) >= PROVIDER_NAME_WIDTH or _cut_mid_word(short, long)):
         return long
     return short or long
 

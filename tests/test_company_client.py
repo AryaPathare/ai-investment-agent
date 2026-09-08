@@ -504,6 +504,62 @@ def test_a_truncated_name_with_no_full_one_keeps_what_it_has():
     )
 
 
+@pytest.mark.parametrize(
+    "short, long",
+    [
+        # Found by a live Energy run on 2026-09-08, not by this suite. Thirty
+        # characters, so the width test let it through; its bear case reviewed
+        # zero articles and the brief said "we argued against this one and it
+        # held up" about its own third recommendation.
+        ("BHARAT PETROLEUM CORPORATION L", "Bharat Petroleum Corporation Limited"),
+    ],
+)
+def test_a_name_cut_mid_word_below_the_field_width_is_replaced(short, long):
+    assert C.company_name(short, long) == long
+    assert len(short) < C.PROVIDER_NAME_WIDTH, (
+        "the point of this case is that the width test cannot see it"
+    )
+
+
+@pytest.mark.parametrize(
+    "short, long",
+    [
+        # All four sit at exactly thirty characters, the same length as BPCL
+        # above, and all four are COMPLETE. Lowering PROVIDER_NAME_WIDTH to
+        # catch BPCL would take these with it, which is why the second signal
+        # reads the long name rather than the short one's length.
+        ("Ultragenyx Pharmaceutical Inc.", "Ultragenyx Pharmaceutical Inc."),
+        ("SolarWindow Technologies, Inc.", "SolarWindow Technologies, Inc."),
+        # A prefix of its long name, and NOT a truncation: what follows the cut
+        # is "." rather than a letter, so the name ended on a word boundary.
+        ("HOYMILES POWER ELECTRONICS INC", "Hoymiles Power Electronics Inc."),
+        ("Fujiyama Power Systems Limited", None),
+    ],
+)
+def test_a_complete_name_at_the_same_length_is_kept(short, long):
+    assert C.company_name(short, long) == short
+
+
+def test_the_two_truncation_signals_catch_different_names():
+    """Neither test subsumes the other, which is the reason there are two.
+
+    Written as an assertion about the SIGNALS rather than about the output,
+    because ``company_name`` returns the long name either way and a test over
+    its result cannot tell which signal fired. Delete either branch of the
+    ``or`` in ``company_name`` and one half of this goes red.
+    """
+    # Width only: the short form carries "- New York Re", which the long form
+    # does not have, so it is no prefix of it.
+    assert len("ASML Holding N.V. - New York Re") >= C.PROVIDER_NAME_WIDTH
+    assert not C._cut_mid_word("ASML Holding N.V. - New York Re", "ASML Holding N.V.")
+
+    # Mid-word only: thirty characters, below the width.
+    assert len("BHARAT PETROLEUM CORPORATION L") < C.PROVIDER_NAME_WIDTH
+    assert C._cut_mid_word(
+        "BHARAT PETROLEUM CORPORATION L", "Bharat Petroleum Corporation Limited"
+    )
+
+
 def test_the_width_matches_what_the_provider_actually_does():
     """Ten of 102 cached companies sit at exactly 31 characters and none are
     longer. If that ever changes, this constant is the thing to re-measure."""
