@@ -1,10 +1,10 @@
 # Start here
 
-**Written against `d9ee48b`, 2026-09-08 (session 20).** Before trusting a word
-of this:
+**Written against `6512a09`, 2026-09-08, at the end of session 20.** Before
+trusting a word of this:
 
 ```powershell
-git log --oneline d9ee48b..HEAD
+git log --oneline 6512a09..HEAD
 ```
 
 Thirty seconds, and it is here because of entry 92: session 15 opened this file,
@@ -26,6 +26,70 @@ entry 112, and the answer was no - see below. The suite is **1032 passed,
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - `docs/PROJECT_LOG.md` is current through entry **118**, 20 sessions
 - Tagged **`v1.0.0`** at `48f9c08`, which the case study quotes
+
+---
+
+## The task list, agreed at the end of session 20
+
+Eight items, grouped by what BLOCKS each one rather than by how interesting it
+is. Everything below was checked against the repository on 2026-09-08, not
+carried forward from a previous handoff - which is the mistake the section
+"What is not written down" further down records this file making twice.
+
+### A. Quota-bound - need a day's headroom
+
+**A1. The Basic Materials gallery run.** ~28k tokens and ~13 news requests, and
+the gallery is complete at eleven of eleven sectors plus the run that recommends
+nothing. The profile is written and validated under "Where the gallery got to"
+below; audit before recording.
+Watch this one specifically: Basic Materials is the lithium-shaped sector, entry
+112 is measured and UNFIXED, so a project vehicle can still be recommended as a
+company. Steering the narrowing to copper is deliberate.
+
+**A2. `python -m evals.company_runner` against the buyer ceiling (entry 106).**
+~28k tokens. Owed since session 19 and the honest gap - the ceiling is measured
+on one frozen state plus five live runs that it graded defensibly. It guards
+BOTH directions: a ceiling that is too aggressive empties briefs, which is
+exactly how entry 69 played out.
+
+### B. Free - no model calls at all
+
+**B3. The public-documents refresh.** The four stale numbers and the three
+missing limitations, both listed under "What is not written down" below. This is
+the file a stranger reads first and the work costs nothing.
+
+**B4. Entry 116 - `<Country>'s <Company>` does not resolve.** The cheapest open
+item to VERIFY and the easiest to get wrong. Verifiable end to end offline,
+because resolution is Python plus a cached search - but it touches
+`resolve_company`, which `AMD`, `IBM`, `BP`, `GE`, `RWE` and `SMIC` all depend
+on, and entry 53's retry does not reach it: the possessive has to be normalised
+out BEFORE scoring, not merely before searching. Decide the approach first, the
+way entry 112 was decided.
+
+### C. Decisions before any work
+
+**C5. Retrying entry 112.** Optional. Only worth starting with n of at least 6
+per arm, and the rule has to remove PPG WITHOUT increasing verbatim copying,
+which is what defeated the last attempt.
+
+**C6. Failed-run resumability, 2.10's second half.** Re-entering a completed
+thread, which changes what `--resume` and `--list` mean for every run.
+
+**C7. Agent 1's hard eval set is exhausted.** 12/12 across `--repeat 3`, which by
+the rubric written with those cases means it confirms rather than measures.
+Writing harder cases is free; running them is 12 calls.
+
+**C8. `disqualified_by_risk` has still never fired on real data.** Deliberately
+not forced - a fabricated critique proves only that the code runs on a
+fabrication. It waits on a live run where a critic genuinely finds something
+critical.
+
+### Order
+
+**B3 first** - free, and it is the reader-facing one. **A1 the moment news
+headroom returns**, because the gallery slot is the only item with a deadline of
+sorts: every day it is missing is a day the site shows ten of eleven sectors.
+Then **A2**. B4 is the interesting engineering and wants a decision before code.
 
 ---
 
@@ -332,11 +396,37 @@ a restart stops visitors resuming a paused run.
 
 ## What is not written down
 
-`README.md` and `docs/DESIGN.md` both describe a system with no web layer, and
-the README still calls the CLI "the only way a person runs this". Neither
-mentions the gallery. That is the oldest outstanding item in this file and it is
-the one a stranger hits first - entries 94 and 95 are about precisely this
-failure, twice.
+**The claim that used to sit here was itself stale, and session 20 checked it
+rather than acting on it.** It said `README.md` and `docs/DESIGN.md` describe a
+system with no web layer, that the README still calls the CLI "the only way a
+person runs this", and that neither mentions the gallery. **All three are false
+now** - `156fa87` and `2047762` fixed them at the end of session 18, and the
+handoff carried the pre-fix description forward anyway. Entry 92 happening to
+this file again, which is why line 1 says to run `git log` before trusting a
+word of it.
+
+What the public documents actually have wrong is smaller, and was verified
+against the repository on 2026-09-08:
+
+    README.md:109    "1008 passed, 1 skipped"   ->  1032
+    README.md:206    "1008 passed, 1 skipped"   ->  1032   <-- the check line
+    README.md:346    "97 entries"               ->  118
+    docs/DESIGN.md:4 "97 entries"               ->  118
+
+**Line 206 is the one that matters**, and it is entry 94 verbatim: a stale
+number in the VERIFICATION INSTRUCTION, the line telling a returning reader what
+a healthy suite looks like. Anybody following it runs pytest, sees 1032 against
+an expected 1008, and goes looking for what they broke. A stale number in a
+check does not merely fail to inform; it manufactures a discrepancy in a system
+that is fine.
+
+**And the README's limitations list is missing the three newest ones.** That
+list is good and current through entry 91, which is what makes the gap easy to
+miss. It does not carry entry 112 (a project vehicle can be recommended as a
+company - the one that actually reaches a reader), entry 116, or entry 118 (no
+size or liquidity notion anywhere in the pipeline). Entry 94's finding was that
+a limitations list goes stale by things getting BETTER and nobody re-reading it;
+this is the other direction.
 
 ---
 
