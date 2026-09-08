@@ -4480,3 +4480,44 @@ this log has now recorded three times and which was one decision away from being
 skipped here on the grounds that the first control had already been taken.
 
 Suite unchanged at **1032 passed, 1 skipped**: nothing shipped.
+
+### 118. A price floor would have removed the one honest candidate
+
+The recorded Energy run recommends a **EUR 0.05** share to a low-risk 58-year-old
+holding GBP 250,000, and prints the position as **6,265,053 shares**. It was
+carried out of session 19 as a decision rather than a defect, because nothing is
+wrong by the system's own rules: selection orders by verdict tier then screen
+score, and risk tolerance deliberately gates nothing downstream.
+
+**Measured before deciding, across every recommendation this project has made.**
+54 of 67 carry a price, and exactly two sit below one unit of their currency:
+
+    0.0465  EUR   87R.F   Rompetrol Rafinare    the Energy gallery recording
+    0.3797  USD   PBK     PowerBank Corporation a recurring candidate
+
+The second row is the argument. PowerBank is a real renewable utility, and in
+entry 69 it was the ONLY candidate left standing after the buyer ceiling dropped
+Alphabet and Amazon from a renewables brief - the case that entry recorded as
+"one honest candidate is a thinner brief than three and a better one". **A floor
+at one currency unit would have deleted it.** On this pipeline's data, a price
+floor is not a quality screen; it is a screen against small and foreign
+listings, which is the class of company entries 53 and 60 were both about
+recovering.
+
+**And the two things the symptom conflates are worth separating.** A low share
+price is not evidence about a company - any firm can reverse-split into a high
+one - so there is nothing to screen ON. What actually reads badly is the share
+COUNT, and that is a presentation artifact of dividing a large amount by a tiny
+price, not a fact the pipeline measured.
+
+The screen a reader would actually want is size or liquidity, and **the pipeline
+has no volume or market-cap field anywhere** - not on `ResolvedCompany`, not in
+either provider path. Building one means a new fetch, a new field, and a
+threshold nobody can defend yet, measured against briefs emptying. That is entry
+9's trap and entry 69's outcome, and it is a design change rather than a fix.
+
+**Decided: recorded, nothing changed.** On the same terms as the two scoring
+limits in `agents/screening.py` and the off-topic matches of entry 47 - measured,
+understood, and left deliberately. The absence of any size or liquidity notion is
+now written down where a reader will find it, which is the honest response to a
+gap that no cheap instrument closes.

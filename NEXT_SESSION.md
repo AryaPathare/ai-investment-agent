@@ -24,7 +24,7 @@ entry 112, and the answer was no - see below. The suite is **1032 passed,
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **117**, 20 sessions
+- `docs/PROJECT_LOG.md` is current through entry **118**, 20 sessions
 - Tagged **`v1.0.0`** at `48f9c08`, which the case study quotes
 
 ---
@@ -61,9 +61,27 @@ for. This is the first item to spend on.
 
 **A lithium-shaped Basic Materials profile is the one that produced entry 112.**
 That is now measured and unfixed, so a run down that theme can still put a
-project vehicle in front of a reader. `copper and specialty chemicals` is the
-narrowing suggested below partly for that reason; audit the mentions before
-recording whatever lands.
+project vehicle in front of a reader. Note that `render.SECTORS` offers
+`lithium mining, chemicals` as this sector's narrowing, and steering to copper
+is a DELIBERATE departure from the menu wording for that reason; audit the
+mentions before recording whatever lands.
+
+**The profile is written and validated through `UserInput`** - demographics
+varied against the eleven already in the gallery, no restrictions, so nothing
+in it needs deciding before it is spent:
+
+```json
+{
+  "age": 52,
+  "investment_experience": "advanced",
+  "risk_tolerance": "moderate",
+  "investment_amount": 60000.0,
+  "investment_currency": "USD",
+  "holding_period": "5-7 years",
+  "sectors_of_interest": ["Basic Materials", "copper and specialty chemicals"],
+  "restrictions": []
+}
+```
 
 **The profile shape that works, and it is not the plain sector name alone.** Lead
 with the plain sector name so a visitor can see which sector a run is, then add
@@ -201,13 +219,19 @@ frozen state, plus session 19's five live runs, which it graded defensibly in
 every case. It also guards the other direction - a ceiling that is too aggressive
 empties briefs, which is how entry 69 played out. ~28k tokens.
 
-**A sub-penny share reached a low-risk brief.** The recorded Energy run
-recommends a EUR 0.05 share to a low-risk 58-year-old with GBP 250,000, carrying
-three fundamental risks, priced at 6,265,053 shares. Nothing is wrong by the
-system's own rules - selection orders by verdict tier then screen score, and risk
-tolerance deliberately gates nothing downstream. There is no price floor and no
-liquidity screen anywhere in the pipeline. Decide whether there should be before
-adding one; it is the first time this has been visible on a page.
+**A sub-penny share reached a low-risk brief - DECIDED in session 20, entry 118.
+Recorded, nothing changed. Do not add a price floor.** Measured across every
+recommendation the project has made: 54 of 67 carry a price and exactly two are
+under one currency unit - the EUR 0.05 Energy holding, and **PowerBank at USD
+0.38**, which entry 69 left as the single honest candidate of a renewables brief.
+A floor would have deleted it. On this pipeline's data a price floor is not a
+quality screen, it is a screen against small and foreign listings, which is the
+class entries 53 and 60 were both about recovering.
+
+What a reader would actually want is size or liquidity, and **the pipeline has no
+volume or market-cap field anywhere**, on either provider path. That is a design
+change with a threshold nobody can defend yet, not a fix. The absence is now
+written down rather than closed.
 
 **Entry 116, the possessive prefix.** Written up with the two defects above,
 because that is where it was found. It is the cheapest open item to settle -
