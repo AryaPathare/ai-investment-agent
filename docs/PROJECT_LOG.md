@@ -4521,3 +4521,148 @@ limits in `agents/screening.py` and the off-topic matches of entry 47 - measured
 understood, and left deliberately. The absence of any size or liquidity notion is
 now written down where a reader will find it, which is the honest response to a
 gap that no cheap instrument closes.
+
+## Session 21 — 2026-09-08
+
+The session the website went up. The goal was stated plainly for the first time -
+a live site other people can use from their own computers - and the work that
+followed was mostly reading the deployment config against the platform's actual
+spec rather than writing anything new. Two defects came out of that reading, and
+both were the same kind: a file that had never been executed, asserting something
+nobody had checked.
+
+### 119. A pin that pinned nothing
+
+`render.yaml` had been written the session before with every constraint stated
+deliberately - one worker, a health check path, a generated session secret - and
+one line that did nothing at all:
+
+    pythonVersion: "3.14"
+
+**`pythonVersion` is not a key Render's blueprint spec defines.** It was silently
+ignored. The service would have built on whatever Render's default happened to
+be, against a project that pins every dependency with `==` and whose CI has only
+ever run 3.14.
+
+It was harmless on the day, and that is the part worth keeping: Render's own
+default is currently **3.14.3**, so the ignored pin and the intended pin agreed
+by coincidence. The failure was scheduled rather than absent - the first default
+bump to 3.15 would have changed the interpreter under the service, with nothing
+in the repository changing and nothing to notice.
+
+Render honours exactly two mechanisms: a fully qualified `PYTHON_VERSION`
+variable, or a `.python-version` file. The file is used, holding `3.14` **without
+a patch number**, which is deliberate: `.github/workflows/tests.yml` also runs
+`"3.14"` and floats the patch, so the deployed interpreter and the tested
+interpreter move together. Pinning a patch here would have looked more precise
+and quietly let CI and production diverge - the more precise-looking option being
+the wrong one is a shape this log already has three times.
+
+**A deployment file is otherwise only testable BY DEPLOYING**, which is exactly
+why this sat unnoticed for a session: the suite does not deploy, and the service
+had never been created. `tests/test_deployment_config.py` now checks the part
+that can be checked without one - the deployed Python matches the tested Python,
+the ignored key cannot come back, both start commands pin one worker, the
+`healthCheckPath` is a real route on the app, and the module those commands name
+actually imports. Its docstring states what it CANNOT verify, because a guard
+whose limits are unstated gets trusted for more than it checks.
+
+All six mutations go red. And the `pythonVersion` guard failed on its first run
+against a correct file - it matched the word inside the comment EXPLAINING why
+not to use the key. **The guard was reading prose rather than configuration**,
+which is the same error as entry 109's sector heuristic testing the words used to
+describe a company. It strips comments now.
+
+### 120. The live view of a failure said less than the reloaded view
+
+`render.describe_run` attaches `RATE_LIMIT_HINT` to a failed run read back from
+state. The streaming path hardcoded an empty hint. So a visitor WATCHING a run
+die got a bare exception string, while the same person reloading the page got the
+sentence explaining that a daily ceiling had been reached and to try later.
+
+**It cost nothing locally and would have cost a great deal deployed**, for a
+reason specific to how this system is built. There is deliberately no global gate
+on starting a run: `quota.py`'s own rule is that nothing may refuse a visitor on
+the strength of its estimate, because the provider's refusal is the honest gate
+and it is free. The consequence on a public site is that everybody past the day's
+seventh run starts one and watches it fail - so the live view is not an edge case
+there, it is the common case.
+
+The front end was inventing the empty hint itself, which is **entry 98's line
+crossed**: what a reader is TOLD is content and lives in `render.py`; only layout
+belongs to the front end. Both failure emits now carry the hint, and the page
+renders what it is given.
+
+Two hours before a deployment is a conspicuously lucky time to find this, and it
+was not luck - it surfaced from asking what a visitor sees once the shared quota
+is gone, which is a question that only gets asked when somebody decides real
+strangers will use the thing.
+
+### 121. Two accounts, and the repository on the wrong one
+
+Not a code defect, and worth recording because it took a live API call to
+untangle something that looked like a mystery.
+
+The repository sat at `AryaPathare/ai-investment-agent`, reachable from a UNC
+school login. Every commit in its history is authored `patharearya@gmail.com`.
+Both accounts are his, and the split was invisible until he noticed the project
+was absent from one account's repository list.
+
+**Session 8 caused it, correctly.** That session rewrote all 38 commits from a
+work email so that publishing would not put it permanently into public commit
+metadata. The replacement address happens to be verified on a DIFFERENT GitHub
+account from the one that created the repository - so GitHub credited every
+commit to `patharearya` while `AryaPathare` owned the repo. Confirmed rather than
+inferred, from the API: commit `fd58395` reports
+`linked_github_login: patharearya`.
+
+Transferred to `patharearya`, the professional account. **SHAs did not change**,
+so `v1.0.0` at `48f9c08` still resolves and the case study that quotes it still
+holds - which is the one thing a transfer must not break and a history rewrite
+always does. Ownership and credit now agree. The school account was left as a
+collaborator on purpose.
+
+Four references needed updating, all prose: the CI badge's image URL and its link
+target on one line, the clone command, and the handoff. The badge is the only
+place a redirect would have shown, since it resolves THROUGH to a workflow rather
+than rendering from one.
+
+### 122. Live, and what that does and does not prove
+
+**https://ai-investment-agent-gdjr.onrender.com** - deployed from `render.yaml`
+as a Render blueprint at commit `1320108`. The subdomain carries a suffix because
+`ai-investment-agent` was already taken globally.
+
+Verified against the real deployment rather than a local server:
+
+    /api/health              {"ok":true}, 0.40s
+    /                        200, 21KB
+    /api/quota               "About 7 runs left today", flagged as an estimate
+    /api/gallery             all 11 recordings
+    /api/gallery/technology  full brief, ASML / 688825.SS / PLAB, disclaimer kept
+    /api/form                8 fields, the sector menu and its narrowings
+    traversal                404
+
+The form result is the one worth calling out. The eleven-sector menu WITH its
+narrowing examples is served from the server, not duplicated into the page, so
+entry 98's split survived contact with a second environment. And entry 83's whole
+argument - that the menu teaches narrowing at the moment of choice - is now
+reaching actual strangers rather than a local browser.
+
+**What was deliberately NOT tested: a real live run.** It costs ~28k tokens and
+~13 news requests against a budget already near its ceiling, and the Basic
+Materials gallery slot has first claim on tomorrow's headroom. So the run path in
+production rests on 1040 local tests and on session 18's live runs against the
+same code - which is good evidence, and is not the same as having watched it work
+there. **It is now the last genuinely unverified thing in this project**, and it
+should be stated that way rather than folded into "it is deployed".
+
+Two behaviours accepted rather than fixed, both documented in `render.yaml`
+before the deploy: the free plan spins down after fifteen minutes, so the first
+visitor waits about a minute, and the filesystem is ephemeral, so a redeploy
+loses any paused clarification and resets the runs-served ledger. A persistent
+disk fixes both and is the first thing to add if this ever sees real traffic.
+
+1032 passed to **1040**, and the four stale counts in `README.md` and
+`docs/DESIGN.md` were corrected in the same commits that moved them - which is
+the only discipline that keeps a documented number true.

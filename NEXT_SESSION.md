@@ -1,10 +1,10 @@
 # Start here
 
-**Written against `6512a09`, 2026-09-08, at the end of session 20.** Before
+**Written against `1320108`, 2026-09-08, at the end of session 21.** Before
 trusting a word of this:
 
 ```powershell
-git log --oneline 6512a09..HEAD
+git log --oneline 1320108..HEAD
 ```
 
 Thirty seconds, and it is here because of entry 92: session 15 opened this file,
@@ -18,14 +18,30 @@ what happens next.
 **Session 19's four commits are PUSHED and CI is green on all of them.** That
 was the first thing session 20 did; there is nothing outstanding from it.
 
-Session 20 spent no news requests and shipped no behaviour change. It answered
-entry 112, and the answer was no - see below. Session 21 then began the deploy
-work and added the first tests the deployment config has ever had. The suite is
-**1040 passed, 1 skipped**.
+## THE SITE IS LIVE
+
+**https://ai-investment-agent-gdjr.onrender.com**
+
+Deployed 2026-09-08 from `render.yaml` as a Render blueprint at `1320108`, on
+the `patharearya` account. Verified against the real deployment: health, the
+page, the quota estimate, all 11 gallery recordings, a full brief, the 8-field
+form with its sector menu, and the traversal guard. Entry 122 has the numbers.
+
+**The one thing NOT verified there is a real live run** - it costs ~28k tokens
+and ~13 news requests, and Basic Materials has first claim on the next headroom.
+The run path in production rests on 1040 local tests plus session 18's live runs
+against the same code. That is good evidence and it is not the same thing. **It
+is now the last genuinely unverified thing in this project.**
+
+Session 20 spent no news requests and shipped no behaviour change; it answered
+entry 112, and the answer was no. Session 21 deployed, moved the repository to
+the professional account, and gave the deployment config the first tests it has
+ever had. The suite is **1040 passed, 1 skipped**.
 
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
+- Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, one worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **118**, 20 sessions
+- `docs/PROJECT_LOG.md` is current through entry **122**, 21 sessions
 - Tagged **`v1.0.0`** at `48f9c08`, which the case study quotes
 
 ---
@@ -38,6 +54,17 @@ carried forward from a previous handoff - which is the mistake the section
 "What is not written down" further down records this file making twice.
 
 ### A. Quota-bound - need a day's headroom
+
+**A0. One live run against the DEPLOYED site, start to finish.** New, and now the
+top item: it is the last genuinely unverified thing in the project. Open
+https://ai-investment-agent-gdjr.onrender.com, fill the form, watch it stream
+through five stages and render a brief. What it proves that no local test can:
+the three keys work server-side, a 2-4 minute SSE stream survives Render's proxy
+(sse-starlette pings every 15s by default, so it should), the queue behaves in a
+real process, and the runs-served ledger increments. ~28k tokens and ~13 news
+requests, the same as any run - so it competes directly with A1 for the same
+headroom, and A1 is a gallery slot while this is a verification. Do A0 first if
+only one fits.
 
 **A1. The Basic Materials gallery run.** ~28k tokens and ~13 news requests, and
 the gallery is complete at eleven of eleven sectors plus the run that recommends
@@ -90,10 +117,15 @@ critical.
 
 ### Order
 
-**B3 first** - free, and it is the reader-facing one. **A1 the moment news
-headroom returns**, because the gallery slot is the only item with a deadline of
-sorts: every day it is missing is a day the site shows ten of eleven sectors.
-Then **A2**. B4 is the interesting engineering and wants a decision before code.
+**A0 first the moment headroom returns** - the site is public now, so an
+unverified run path is a stranger's broken experience rather than an internal
+gap. **A1 next**, since every day it is missing is a day the live gallery shows
+ten of eleven sectors. Then **B3**'s remaining half, which is free. Then **A2**.
+B4 is the interesting engineering and wants a decision before code.
+
+One caveat on A0 that did not exist before: the site is deployed with a shared
+budget, so a visitor may consume the headroom you were saving. The quota
+endpoint reports what is left.
 
 ---
 
