@@ -1,6 +1,6 @@
 # AI Investment Research Agent
 
-[![tests](https://github.com/AryaPathare/ai-investment-agent/actions/workflows/tests.yml/badge.svg)](https://github.com/AryaPathare/ai-investment-agent/actions/workflows/tests.yml)
+[![tests](https://github.com/patharearya/ai-investment-agent/actions/workflows/tests.yml/badge.svg)](https://github.com/patharearya/ai-investment-agent/actions/workflows/tests.yml)
 
 Five LLM agents that research stocks for someone who doesn't know where to
 start. You say which sectors interest you, how much risk you can take and what
@@ -62,7 +62,7 @@ Python **3.14** is what CI runs on Linux and Windows, and every dependency is
 pinned exactly. Older versions are untested rather than known-broken.
 
 ```bash
-git clone https://github.com/AryaPathare/ai-investment-agent.git
+git clone https://github.com/patharearya/ai-investment-agent.git
 cd ai-investment-agent
 ```
 

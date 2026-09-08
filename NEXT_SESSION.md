@@ -23,7 +23,7 @@ entry 112, and the answer was no - see below. Session 21 then began the deploy
 work and added the first tests the deployment config has ever had. The suite is
 **1040 passed, 1 skipped**.
 
-- Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
+- Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - `docs/PROJECT_LOG.md` is current through entry **118**, 20 sessions
 - Tagged **`v1.0.0`** at `48f9c08`, which the case study quotes
