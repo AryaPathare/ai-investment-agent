@@ -1,0 +1,368 @@
+{
+  "recorded_on": "2026-09-08T14:30:01.765528+00:00",
+  "profile": {
+    "age": 67,
+    "investment_experience": "beginner",
+    "risk_tolerance": "low",
+    "investment_amount": 40000.0,
+    "investment_currency": "EUR",
+    "holding_period": "until I stop working",
+    "sectors_of_interest": [
+      "Consumer Defensive",
+      "food producers"
+    ],
+    "restrictions": [
+      "No tobacco companies"
+    ]
+  },
+  "decision": {
+    "recommendations": [
+      {
+        "ticker": "HRL",
+        "name": "Hormel Foods Corporation",
+        "thesis": "Hormel Foods sells packaged meats, snacks, and pet foods. Its earnings outlook depends on steady demand for these staples. Low debt and healthy margins give it room to grow.",
+        "exit_conditions": [
+          {
+            "condition": "Hormel\u2019s dividend sustainability is under scrutiny.",
+            "article_ids": [
+              "e8e99534-e862-4710-94be-149f1f6487c0"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "debt_to_equity rises above 0.1.",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          }
+        ],
+        "screen_score": 0.2829,
+        "price": {
+          "amount": 21.285,
+          "currency": "USD",
+          "as_of": "2026-09-08T14:28:12.780961Z"
+        },
+        "shares_affordable": 2185,
+        "price_in_investor_currency": 18.298715504965458,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Hormel Foods Earnings Outlook"
+        ],
+        "evidence_article_ids": [
+          "e8e99534-e862-4710-94be-149f1f6487c0"
+        ],
+        "known_risks": [
+          "Revenue is shrinking, so the theme this company was selected for is not yet showing up in what it sells."
+        ]
+      },
+      {
+        "ticker": "SY1.F",
+        "name": "Symrise AG",
+        "thesis": "Symrise makes natural terpene ingredients used in food and beverages worldwide. Despite selling its US unit, it still supplies key terpene flavors to European and Asian markets. Its 15.8% operating margin shows strong profitability, making it a low\u2011risk, long\u2011term play.",
+        "exit_conditions": [
+          {
+            "condition": "Symrise announces a divestiture of its remaining terpene assets",
+            "article_ids": [
+              "6ef544e2-5692-44a3-81a5-e15f8f7b4959"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "debt_to_equity rises above 3.0",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          }
+        ],
+        "screen_score": 0.3736,
+        "price": {
+          "amount": 91.02,
+          "currency": "EUR",
+          "as_of": "2026-09-08T14:28:08.978557Z"
+        },
+        "shares_affordable": 439,
+        "price_in_investor_currency": 91.02,
+        "verdict": "weakened",
+        "exposure": "direct",
+        "themes": [
+          "Natural Terpene Ingredients for Food & Beverage"
+        ],
+        "evidence_article_ids": [
+          "6ef544e2-5692-44a3-81a5-e15f8f7b4959",
+          "cc0f72e1-eb2a-47a5-a175-91b77ecfd315"
+        ],
+        "known_risks": [
+          "Symrise divests its US terpene business AmeriTerpenes, reducing its exposure to natural terpene ingredients and weakening the theme rationale.",
+          "Revenue is shrinking, so the theme this company was selected for is not yet showing up in what it sells."
+        ]
+      }
+    ],
+    "excluded": [],
+    "no_recommendation_reason": null,
+    "conditions_discarded": 0,
+    "notes": null
+  },
+  "research_findings": {
+    "themes": [
+      {
+        "name": "Stable Dividend Consumer Staples",
+        "why_it_matters": "Dollar General\u2019s solid earnings and dividend track record align with your low\u2011risk, long\u2011term holding strategy in consumer defensive stocks.",
+        "industries": [
+          "Consumer Defensive",
+          "Retail"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "f87334a4-8a3d-44fe-a734-457e3b1a7a99",
+            "stance": "supports",
+            "relevance": "Dollar General beat Q2 earnings, reinforcing dividend stability."
+          }
+        ]
+      },
+      {
+        "name": "Hormel Foods Earnings Outlook",
+        "why_it_matters": "Hormel\u2019s recent earnings beat and dividend concerns are directly relevant to your interest in food producers and your preference for stable, dividend\u2011paying companies.",
+        "industries": [
+          "Food Producers",
+          "Consumer Defensive"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "e8e99534-e862-4710-94be-149f1f6487c0",
+            "stance": "supports",
+            "relevance": "Hormel Foods beat Q3 earnings but issued a softer 2026 forecast, raising dividend sustainability questions."
+          }
+        ]
+      },
+      {
+        "name": "Digital Agriculture Platform Expansion",
+        "why_it_matters": "Breedr\u2019s growth reflects a shift toward tech\u2011enabled livestock management, a trend that could influence future food producer performance.",
+        "industries": [
+          "Food Producers",
+          "AgTech"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "6fc687b1-a94d-4740-95a4-294c3b9be8b5",
+            "stance": "supports",
+            "relevance": "Breedr raised $27m to expand its livestock\u2011management platform amid rising beef prices."
+          }
+        ]
+      },
+      {
+        "name": "Natural Terpene Ingredients for Food & Beverage",
+        "why_it_matters": "The acquisition signals growing demand for natural flavoring ingredients, a niche within food producers that aligns with your sector focus.",
+        "industries": [
+          "Food Producers",
+          "Ingredients"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "high",
+        "evidence": [
+          {
+            "article_id": "6ef544e2-5692-44a3-81a5-e15f8f7b4959",
+            "stance": "supports",
+            "relevance": "AmeriTerpenes acquisition provides natural terpene ingredients for food and beverage sectors."
+          },
+          {
+            "article_id": "cc0f72e1-eb2a-47a5-a175-91b77ecfd315",
+            "stance": "supports",
+            "relevance": "AmeriTerpenes acquisition confirms natural ingredient supply for food and beverage markets."
+          }
+        ]
+      },
+      {
+        "name": "Chinese Seed Industry Expansion",
+        "why_it_matters": "China\u2019s seed market growth could reshape global food production, impacting food producers you may consider.",
+        "industries": [
+          "Food Producers",
+          "Agribusiness"
+        ],
+        "timeframe": "6_to_18_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "31ad682d-4024-49c8-bad4-375c65c08a38",
+            "stance": "supports",
+            "relevance": "China\u2019s state\u2011backed biotech and GM crop expansion threatens seed sovereignty and global food supply dynamics."
+          }
+        ]
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "6fc687b1-a94d-4740-95a4-294c3b9be8b5",
+        "title": "Livestock management app Breedr plans expansion after $27m raise led by Partech\u2019s impact arm",
+        "description": "The Series B investment comes on the heels of record lows in cattle herd sizes and rising beef prices for producers and consumers.",
+        "snippet": "Texas-based Breedr has raised a $27 million Series B round to expand its livestock management platform that creates a digital system of record for cattle. New f...",
+        "url": "https://agfundernews.com/livestock-management-app-breedr-plans-expansion-after-27m-raise-led-by-partechs-impact-arm",
+        "source": "agfundernews.com",
+        "published_at": "2026-08-26T19:30:44Z",
+        "categories": [
+          "food",
+          "tech"
+        ]
+      },
+      {
+        "uuid": "f87334a4-8a3d-44fe-a734-457e3b1a7a99",
+        "title": "DG Looks 0.0% Fairly Valued on GF Value\u2122 as Dividend Remains Well-Supported",
+        "description": "On August 27, 2026, Dollar General Corp (NYSE: DG) reported second-quarter results that beat expectations, reinforcing its position as a stable dividend stock i",
+        "snippet": "On August 27, 2026, Dollar General Corp (NYSE: DG) reported second-quarter results that beat expectations, reinforcing its position as a stable dividend stock i...",
+        "url": "https://www.gurufocus.com/news/9055886/dg-looks-00-fairly-valued-on-gf-value-as-dividend-remains-wellsupported",
+        "source": "gurufocus.com",
+        "published_at": "2026-08-27T12:25:29Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "e8e99534-e862-4710-94be-149f1f6487c0",
+        "title": "HRL Looks 24.0% Undervalued on GF Value\u2122 as Dividend Sustainability Faces Scrutiny",
+        "description": "On August 27, 2026, Hormel Foods Corp (NYSE: HRL) updated its fiscal 2026 adjusted earnings forecast following a Q3 earnings beat but with softer-than-expected",
+        "snippet": "On August 27, 2026, Hormel Foods Corp (NYSE: HRL) updated its fiscal 2026 adjusted earnings forecast following a Q3 earnings beat but with softer-than-expected ...",
+        "url": "https://www.gurufocus.com/news/9055986/hrl-looks-240-undervalued-on-gf-value-as-dividend-sustainability-faces-scrutiny",
+        "source": "gurufocus.com",
+        "published_at": "2026-08-27T13:01:08Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "31ad682d-4024-49c8-bad4-375c65c08a38",
+        "title": "Capturing the Seed: China\u2019s Agribusiness Expansion at Home and Abroad - Global Research",
+        "description": "China is reshaping its seed industry through state-backed biotech, GM crops and overseas expansion, raising concerns over farmer seed sovereignty and food contr...",
+        "snippet": "While the Chinese seed market hits a staggering US$19.1 billion, for over twenty years the Asian giant has been a net grain importer, relying mainly on the US, ...",
+        "url": "https://www.globalresearch.ca/china-agribusiness-expansion-home-abroad/5938351",
+        "source": "globalresearch.ca",
+        "published_at": "2026-08-31T02:14:01Z",
+        "categories": [
+          "general",
+          "politics"
+        ]
+      },
+      {
+        "uuid": "6ef544e2-5692-44a3-81a5-e15f8f7b4959",
+        "title": "Mutares carves out AmeriTerpenes from Symrise",
+        "description": "AmeriTerpenes makes natural terpene-based ingredients from pine feedstocks for the perfume, personal care, and food and beverage sectors, generating roughly $20...",
+        "snippet": "AmeriTerpenes makes natural terpene-based ingredients from pine feedstocks for the perfume, personal care, and food and beverage sectors, generating roughly $20...",
+        "url": "https://www.pehub.com/mutares-carves-out-ameriterpenes-from-symrise/",
+        "source": "pehub.com",
+        "published_at": "2026-09-01T07:28:50Z",
+        "categories": []
+      },
+      {
+        "uuid": "cc0f72e1-eb2a-47a5-a175-91b77ecfd315",
+        "title": "Mutares buys Symrise\u2019s US terpene business AmeriTerpenes",
+        "description": "AmeriTerpenes makes natural terpene-based ingredients from pine feedstocks for the perfume, personal care, and food and beverage sectors, generating roughly $20...",
+        "snippet": "AmeriTerpenes makes natural terpene-based ingredients from pine feedstocks for the perfume, personal care, and food and beverage sectors, generating roughly $20...",
+        "url": "https://www.pehub.com/mutares-buys-symrises-us-terpene-business-ameriterpenes/",
+        "source": "pehub.com",
+        "published_at": "2026-09-01T08:07:02Z",
+        "categories": []
+      }
+    ],
+    "queries_used": [
+      "food producer supply chain expansion",
+      "consumer defensive dividend increase",
+      "food producer acquisition deal",
+      "consumer defensive earnings beat",
+      "food producer sustainability certification"
+    ],
+    "articles_retrieved": 15,
+    "notes": null
+  },
+  "risk_findings": {
+    "critiques": [
+      {
+        "ticker": "SY1.F",
+        "name": "Symrise AG",
+        "risks": [
+          {
+            "ticker": "SY1.F",
+            "risk_type": "thesis_invalidation",
+            "severity": "material",
+            "claim": "Symrise divests its US terpene business AmeriTerpenes, reducing its exposure to natural terpene ingredients and weakening the theme rationale.",
+            "article_ids": [
+              "6ef544e2-5692-44a3-81a5-e15f8f7b4959",
+              "cc0f72e1-eb2a-47a5-a175-91b77ecfd315"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "SY1.F",
+            "risk_type": "thesis_invalidation",
+            "severity": "material",
+            "claim": "Revenue is shrinking, so the theme this company was selected for is not yet showing up in what it sells.",
+            "article_ids": [],
+            "metric": "revenue_growth",
+            "metric_value": -0.006
+          }
+        ],
+        "queries_used": [
+          "\"Symrise\" lawsuit",
+          "\"Symrise\" Ingredients"
+        ],
+        "articles_reviewed": 3,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "HRL",
+        "name": "Hormel Foods Corporation",
+        "risks": [
+          {
+            "ticker": "HRL",
+            "risk_type": "thesis_invalidation",
+            "severity": "material",
+            "claim": "Revenue is shrinking, so the theme this company was selected for is not yet showing up in what it sells.",
+            "article_ids": [],
+            "metric": "revenue_growth",
+            "metric_value": -0.029
+          }
+        ],
+        "queries_used": [
+          "\"Hormel Foods\" lawsuit",
+          "\"Hormel Foods\" Earnings"
+        ],
+        "articles_reviewed": 2,
+        "press_releases_withheld": 0,
+        "sources_withheld": [
+          "insidermonkey.com"
+        ],
+        "skipped_reason": null
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "6ef544e2-5692-44a3-81a5-e15f8f7b4959",
+        "title": "Mutares carves out AmeriTerpenes from Symrise",
+        "description": "AmeriTerpenes makes natural terpene-based ingredients from pine feedstocks for the perfume, personal care, and food and beverage sectors, generating roughly $20...",
+        "snippet": "AmeriTerpenes makes natural terpene-based ingredients from pine feedstocks for the perfume, personal care, and food and beverage sectors, generating roughly $20...",
+        "url": "https://www.pehub.com/mutares-carves-out-ameriterpenes-from-symrise/",
+        "source": "pehub.com",
+        "published_at": "2026-09-01T07:28:50Z",
+        "categories": []
+      },
+      {
+        "uuid": "cc0f72e1-eb2a-47a5-a175-91b77ecfd315",
+        "title": "Mutares buys Symrise\u2019s US terpene business AmeriTerpenes",
+        "description": "AmeriTerpenes makes natural terpene-based ingredients from pine feedstocks for the perfume, personal care, and food and beverage sectors, generating roughly $20...",
+        "snippet": "AmeriTerpenes makes natural terpene-based ingredients from pine feedstocks for the perfume, personal care, and food and beverage sectors, generating roughly $20...",
+        "url": "https://www.pehub.com/mutares-buys-symrises-us-terpene-business-ameriterpenes/",
+        "source": "pehub.com",
+        "published_at": "2026-09-01T08:07:02Z",
+        "categories": []
+      }
+    ],
+    "articles_retrieved": 5,
+    "risks_discarded": 0,
+    "notes": null
+  }
+}

@@ -1,0 +1,345 @@
+{
+  "recorded_on": "2026-09-08T14:33:06.594746+00:00",
+  "profile": {
+    "age": 58,
+    "investment_experience": "advanced",
+    "risk_tolerance": "low",
+    "investment_amount": 250000.0,
+    "investment_currency": "GBP",
+    "holding_period": "10 years",
+    "sectors_of_interest": [
+      "Energy",
+      "oil services and refining"
+    ],
+    "restrictions": []
+  },
+  "decision": {
+    "recommendations": [
+      {
+        "ticker": "688309.SS",
+        "name": "Niutech Technology Group Co. Ltd.",
+        "thesis": "Niutech builds SAF plants that turn waste plastic into green aviation fuel. Airlines need SAF to meet emissions rules. Niutech\u2019s high operating margin shows it can profit while scaling.",
+        "exit_conditions": [
+          {
+            "condition": "revenue_growth turns negative",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          },
+          {
+            "condition": "operating_margin falls below 20%",
+            "article_ids": [],
+            "metric": "operating_margin"
+          },
+          {
+            "condition": "the partnership with the global energy major is terminated",
+            "article_ids": [
+              "c3f821ec-8778-47b9-b78f-46cd79af088a"
+            ],
+            "metric": null
+          }
+        ],
+        "screen_score": 0.8604,
+        "price": {
+          "amount": 81.65,
+          "currency": "CNY",
+          "as_of": "2026-09-08T14:31:33.678691Z"
+        },
+        "shares_affordable": 27842,
+        "price_in_investor_currency": 8.979237232217482,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Niutech SAF Production Line"
+        ],
+        "evidence_article_ids": [
+          "c3f821ec-8778-47b9-b78f-46cd79af088a"
+        ],
+        "known_risks": [
+          "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business."
+        ]
+      },
+      {
+        "ticker": "87R.F",
+        "name": "Rompetrol Rafinare S.A.",
+        "thesis": "Rompetrol Rafinare S.A. refines crude oil into gasoline, diesel, and other fuels. Its 25% turnover rise in 2026 shows it is capturing growing regional demand. The refinery\u2019s large scale and strategic location give it a competitive edge despite thin margins.",
+        "exit_conditions": [
+          {
+            "condition": "Rompetrol Rafinare's turnover growth turns negative",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          },
+          {
+            "condition": "Operating margin falls below 0.02",
+            "article_ids": [],
+            "metric": "operating_margin"
+          },
+          {
+            "condition": "Rompetrol Rafinare fails to maintain the 25% turnover increase reported in A1",
+            "article_ids": [
+              "837d2e77-605d-4280-9e6a-175b4f805aa0"
+            ],
+            "metric": null
+          }
+        ],
+        "screen_score": 0.2874,
+        "price": {
+          "amount": 0.0465,
+          "currency": "EUR",
+          "as_of": "2026-09-08T14:31:34.372124Z"
+        },
+        "shares_affordable": 6265053,
+        "price_in_investor_currency": 0.039903887410967134,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Rompetrol Rafinare Turnover Growth"
+        ],
+        "evidence_article_ids": [
+          "837d2e77-605d-4280-9e6a-175b4f805aa0"
+        ],
+        "known_risks": [
+          "Debt is large relative to equity, so a downturn is absorbed by creditors' terms before shareholders get a say.",
+          "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business.",
+          "Gross margin is thin, which usually means the product competes on price and has little room to absorb cost increases."
+        ]
+      }
+    ],
+    "excluded": [],
+    "no_recommendation_reason": null,
+    "conditions_discarded": 0,
+    "notes": null
+  },
+  "research_findings": {
+    "themes": [
+      {
+        "name": "India's Samudra Manthan Drilling Push",
+        "why_it_matters": "India's drilling expansion may increase upstream output, supporting oil supply stability. This aligns with your long\u2011term energy investment strategy and low\u2011risk profile.",
+        "industries": [
+          "Oil Services",
+          "Energy"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "439c0366-d2e8-4586-8075-c5b7c2b29679",
+            "stance": "supports",
+            "relevance": "India likely to finalize plan for drilling, seismic surveys, rig deployment under Samudra Manthan."
+          }
+        ]
+      },
+      {
+        "name": "Rompetrol Rafinare Turnover Growth",
+        "why_it_matters": "Higher turnover indicates robust refining operations, potentially improving margins over the next decade. This supports a stable, long\u2011term investment in refining assets.",
+        "industries": [
+          "Refining",
+          "Energy"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "837d2e77-605d-4280-9e6a-175b4f805aa0",
+            "stance": "supports",
+            "relevance": "Rompetrol Rafinare reports 25% increase in turnover for first half of 2026."
+          }
+        ]
+      },
+      {
+        "name": "Iraq Drilling Company Horizontal Well",
+        "why_it_matters": "Completion of a long horizontal well demonstrates drilling capability and potential for future production. It signals opportunities in emerging markets for long\u2011term oil services exposure.",
+        "industries": [
+          "Oil Services",
+          "Energy"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "837b62cb-cecc-4db6-88eb-757ffecfc949",
+            "stance": "supports",
+            "relevance": "Iraqi Drilling Company completes 4,152m horizontal well in East Baghdad."
+          }
+        ]
+      },
+      {
+        "name": "Niutech SAF Production Line",
+        "why_it_matters": "Transition to sustainable aviation fuel reflects growing demand for green energy solutions. Investing early could capture future growth in renewable energy within your energy sector focus.",
+        "industries": [
+          "Energy",
+          "Renewable Energy"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "c3f821ec-8778-47b9-b78f-46cd79af088a",
+            "stance": "supports",
+            "relevance": "Niutech signs agreement with global energy major for waste plastic pyrolysis line to produce SAF."
+          }
+        ]
+      },
+      {
+        "name": "Oil Price Volatility Amid Geopolitics",
+        "why_it_matters": "Price swings affect profitability of oil services and refining. Understanding volatility helps assess long\u2011term risk for your low\u2011risk portfolio.",
+        "industries": [
+          "Energy",
+          "Oil Services"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "dc0aa227-f8f4-497e-a1f5-0a8ad3fd9d45",
+            "stance": "supports",
+            "relevance": "Crude oil briefly traded back to pre\u2011war levels; speculation on resolution; market disruption."
+          }
+        ]
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "439c0366-d2e8-4586-8075-c5b7c2b29679",
+        "title": "Year-wise plan to implement Samudra Manthan in works",
+        "description": "India News: NEW DELHI: Government is likely to finalise a year-wise plan soon for drilling, seismic surveys and rig deployment under Samudra Manthan, a Rs 84,08...",
+        "snippet": "Petroleum minister Hardeep Puri reviewed the action taken on decisions from two brainstorming sessions on the rollout of the scheme, which received Cabinet\u2019s ...",
+        "url": "https://timesofindia.indiatimes.com/india/year-wise-plan-to-implement-samudra-manthan-in-works/articleshow/133556958.cms",
+        "source": "timesofindia.indiatimes.com",
+        "published_at": "2026-08-27T05:14:32Z",
+        "categories": [
+          "general"
+        ]
+      },
+      {
+        "uuid": "c3f821ec-8778-47b9-b78f-46cd79af088a",
+        "title": "Niutech Signs Agreement with Global Energy Major for Waste Plastic Pyrolysis Line to Produce SAF",
+        "description": "JINAN, China, Aug. 29, 2026 /PRNewswire/ -- Niutech Technology Group Co., Ltd (abbreviated as 'Niutech'), a STAR Market-listed Chinese company specialized in in...",
+        "snippet": "JINAN, China, Aug. 29, 2026 /PRNewswire/ -- Niutech Technology Group Co., Ltd (abbreviated as \"Niutech\"), a STAR Market-listed Chinese company specialized in in...",
+        "url": "https://www.manilatimes.net/2026/08/29/tmt-newswire/pr-newswire/niutech-signs-agreement-with-global-energy-major-for-waste-plastic-pyrolysis-line-to-produce-saf/2414469",
+        "source": "manilatimes.net",
+        "published_at": "2026-08-29T08:11:28Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "837d2e77-605d-4280-9e6a-175b4f805aa0",
+        "title": "Rompetrol Rafinare reports 25% increase in turnover for first half of 2026",
+        "description": "Rompetrol Rafinare recorded a consolidated gross turnover of $3.5 billion in the first half of this year a 25% increase compared to the same perio...",
+        "snippet": "Rompetrol Rafinare reports 25% increase in turnover for first half of 2026\n\nThursday, August 20, 2026 Share\n\nRompetrol Rafinare recorded a consolidated gross tu...",
+        "url": "https://actmedia.eu/energy-and-environment/rompetrol-rafinare-reports-25-increase-in-turnover-for-first-half-of-2026/121300",
+        "source": "actmedia.eu",
+        "published_at": "2026-08-30T21:00:00Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "837b62cb-cecc-4db6-88eb-757ffecfc949",
+        "title": "Iraqi Drilling Company completes 4,152m horizontal well in East Baghdad",
+        "description": "Iraqi Drilling Company completes 4,152m horizontal well in East Baghdad",
+        "snippet": "Baghdad (IraqiNews.com) \u2014 Technical and engineering crews from the state-owned Iraqi Drilling Company (IDC) have completed drilling operations on horizontal o...",
+        "url": "https://www.iraqinews.com/iraq/iraqi-drilling-company-completes-horizontal-well-ebs-157-east-baghdad-2026/",
+        "source": "iraqinews.com",
+        "published_at": "2026-09-02T10:31:55Z",
+        "categories": []
+      },
+      {
+        "uuid": "dc0aa227-f8f4-497e-a1f5-0a8ad3fd9d45",
+        "title": "Goehring & Rozencwajg Q2 2026 Natural Resource Market Commentary",
+        "description": "In June, crude oil even briefly traded back to pre-war levels on hopes that a resolution had been reached while speculative gross short interest now sits near a...",
+        "snippet": "Sakorn Sukkasemsakorn/iStock via Getty Images\n\nSix months ago, the world\u2019s access to the largest oil-producing region on earth was terribly disrupted. Since t...",
+        "url": "https://seekingalpha.com/article/4942415-goehring-and-rozencwajg-q2-2026-natural-resource-market-commentary",
+        "source": "seekingalpha.com",
+        "published_at": "2026-09-02T14:23:00Z",
+        "categories": [
+          "business"
+        ]
+      }
+    ],
+    "queries_used": [
+      "oil services drilling rig deployment",
+      "refining capacity expansion contracts",
+      "oil major renewable investment projects",
+      "energy storage contract awards utilities",
+      "oil refining carbon capture facility"
+    ],
+    "articles_retrieved": 13,
+    "notes": null
+  },
+  "risk_findings": {
+    "critiques": [
+      {
+        "ticker": "688309.SS",
+        "name": "Niutech Technology Group Co. Ltd.",
+        "risks": [
+          {
+            "ticker": "688309.SS",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business.",
+            "article_ids": [],
+            "metric": "free_cash_flow_is_negative",
+            "metric_value": -1.0
+          }
+        ],
+        "queries_used": [
+          "\"Niutech Technology\" lawsuit",
+          "\"Niutech Technology\" Production"
+        ],
+        "articles_reviewed": 0,
+        "press_releases_withheld": 1,
+        "sources_withheld": [
+          "naturalnews.com"
+        ],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "87R.F",
+        "name": "Rompetrol Rafinare S.A.",
+        "risks": [
+          {
+            "ticker": "87R.F",
+            "risk_type": "financial",
+            "severity": "material",
+            "claim": "Debt is large relative to equity, so a downturn is absorbed by creditors' terms before shareholders get a say.",
+            "article_ids": [],
+            "metric": "debt_to_equity",
+            "metric_value": 3.30295
+          },
+          {
+            "ticker": "87R.F",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Free cash flow is negative, so growth is being funded from the balance sheet rather than from the business.",
+            "article_ids": [],
+            "metric": "free_cash_flow_is_negative",
+            "metric_value": -1.0
+          },
+          {
+            "ticker": "87R.F",
+            "risk_type": "competitive",
+            "severity": "minor",
+            "claim": "Gross margin is thin, which usually means the product competes on price and has little room to absorb cost increases.",
+            "article_ids": [],
+            "metric": "gross_margin",
+            "metric_value": 0.10933
+          }
+        ],
+        "queries_used": [
+          "\"Rompetrol Rafinare\" lawsuit",
+          "\"Rompetrol Rafinare\" Rompetrol"
+        ],
+        "articles_reviewed": 2,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      }
+    ],
+    "articles": [],
+    "articles_retrieved": 2,
+    "risks_discarded": 0,
+    "notes": null
+  }
+}

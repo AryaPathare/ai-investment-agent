@@ -1,0 +1,543 @@
+{
+  "recorded_on": "2026-09-08T14:21:59.609497+00:00",
+  "profile": {
+    "age": 35,
+    "investment_experience": "intermediate",
+    "risk_tolerance": "high",
+    "investment_amount": 15000.0,
+    "investment_currency": "EUR",
+    "holding_period": "2 years",
+    "sectors_of_interest": [
+      "Communication Services",
+      "streaming and telecoms"
+    ],
+    "restrictions": [
+      "No gambling companies"
+    ]
+  },
+  "decision": {
+    "recommendations": [
+      {
+        "ticker": "CURI",
+        "name": "CuriosityStream Inc.",
+        "thesis": "CuriosityStream sells documentary\u2011focused streaming content to a loyal audience. It turns viewer data into revenue by licensing it to AI companies. The dual model gives it high margins and growth beyond ad\u2011supported rivals.",
+        "exit_conditions": [
+          {
+            "condition": "CuriosityStream is delisted from Nasdaq.",
+            "article_ids": [
+              "43115147-d2e1-4ef5-97fa-b566227892c1"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "revenue_growth turns negative.",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          },
+          {
+            "condition": "debt_to_equity rises above 3.0.",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          }
+        ],
+        "screen_score": 0.7862,
+        "price": {
+          "amount": 2.695,
+          "currency": "USD",
+          "as_of": "2026-09-08T14:19:24.282961Z"
+        },
+        "shares_affordable": 6474,
+        "price_in_investor_currency": 2.316891627243688,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Streaming AI Data Monetization"
+        ],
+        "evidence_article_ids": [
+          "43115147-d2e1-4ef5-97fa-b566227892c1"
+        ],
+        "known_risks": []
+      },
+      {
+        "ticker": "ROKU",
+        "name": "Roku, Inc.",
+        "thesis": "Roku sells a streaming platform that lets viewers watch live and on\u2011demand shows. Its sports deals, such as the NWSL partnership, bring new viewers and ad revenue. The company has healthy margins and low debt, fitting a high\u2011risk, two\u2011year investor.",
+        "exit_conditions": [
+          {
+            "condition": "The NWSL partnership ends or is not renewed.",
+            "article_ids": [
+              "ed6d18b1-46ad-4174-a51f-67b64f391dbe"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "debt_to_equity rises above 1.0",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          },
+          {
+            "condition": "revenue_growth turns negative",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          }
+        ],
+        "screen_score": 0.4232,
+        "price": {
+          "amount": 154.495,
+          "currency": "USD",
+          "as_of": "2026-09-08T14:19:36.324277Z"
+        },
+        "shares_affordable": 112,
+        "price_in_investor_currency": 132.8193587944392,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Sports Streaming Partnerships"
+        ],
+        "evidence_article_ids": [
+          "ed6d18b1-46ad-4174-a51f-67b64f391dbe"
+        ],
+        "known_risks": []
+      },
+      {
+        "ticker": "META",
+        "name": "Meta Platforms, Inc.",
+        "thesis": "Meta Platforms owns the largest social media network, selling advertising and data services. It also monetizes AI training data from its streams. The company\u2019s high operating margin and gross margin support growth.",
+        "exit_conditions": [
+          {
+            "condition": "Meta settles the youth addiction lawsuit with a fine exceeding $500 million.",
+            "article_ids": [
+              "9d651a87-3523-4592-adb3-bb4a6fc7d01c"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "OpenAI's ad revenue reaches $1 billion annualized, threatening Meta's ad dominance.",
+            "article_ids": [
+              "54ed8ea7-c932-4063-bf56-7dc79dcd7de1"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "revenue_growth turns negative.",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          }
+        ],
+        "screen_score": 0.4912,
+        "price": {
+          "amount": 618.9425,
+          "currency": "USD",
+          "as_of": "2026-09-08T14:19:31.580836Z"
+        },
+        "shares_affordable": 28,
+        "price_in_investor_currency": 532.1048964732009,
+        "verdict": "weakened",
+        "exposure": "partial",
+        "themes": [
+          "Streaming AI Data Monetization"
+        ],
+        "evidence_article_ids": [
+          "43115147-d2e1-4ef5-97fa-b566227892c1"
+        ],
+        "known_risks": [
+          "Meta faces a potential settlement over a youth addiction lawsuit, which could result in significant fines and reputational damage.",
+          "OpenAI's rapid growth in advertising threatens Meta's ad revenue by offering an alternative platform."
+        ]
+      }
+    ],
+    "excluded": [
+      {
+        "ticker": "GOOG",
+        "name": "Alphabet Inc.",
+        "reason": "outside_top_three",
+        "detail": "ranked 4 of 4 eligible (weakened, score 0.450)"
+      }
+    ],
+    "no_recommendation_reason": null,
+    "conditions_discarded": 0,
+    "notes": "4 companies were looked at closely and the best 3 are above. The rest are listed with the reason each one was not chosen."
+  },
+  "research_findings": {
+    "themes": [
+      {
+        "name": "Streaming AI Data Monetization",
+        "why_it_matters": "The investor\u2019s focus on streaming aligns with this new revenue stream. High risk tolerance and a 2\u2011year horizon could capture the upside as AI demand grows.",
+        "industries": [
+          "Streaming Services",
+          "AI",
+          "Data Monetization"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "43115147-d2e1-4ef5-97fa-b566227892c1",
+            "stance": "supports",
+            "relevance": "CuriosityStream profits soar from AI data deals."
+          }
+        ]
+      },
+      {
+        "name": "Sports Streaming Partnerships",
+        "why_it_matters": "Shows sports content migrating to streaming, a key area for the investor. The shift could create new subscription and advertising opportunities within the next two years.",
+        "industries": [
+          "Sports Media",
+          "Streaming Platforms"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "ed6d18b1-46ad-4174-a51f-67b64f391dbe",
+            "stance": "supports",
+            "relevance": "NWSL partners with Roku for Sunday matches."
+          }
+        ]
+      },
+      {
+        "name": "LEO Satellite Cost Management",
+        "why_it_matters": "LEO satellites promise lower telecom costs, potentially reshaping the telecom landscape. The investor could benefit from operators that adopt this technology.",
+        "industries": [
+          "Satellite Telecom",
+          "Enterprise IT"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "5e6f02fd-eae6-46ce-8cca-e78c4d43d2d2",
+            "stance": "supports",
+            "relevance": "Enterprise satellite expenses managed via LEO changes."
+          }
+        ]
+      },
+      {
+        "name": "Rassvet Satellite Challenges",
+        "why_it_matters": "Satellite internet reliability issues may shift competitive dynamics. Monitoring these players could uncover undervalued opportunities.",
+        "industries": [
+          "Satellite Internet",
+          "Defense"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "7b51a8f9-4090-4bcb-8d2b-bb25e667bb95",
+            "stance": "supports",
+            "relevance": "Rassvet satellites underperforming."
+          }
+        ]
+      },
+      {
+        "name": "Broadband Funding Politics",
+        "why_it_matters": "Policy changes can alter investment prospects in telecom. The investor should watch regulatory shifts that could affect infrastructure spending.",
+        "industries": [
+          "Broadband Infrastructure",
+          "Telecom Policy"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "576e61c6-3fd5-4904-aada-5867e2e3ce89",
+            "stance": "supports",
+            "relevance": "Texas politicians uncover Musk's influence on broadband grants."
+          }
+        ]
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "43115147-d2e1-4ef5-97fa-b566227892c1",
+        "title": "Niche Streamers Cash In On AI Training Data Deals; Sports Leagues Play Hardball With Nielsen",
+        "description": "CuriosityStream was nearly de-listed from the Nasdaq, but now its profits are soaring thanks to data deals with Google, OpenAI, Anthropic, xAI and Meta.",
+        "snippet": "Curiouser And Curiouser\n\nCuriosityStream was just one of many streaming TV services that saw an engagement uptick during the pandemic, but hit a painful wall wh...",
+        "url": "https://www.adexchanger.com/daily-news-roundup/wednesday-26082026/",
+        "source": "adexchanger.com",
+        "published_at": "2026-08-26T04:03:23Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "5e6f02fd-eae6-46ce-8cca-e78c4d43d2d2",
+        "title": "Is Your Enterprise Managing Satellite As A Telecom Expense?",
+        "description": "Legacy satellite deployments were fixed, expensive and limited enough to track manually. LEO changes that.",
+        "snippet": "Chris Ortbals is Chief Product Officer (CPO) at IT expense management firm Tangoe, leading technology strategy, R&D and engineering.\n\nSatellite connectivity has...",
+        "url": "https://www.forbes.com/councils/forbestechcouncil/2026/08/26/satellite-has-become-a-telecom-expense-is-your-enterprise-managing-it-like-one/",
+        "source": "forbes.com",
+        "published_at": "2026-08-26T12:30:00Z",
+        "categories": [
+          "tech",
+          "general",
+          "business"
+        ]
+      },
+      {
+        "uuid": "ed6d18b1-46ad-4174-a51f-67b64f391dbe",
+        "title": "NWSL strikes deal with Roku for Sunday night matches after Victory+ departure",
+        "description": "The NWSL has reportedly struck a deal with Roku to air Sunday night matches on Roku Sports Channel after leaving Victory++.",
+        "snippet": "Credit: Troy Wayrynen-Imagn Images\n\nThe NWSL has found a new media partner to host its Sunday night package.\n\nAfter being part of the cohort of franchises and l...",
+        "url": "https://awfulannouncing.com/nwsl/deal-roku-sunday-night-matches-victory-departure.html",
+        "source": "awfulannouncing.com",
+        "published_at": "2026-08-26T14:30:02Z",
+        "categories": [
+          "sports"
+        ]
+      },
+      {
+        "uuid": "576e61c6-3fd5-4904-aada-5867e2e3ce89",
+        "title": "Texas Politicians Slowly Realize Elon Musk Hijacked Billions In Taxpayer Broadband Grants",
+        "description": "Back in June I wrote a feature for The Verge about how Elon Musk and Jeff Bezos had convinced Republicans to redirect billions in taxpayer money away from futur...",
+        "snippet": "Texas Politicians Slowly Realize Elon Musk Hijacked Billions In Taxpayer Broadband Grants\n\nfrom the even-the-corruption-is-bigger-in-texas dept\n\nBack in June I ...",
+        "url": "http://www.techdirt.com/2026/08/31/texas-politicians-slowly-realize-elon-musk-hijacked-billions-in-taxpayer-broadband-grants/",
+        "source": "techdirt.com",
+        "published_at": "2026-08-31T12:23:46Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "7b51a8f9-4090-4bcb-8d2b-bb25e667bb95",
+        "title": "Russia\u2019s Answer to Starlink Is Finally in Orbit but Its First Satellites Are Already Struggling",
+        "description": "Rassvet could reshape battlefield communications, but its first production satellites are falling short.",
+        "snippet": "Illustration of Russia\u2019s planned Rassvet satellite internet constellation and one of its satellite designs. Credit: Open source\n\nRussia has launched 32 new sa...",
+        "url": "https://www.zmescience.com/science/news-science/russias-answer-to-starlink-is-finally-in-orbit-but-its-first-satellites-are-already-struggling/",
+        "source": "zmescience.com",
+        "published_at": "2026-09-04T17:10:32Z",
+        "categories": [
+          "science",
+          "tech",
+          "general"
+        ]
+      }
+    ],
+    "queries_used": [
+      "5G network rollout contracts",
+      "streaming platform acquisition deals",
+      "telecom tower sharing agreements",
+      "satellite broadband deployment projects",
+      "OTT service partnership agreements"
+    ],
+    "articles_retrieved": 9,
+    "notes": null
+  },
+  "risk_findings": {
+    "critiques": [
+      {
+        "ticker": "CURI",
+        "name": "CuriosityStream Inc.",
+        "risks": [],
+        "queries_used": [
+          "\"CuriosityStream\" lawsuit",
+          "\"CuriosityStream\" Monetization"
+        ],
+        "articles_reviewed": 0,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "META",
+        "name": "Meta Platforms, Inc.",
+        "risks": [
+          {
+            "ticker": "META",
+            "risk_type": "regulatory",
+            "severity": "material",
+            "claim": "Meta faces a potential settlement over a youth addiction lawsuit, which could result in significant fines and reputational damage.",
+            "article_ids": [
+              "9d651a87-3523-4592-adb3-bb4a6fc7d01c"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "META",
+            "risk_type": "competitive",
+            "severity": "material",
+            "claim": "OpenAI's rapid growth in advertising threatens Meta's ad revenue by offering an alternative platform.",
+            "article_ids": [
+              "54ed8ea7-c932-4063-bf56-7dc79dcd7de1"
+            ],
+            "metric": null,
+            "metric_value": null
+          }
+        ],
+        "queries_used": [
+          "\"Meta Platforms,\" lawsuit",
+          "\"Meta Platforms,\" Monetization"
+        ],
+        "articles_reviewed": 5,
+        "press_releases_withheld": 0,
+        "sources_withheld": [
+          "naturalnews.com"
+        ],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "GOOG",
+        "name": "Alphabet Inc.",
+        "risks": [
+          {
+            "ticker": "GOOG",
+            "risk_type": "regulatory",
+            "severity": "material",
+            "claim": "FTC lawsuit could result in significant fines and operational restrictions on YouTube.",
+            "article_ids": [
+              "fb6da515-9ad0-484e-b6e2-a7e218f080e5"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "GOOG",
+            "risk_type": "regulatory",
+            "severity": "material",
+            "claim": "UK antitrust settlement indicates ongoing regulatory scrutiny, potentially leading to further fines and restrictions.",
+            "article_ids": [
+              "f02db33b-ec67-459b-bd07-595f8e5cf24a"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "GOOG",
+            "risk_type": "competitive",
+            "severity": "material",
+            "claim": "OpenAI's rapid ad revenue growth could erode Alphabet's advertising market share.",
+            "article_ids": [
+              "54ed8ea7-c932-4063-bf56-7dc79dcd7de1"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "GOOG",
+            "risk_type": "financial",
+            "severity": "material",
+            "claim": "Alphabet's advertising revenue growth has slowed, reducing margin.",
+            "article_ids": [
+              "0cb0c0ac-fd33-4f85-a82f-d4a1adff2df1"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "GOOG",
+            "risk_type": "thesis_invalidation",
+            "severity": "material",
+            "claim": "Alphabet's AI capital expenditures may not generate sufficient returns, undermining the streaming AI monetization thesis.",
+            "article_ids": [
+              "3850300e-181d-46a4-ad5b-e8eeb1899e5a"
+            ],
+            "metric": null,
+            "metric_value": null
+          }
+        ],
+        "queries_used": [
+          "\"Alphabet\" lawsuit",
+          "\"Alphabet\" Monetization"
+        ],
+        "articles_reviewed": 6,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "ROKU",
+        "name": "Roku, Inc.",
+        "risks": [],
+        "queries_used": [
+          "\"Roku,\" lawsuit",
+          "\"Roku,\" Partnerships"
+        ],
+        "articles_reviewed": 4,
+        "press_releases_withheld": 0,
+        "sources_withheld": [
+          "insidermonkey.com"
+        ],
+        "skipped_reason": null
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "9d651a87-3523-4592-adb3-bb4a6fc7d01c",
+        "title": "Meta Platforms Inc. Faces Potential Settlement Over Youth Addiction Lawsuit",
+        "description": "On August 26, 2026, Meta Platforms Inc. (META) is in discussions regarding a possible settlement with attorneys general from multiple U.S. states over a high-pr",
+        "snippet": "On August 26, 2026, Meta Platforms Inc. META is in discussions regarding a possible settlement with attorneys general from multiple U.S. states over a high-prof...",
+        "url": "https://www.gurufocus.com/news/9053668/meta-platforms-inc-faces-potential-settlement-over-youth-addiction-lawsuit",
+        "source": "gurufocus.com",
+        "published_at": "2026-08-26T06:11:20Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "54ed8ea7-c932-4063-bf56-7dc79dcd7de1",
+        "title": "OpenAI Shocks the Ad Industry in 200 Days",
+        "description": "OpenAI's advertising business has reached a $1 billion annualized revenue run rate roughly 200 days after launch, giving the ChatGPT maker another fast-growing",
+        "snippet": "OpenAI's advertising business has reached a $1 billion annualized revenue run rate roughly 200 days after launch, giving the ChatGPT maker another fast-growing ...",
+        "url": "https://www.gurufocus.com/news/9060327/openai-shocks-the-ad-industry-in-200-days",
+        "source": "gurufocus.com",
+        "published_at": "2026-09-01T02:27:42Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "0cb0c0ac-fd33-4f85-a82f-d4a1adff2df1",
+        "title": "Why Meta and Alphabet's Stock Have Been Struggling Lately",
+        "description": "Nvidia jolted markets with a stunning earnings report this week. The chip titan's winning streak is in stark contrast to some Magnificent Seven peers.",
+        "snippet": "The Magnificent Seven may not be the dominant engine of stock gains that they once were, but it's stark just how sharply some of their fortunes have diverged th...",
+        "url": "https://www.businessinsider.com/meta-alphabet-stock-price-decline-record-highs-mag7-nvda-earnings-2026-8",
+        "source": "businessinsider.com",
+        "published_at": "2026-08-27T17:59:36Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "fb6da515-9ad0-484e-b6e2-a7e218f080e5",
+        "title": "FTC Prepares Lawsuit Against YouTube Over Social Media Guidelines",
+        "description": "The U.S. Federal Trade Commission (FTC) is reportedly nearing the conclusion of an extensive investigation into YouTube, the world's largest",
+        "snippet": "Key Takeaways\n\nThe U.S. Federal Trade Commission (FTC) is in the final stages of preparing a potential lawsuit against YouTube , a subsidiary of Alphabet (GOOGL...",
+        "url": "https://www2.stockmarketwatch.com/stock-market-news/ftc-prepares-lawsuit-against-youtube-over-social-media-guidelines/71010/",
+        "source": "thestockmarketwatch.com",
+        "published_at": "2026-08-27T22:38:10Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "f02db33b-ec67-459b-bd07-595f8e5cf24a",
+        "title": "Google Agrees to Pay \u00a3260M to Settle UK App Store Monopoly Lawsuit",
+        "description": "Google has agreed to a \u00a3260 million Play Store settlement in the U.K., with \u00a3160 million earmarked to compensate eligible app developers.",
+        "snippet": "Google is paying a hefty price to make one of its biggest Play Store headaches go away.\n\nAlphabet Inc., its parent company, reached a \u00a3260 million ($353 millio...",
+        "url": "https://www.techrepublic.com/article/news-google-uk-play-store-developer-settlement/",
+        "source": "techrepublic.com",
+        "published_at": "2026-08-31T13:50:43Z",
+        "categories": [
+          "tech"
+        ]
+      },
+      {
+        "uuid": "3850300e-181d-46a4-ad5b-e8eeb1899e5a",
+        "title": "Magnificent Seven's $780 Billion AI Bet Hits Critical Test",
+        "description": "Magnificent Seven companies are preparing to spend more than $780 billion on capital expenditures in 2026, but recent earnings reactions show investors are no l",
+        "snippet": "Magnificent Seven companies are preparing to spend more than $780 billion on capital expenditures in 2026, but recent earnings reactions show investors are no l...",
+        "url": "https://www.gurufocus.com/news/9059988/magnificent-sevens-780-billion-ai-bet-hits-critical-test",
+        "source": "gurufocus.com",
+        "published_at": "2026-09-01T01:47:37Z",
+        "categories": [
+          "business"
+        ]
+      }
+    ],
+    "articles_retrieved": 15,
+    "risks_discarded": 0,
+    "notes": null
+  }
+}

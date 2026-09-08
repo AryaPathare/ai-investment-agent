@@ -1,0 +1,330 @@
+{
+  "recorded_on": "2026-09-08T14:16:03.354420+00:00",
+  "profile": {
+    "age": 24,
+    "investment_experience": "beginner",
+    "risk_tolerance": "high",
+    "investment_amount": 2000.0,
+    "investment_currency": "USD",
+    "holding_period": "5 years",
+    "sectors_of_interest": [
+      "Consumer Cyclical",
+      "carmakers"
+    ],
+    "restrictions": []
+  },
+  "decision": {
+    "recommendations": [
+      {
+        "ticker": "MARUTI.NS",
+        "name": "MARUTI SUZUKI INDIA LTD.",
+        "thesis": "Maruti Suzuki sells affordable cars to India\u2019s mass market. Its massive capex expansion will build new plants and launch electric models, positioning it to capture demand after GST reforms.",
+        "exit_conditions": [
+          {
+            "condition": "Maruti Suzuki reduces its planned \u20b977,500 crore capex by more than 20%.",
+            "article_ids": [
+              "aee1e917-d0f6-43d9-8872-b5b58d34484d"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "debt_to_equity rises above 1.0.",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          },
+          {
+            "condition": "operating_margin falls below 3%.",
+            "article_ids": [],
+            "metric": "operating_margin"
+          }
+        ],
+        "screen_score": 0.4747,
+        "price": {
+          "amount": 12641.0,
+          "currency": "INR",
+          "as_of": "2026-09-08T14:14:47.497300Z"
+        },
+        "shares_affordable": 14,
+        "price_in_investor_currency": 133.80259327864516,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Maruti Suzuki Massive Capex Expansion"
+        ],
+        "evidence_article_ids": [
+          "258f51f0-f04b-4e25-84aa-d02632fe8172",
+          "aee1e917-d0f6-43d9-8872-b5b58d34484d"
+        ],
+        "known_risks": []
+      },
+      {
+        "ticker": "JD",
+        "name": "JD.com, Inc.",
+        "thesis": "JD.com runs China\u2019s largest e\u2011commerce platform and owns a nationwide delivery network. It is shifting capital into cloud and fintech services to raise margins beyond retail. The delivery network gives it a cost advantage that can support the new high\u2011margin businesses.",
+        "exit_conditions": [
+          {
+            "condition": "operating_margin falls below 5%",
+            "article_ids": [
+              "213d16cd-02e8-4fe4-97b7-c059d0c66f8d"
+            ],
+            "metric": "operating_margin"
+          },
+          {
+            "condition": "debt_to_equity rises above 1.0",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          }
+        ],
+        "screen_score": 0.209,
+        "price": {
+          "amount": 27.705,
+          "currency": "USD",
+          "as_of": "2026-09-08T14:14:46.549359Z"
+        },
+        "shares_affordable": 72,
+        "price_in_investor_currency": 27.705,
+        "verdict": "weakened",
+        "exposure": "direct",
+        "themes": [
+          "JD.com Capital Shift from Consumer Sectors"
+        ],
+        "evidence_article_ids": [
+          "4898ea6c-1d7f-4ff3-8fde-d48e27632007"
+        ],
+        "known_risks": [
+          "Intense delivery price war erodes JD.com's delivery margins.",
+          "Revenue is shrinking, so the theme this company was selected for is not yet showing up in what it sells.",
+          "Gross margin is thin, which usually means the product competes on price and has little room to absorb cost increases."
+        ]
+      }
+    ],
+    "excluded": [],
+    "no_recommendation_reason": null,
+    "conditions_discarded": 0,
+    "notes": null
+  },
+  "research_findings": {
+    "themes": [
+      {
+        "name": "Chinese NEVs Expand Globally",
+        "why_it_matters": "The investor\u2019s focus on carmakers means exposure to rising EV competitors. Chinese NEVs\u2019 global push could reshape market dynamics and create new growth opportunities over the next five years.",
+        "industries": [
+          "Automotive"
+        ],
+        "timeframe": "already_underway",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "839b2d97-0944-4d62-ab69-9de358a7f318",
+            "stance": "supports",
+            "relevance": "Chinese NEVs gaining global market share at major auto shows."
+          }
+        ]
+      },
+      {
+        "name": "Maruti Suzuki Massive Capex Expansion",
+        "why_it_matters": "A large capex plan signals strong growth prospects in India, a key emerging market for carmakers. Over a five\u2011year horizon, this could translate into higher earnings for investors willing to take on higher risk.",
+        "industries": [
+          "Automotive"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "high",
+        "evidence": [
+          {
+            "article_id": "aee1e917-d0f6-43d9-8872-b5b58d34484d",
+            "stance": "supports",
+            "relevance": "Maruti Suzuki announces \u20b977,500 crore capex for expansion, R&D, and cleaner manufacturing."
+          },
+          {
+            "article_id": "258f51f0-f04b-4e25-84aa-d02632fe8172",
+            "stance": "supports",
+            "relevance": "Maruti Suzuki reiterates the same capex plan to boost demand post\u2011GST."
+          }
+        ]
+      },
+      {
+        "name": "Automotive Cybersecurity Imperative",
+        "why_it_matters": "Digitalization in vehicles introduces new risk vectors. Investors in carmakers should monitor how firms invest in cybersecurity, as failures could erode brand value and profitability.",
+        "industries": [
+          "Automotive"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "fb2328f3-3303-477d-b160-c73d672490cb",
+            "stance": "supports",
+            "relevance": "Auto industry must stay ahead of hackers, emphasizing cybersecurity needs."
+          }
+        ]
+      },
+      {
+        "name": "JD.com Capital Shift from Consumer Sectors",
+        "why_it_matters": "A move away from consumer spending could signal weakening demand in the sector the investor follows. Monitoring this trend helps gauge potential headwinds for consumer\u2011cyclical stocks.",
+        "industries": [
+          "Consumer Cyclical"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "4898ea6c-1d7f-4ff3-8fde-d48e27632007",
+            "stance": "supports",
+            "relevance": "JD.com shifts capital allocation away from traditional consumer sectors."
+          }
+        ]
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "4898ea6c-1d7f-4ff3-8fde-d48e27632007",
+        "title": "JD Looks 25.1% Undervalued on GF Value\u2122",
+        "description": "On August 28, 2026, China's leading internet companies, including JD.com Inc (ticker: JD), are shifting capital allocation from traditional consumer sectors tow",
+        "snippet": "On August 28, 2026, China\u2019s leading internet companies, including JD.com Inc (ticker: JD), are shifting capital allocation from traditional consumer sectors t...",
+        "url": "https://www.gurufocus.com/news/9058521/jd-looks-251-undervalued-on-gf-value",
+        "source": "gurufocus.com",
+        "published_at": "2026-08-28T20:57:13Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "839b2d97-0944-4d62-ab69-9de358a7f318",
+        "title": "Global Times: How Chinese NEVs gain ground in global markets, providing greener, smarter mobility",
+        "description": "BEIJING, Aug. 30, 2026 /PRNewswire/ -- This year, the 47th Bangkok International Motor Show was held at the IMPACT Arena, Exhibition and Convention Center. BYD'...",
+        "snippet": "BEIJING, Aug. 30, 2026 /PRNewswire/ \u2014 This year, the 47th Bangkok International Motor Show was held at the IMPACT Arena, Exhibition and Convention Center. BYD...",
+        "url": "https://bubblear.com/global-times-how-chinese-nevs-gain-ground-in-global-markets-providing-greener-smarter-mobility/33079/",
+        "source": "thebubble.com",
+        "published_at": "2026-08-30T14:12:00Z",
+        "categories": [
+          "general"
+        ]
+      },
+      {
+        "uuid": "aee1e917-d0f6-43d9-8872-b5b58d34484d",
+        "title": "Maruti raises FY27-31 capex target to \u20b977,500 crore for expansion, R&D",
+        "description": "Maruti Suzuki India plans \u20b977,500 crore in capital expenditure through FY31 for capacity expansion, new models, R&D, cleaner manufacturing and sales infrastru...",
+        "snippet": "Maruti Suzuki India (MSIL) plans to spend \u20b977,500 crore on capital expenditure (capex) between 2026-27 (FY27) and 2030-31 (FY31) as the country\u2019s largest ca...",
+        "url": "https://www.business-standard.com/companies/news/maruti-suzuki-capex-target-fy27-fy31-capacity-expansion-rd-126083100583_1.html",
+        "source": "business-standard.com",
+        "published_at": "2026-08-31T08:31:21Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "258f51f0-f04b-4e25-84aa-d02632fe8172",
+        "title": "Maruti Suzuki plans Rs 77,500 crore capex over 5 years to boost demand post-GST",
+        "description": "Maruti Suzuki will invest Rs 77,500 crore in capital expenditure over five years. This significant investment aims to capitalize on anticipated demand momentum ...",
+        "snippet": "Live Events\n\n\n\nas a Reliable and Trusted News Source Addas a Reliable and Trusted News Source Add Now!\n\n(You can now subscribe to our\n\n(You can now subscribe to...",
+        "url": "https://economictimes.indiatimes.com/industry/auto/cars-uvs/maruti-suzuki-plans-rs-77500-crore-capex-over-5-years-to-boost-demand-post-gst/articleshow/133661860.cms",
+        "source": "economictimes.indiatimes.com",
+        "published_at": "2026-08-31T19:07:38Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "fb2328f3-3303-477d-b160-c73d672490cb",
+        "title": "Auto industry must stay one step ahead of hackers, says Maruti CEO",
+        "description": "Hisashi Takeuchi said automakers need stronger cybersecurity, robust contingency plans, deeper localisation and greater supplier resilience as digitalisation ac...",
+        "snippet": "The Indian auto industry must ensure that it stays one step ahead of hackers as they evolve their technology and become more sophisticated with each passing day...",
+        "url": "https://www.business-standard.com/industry/auto/auto-industry-must-stay-one-step-ahead-of-hackers-says-maruti-ceo-126090200426_1.html",
+        "source": "business-standard.com",
+        "published_at": "2026-09-02T06:31:21Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      }
+    ],
+    "queries_used": [
+      "carmaker electric vehicle battery supply chain expansion",
+      "carmaker autonomous driving software partnership",
+      "carmaker production capacity expansion",
+      "consumer cyclical retail sales surge",
+      "consumer cyclical e-commerce growth"
+    ],
+    "articles_retrieved": 10,
+    "notes": null
+  },
+  "risk_findings": {
+    "critiques": [
+      {
+        "ticker": "MARUTI.NS",
+        "name": "MARUTI SUZUKI INDIA LTD.",
+        "risks": [],
+        "queries_used": [
+          "\"MARUTI SUZUKI INDIA\" lawsuit",
+          "\"MARUTI SUZUKI INDIA\" Massive"
+        ],
+        "articles_reviewed": 0,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "JD",
+        "name": "JD.com, Inc.",
+        "risks": [
+          {
+            "ticker": "JD",
+            "risk_type": "competitive",
+            "severity": "material",
+            "claim": "Intense delivery price war erodes JD.com's delivery margins.",
+            "article_ids": [
+              "213d16cd-02e8-4fe4-97b7-c059d0c66f8d"
+            ],
+            "metric": null,
+            "metric_value": null
+          },
+          {
+            "ticker": "JD",
+            "risk_type": "thesis_invalidation",
+            "severity": "material",
+            "claim": "Revenue is shrinking, so the theme this company was selected for is not yet showing up in what it sells.",
+            "article_ids": [],
+            "metric": "revenue_growth",
+            "metric_value": -0.029
+          },
+          {
+            "ticker": "JD",
+            "risk_type": "competitive",
+            "severity": "minor",
+            "claim": "Gross margin is thin, which usually means the product competes on price and has little room to absorb cost increases.",
+            "article_ids": [],
+            "metric": "gross_margin",
+            "metric_value": 0.09421
+          }
+        ],
+        "queries_used": [
+          "\"JD.com,\" lawsuit",
+          "\"JD.com,\" Consumer"
+        ],
+        "articles_reviewed": 3,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "213d16cd-02e8-4fe4-97b7-c059d0c66f8d",
+        "title": "Chinese e-commerce moves to next phase after delivery price war changes shopping habits",
+        "description": "China's e-commerce landscape is rapidly evolving as instant retail emerges, fueled by a competitive delivery price war. The shift in consumer expectations for q...",
+        "snippet": "Advt\n\nAdvt\n\nJoin the community of 2M+ industry professionals. Subscribe to Newsletter to get latest insights & analysis in your inbox. All about ETRetail indust...",
+        "url": "https://retail.economictimes.indiatimes.com/news/e-commerce/e-tailing/chinese-e-commerce-moves-to-next-phase-after-delivery-price-war-changes-shopping-habits/133752977",
+        "source": "retail.economictimes.indiatimes.com",
+        "published_at": "2026-09-04T05:33:11Z",
+        "categories": [
+          "business"
+        ]
+      }
+    ],
+    "articles_retrieved": 3,
+    "risks_discarded": 0,
+    "notes": null
+  }
+}

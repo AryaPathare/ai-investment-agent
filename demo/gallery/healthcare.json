@@ -1,0 +1,291 @@
+{
+  "recorded_on": "2026-09-01T21:40:21.891503+00:00",
+  "profile": {
+    "age": 19,
+    "investment_experience": "beginner",
+    "risk_tolerance": "low",
+    "investment_amount": 100.0,
+    "investment_currency": "USD",
+    "holding_period": "3 months",
+    "sectors_of_interest": [
+      "Healthcare"
+    ],
+    "restrictions": [
+      "no fossil fuels",
+      "no data centres"
+    ]
+  },
+  "decision": {
+    "recommendations": [
+      {
+        "ticker": "LLY",
+        "name": "Eli Lilly and Company",
+        "thesis": "Eli Lilly sells Mounjaro, a diabetes drug that also treats weight loss and cardiovascular risk. FDA approval expands its market, boosting sales. The company\u2019s high margins and strong growth make it a solid short\u2011term play for a low\u2011risk investor.",
+        "exit_conditions": [
+          {
+            "condition": "FDA approval for Mounjaro is revoked.",
+            "article_ids": [
+              "6904eeba-8b5e-49ae-b2d8-52ac37e9ea82"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "revenue_growth turns negative.",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          }
+        ],
+        "screen_score": 0.8965,
+        "price": {
+          "amount": 1160.0,
+          "currency": "USD",
+          "as_of": "2026-09-01T21:37:11.118940Z"
+        },
+        "shares_affordable": 0,
+        "price_in_investor_currency": 1160.0,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Mounjaro FDA Approval Boost"
+        ],
+        "evidence_article_ids": [
+          "5b212ee2-7cda-4f75-a0b2-b98a6dda10f3",
+          "6904eeba-8b5e-49ae-b2d8-52ac37e9ea82",
+          "87dd5373-95fd-4205-bc84-b2cc883e1841"
+        ],
+        "known_risks": [
+          "Leverage is above the level at which it starts to constrain choices."
+        ]
+      },
+      {
+        "ticker": "ASTERDM.BO",
+        "name": "ASTER DM QUALITY CARE LIMITED",
+        "thesis": "Aster DM is buying hospitals to become a larger integrated provider. It offers inpatient and outpatient care. The consolidation trend supports its growth.",
+        "exit_conditions": [
+          {
+            "condition": "Aster DM fails to acquire Yatharth Hospitals",
+            "article_ids": [
+              "842398b4-6da6-40f2-a94b-e93d40e4c10c"
+            ],
+            "metric": null
+          },
+          {
+            "condition": "debt_to_equity rises above 3.0",
+            "article_ids": [],
+            "metric": "debt_to_equity"
+          },
+          {
+            "condition": "revenue_growth turns negative",
+            "article_ids": [],
+            "metric": "revenue_growth"
+          }
+        ],
+        "screen_score": 0.5816,
+        "price": {
+          "amount": 758.2,
+          "currency": "INR",
+          "as_of": "2026-09-01T21:37:11.747731Z"
+        },
+        "shares_affordable": 12,
+        "price_in_investor_currency": 7.986096481988625,
+        "verdict": "survives",
+        "exposure": "direct",
+        "themes": [
+          "Healthcare Consolidation Trend"
+        ],
+        "evidence_article_ids": [
+          "842398b4-6da6-40f2-a94b-e93d40e4c10c"
+        ],
+        "known_risks": []
+      }
+    ],
+    "excluded": [],
+    "no_recommendation_reason": null,
+    "conditions_discarded": 0,
+    "notes": null
+  },
+  "research_findings": {
+    "themes": [
+      {
+        "name": "Mounjaro FDA Approval Boost",
+        "why_it_matters": "FDA approvals often trigger short\u2011term price momentum. With a 3\u2011month holding period, this catalyst could generate a quick return for a low\u2011risk, healthcare\u2011focused investor.",
+        "industries": [
+          "Healthcare",
+          "Pharmaceuticals"
+        ],
+        "timeframe": "within_6_months",
+        "confidence": "high",
+        "evidence": [
+          {
+            "article_id": "6904eeba-8b5e-49ae-b2d8-52ac37e9ea82",
+            "stance": "supports",
+            "relevance": "Eli Lilly\u2019s Mounjaro received FDA approval for cardiovascular benefit."
+          },
+          {
+            "article_id": "5b212ee2-7cda-4f75-a0b2-b98a6dda10f3",
+            "stance": "supports",
+            "relevance": "FDA approval of Mounjaro expands its use beyond diabetes and weight management."
+          },
+          {
+            "article_id": "87dd5373-95fd-4205-bc84-b2cc883e1841",
+            "stance": "supports",
+            "relevance": "Mounjaro\u2019s new indication reduces heart attack and stroke risks."
+          }
+        ]
+      },
+      {
+        "name": "AI Medical Device Evidence Gap",
+        "why_it_matters": "The lack of robust evidence for most AI\u2011enabled devices signals higher risk for companies relying on AI claims, a key consideration for a beginner investor with low risk tolerance.",
+        "industries": [
+          "Healthcare",
+          "Medical Devices"
+        ],
+        "timeframe": "unclear",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "eeba5106-7dea-4667-bf10-13cea3c85e62",
+            "stance": "supports",
+            "relevance": "Only 3 of 1,357 FDA\u2011cleared AI devices had linked clinical trials."
+          }
+        ]
+      },
+      {
+        "name": "Healthcare Consolidation Trend",
+        "why_it_matters": "Consolidation can lift valuations of target hospitals. While the effect may take time, it signals a structural shift that could benefit investors looking for exposure to growing healthcare entities.",
+        "industries": [
+          "Healthcare",
+          "Hospital Management"
+        ],
+        "timeframe": "6_to_18_months",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "article_id": "842398b4-6da6-40f2-a94b-e93d40e4c10c",
+            "stance": "supports",
+            "relevance": "Yatharth Hospitals is attracting acquisition interest from Aster and Advent."
+          }
+        ]
+      }
+    ],
+    "articles": [
+      {
+        "uuid": "eeba5106-7dea-4667-bf10-13cea3c85e62",
+        "title": "Only three of 1,357 FDA-cleared AI devices tested patient outcomes",
+        "description": "Researchers found that among 1,357 FDA-cleared or approved AI/ML-enabled medical devices, only 34 were linked to registered clinical trials and just three had b...",
+        "snippet": "Hundreds of AI tools are entering clinical care, but researchers traced how quickly the evidence thins out when the focus shifts from regulatory authorization t...",
+        "url": "https://www.news-medical.net/news/20260820/Only-three-of-1357-FDA-cleared-AI-devices-tested-patient-outcomes.aspx",
+        "source": "news-medical.net",
+        "published_at": "2026-08-21T02:06:00Z",
+        "categories": [
+          "health"
+        ]
+      },
+      {
+        "uuid": "842398b4-6da6-40f2-a94b-e93d40e4c10c",
+        "title": "Yatharth Hospitals draws interest from Aster, Advent as healthcare consolidation heats up",
+        "description": "Aster DM Quality Care is negotiating to acquire a controlling stake in Yatharth Hospitals.  This potential acquisition aims to consolidate the hospital sector a...",
+        "snippet": "ET Bureau\n\nSynergy in Acquisition\n\nLive Events\n\nPan India Aspirantions\n\nMoney Pouring In\n\n\n\nas a Reliable and Trusted News Source Addas a Reliable and Trusted N...",
+        "url": "https://economictimes.indiatimes.com/industry/healthcare/biotech/healthcare/yatharth-hospitals-draws-interest-from-aster-advent-as-healthcare-consolidation-heats-up/articleshow/133577494.cms",
+        "source": "economictimes.indiatimes.com",
+        "published_at": "2026-08-28T00:00:00Z",
+        "categories": [
+          "business",
+          "general"
+        ]
+      },
+      {
+        "uuid": "6904eeba-8b5e-49ae-b2d8-52ac37e9ea82",
+        "title": "LLY Looks 22.7% Undervalued on GF Value\u2122 After FDA Approval Boost",
+        "description": "On August 28, 2026, Eli Lilly and Co (NYSE: LLY) announced that the U.S. Food and Drug Administration (FDA) approved its drug Mounjaro for reducing the risk of",
+        "snippet": "On August 28, 2026, Eli Lilly and Co (NYSE: LLY) announced that the U.S. Food and Drug Administration (FDA) approved its drug Mounjaro for reducing the risk of ...",
+        "url": "https://www.gurufocus.com/news/9057958/lly-looks-227-undervalued-on-gf-value-after-fda-approval-boost",
+        "source": "gurufocus.com",
+        "published_at": "2026-08-28T12:27:51Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "5b212ee2-7cda-4f75-a0b2-b98a6dda10f3",
+        "title": "Eli Lilly Scores Major FDA Win for Weight Loss Drug",
+        "description": "Eli Lilly (LLY) scored another regulatory win for Mounjaro after the FDA approved the blockbuster diabetes drug to reduce the risk of major cardiovascular event",
+        "snippet": "Eli Lilly LLY scored another regulatory win for Mounjaro after the FDA approved the blockbuster diabetes drug to reduce the risk of major cardiovascular events ...",
+        "url": "https://www.gurufocus.com/news/9058049/eli-lilly-scores-major-fda-win-for-weight-loss-drug",
+        "source": "gurufocus.com",
+        "published_at": "2026-08-28T14:14:56Z",
+        "categories": [
+          "business"
+        ]
+      },
+      {
+        "uuid": "87dd5373-95fd-4205-bc84-b2cc883e1841",
+        "title": "Eli Lilly\u2019s Mounjaro wins FDA approval for a major new cardiovascular benefit",
+        "description": "Eli Lilly's Mounjaro received FDA approval for reducing heart attack and stroke risks. This new indication expands its use beyond diabetes and weight management...",
+        "snippet": "Mounjaro beats Lilly\u2019s older diabetes drug in major study\n\nLive Events\n\nWhy the FDA approval matters for Eli Lilly\n\nGLP-1 drugs are moving beyond weight loss\n...",
+        "url": "https://economictimes.indiatimes.com/news/international/global-trends/eli-lillys-mounjaro-wins-fda-approval-for-a-major-new-cardiovascular-benefit/articleshow/133598000.cms",
+        "source": "economictimes.indiatimes.com",
+        "published_at": "2026-08-28T18:12:06Z",
+        "categories": [
+          "general",
+          "business"
+        ]
+      }
+    ],
+    "queries_used": [
+      "FDA approval new diabetes drug",
+      "clinical trial results cardiovascular device",
+      "pharma merger acquisition deal",
+      "biotech IPO announcement",
+      "hospital equipment procurement contract"
+    ],
+    "articles_retrieved": 14,
+    "notes": null
+  },
+  "risk_findings": {
+    "critiques": [
+      {
+        "ticker": "LLY",
+        "name": "Eli Lilly and Company",
+        "risks": [
+          {
+            "ticker": "LLY",
+            "risk_type": "financial",
+            "severity": "minor",
+            "claim": "Leverage is above the level at which it starts to constrain choices.",
+            "article_ids": [],
+            "metric": "debt_to_equity",
+            "metric_value": 1.6207099999999999
+          }
+        ],
+        "queries_used": [
+          "\"Eli Lilly and\" lawsuit",
+          "\"Eli Lilly and\" Mounjaro"
+        ],
+        "articles_reviewed": 2,
+        "press_releases_withheld": 0,
+        "sources_withheld": [
+          "insidermonkey.com"
+        ],
+        "skipped_reason": null
+      },
+      {
+        "ticker": "ASTERDM.BO",
+        "name": "ASTER DM QUALITY CARE LIMITED",
+        "risks": [],
+        "queries_used": [
+          "\"ASTER DM QUALITY CARE\" lawsuit",
+          "\"ASTER DM QUALITY CARE\" Consolidation"
+        ],
+        "articles_reviewed": 1,
+        "press_releases_withheld": 0,
+        "sources_withheld": [],
+        "skipped_reason": null
+      }
+    ],
+    "articles": [],
+    "articles_retrieved": 3,
+    "risks_discarded": 0,
+    "notes": null
+  }
+}
