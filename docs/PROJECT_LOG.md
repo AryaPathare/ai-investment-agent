@@ -4103,3 +4103,257 @@ the same hour, which is entry 48's condition exactly. **A test that cannot fail
 is not evidence, and the only way to find out is to break the thing on purpose.**
 
 856 passed to **1008**, 1009 collected.
+
+## Session 19 — 2026-09-08
+
+The gallery went from five sectors to ten. Two of the four runs held for triage
+were rescued without spending anything, the paid replays turned out to be aimed
+at slots that were already filled, and the two live defects the day found were
+both about company IDENTITY - a name the provider cut off, and a name belonging
+to something that is not a company at all.
+
+### 109. Triage that cost nothing, because the question was already on disk
+
+Four pre-fix runs were held for replay: Agent 3 re-graded over each one's frozen
+research, about 3k tokens against 28k to re-run, to see whether entry 106's buyer
+ceiling now drops a company the recorded brief recommends.
+
+**None of the four needed a model call.** The ceiling acts only where "the
+company's industry sits OUTSIDE the theme's sector", and the checkpoint already
+records the industry, the sector and the theme for every candidate. Reading the
+pairs answers the question:
+
+    cli-bff02452  LLY         Healthcare/Drug Manufacturers  vs Mounjaro approval
+                  ASTERDM.BO  Healthcare/Medical Care        vs healthcare consolidation
+    cli-241f9faf  BAGMANE.BO  Real Estate/REIT - Office      vs an office REIT expansion
+
+Every pair in-sector, so the ceiling has nothing to act on. Both were recorded as
+they stood - **Healthcare and Real Estate filled for zero quota.**
+
+The other two were suspect and stayed unrecorded, and their replays were still
+not worth buying. `cli-008657ee` carries Amazon (Consumer Cyclical / Internet
+Retail) graded `partial` against a clinical-trials theme, which is the handoff's
+own named example; `cli-f01b668f` is a Utilities run whose slot Utilities already
+holds. **A replay that can only confirm a slot already filled is a test that
+cannot change a decision**, which is entry 66's rule pointed at triage rather
+than at a quota probe.
+
+Three other multi-sector runs were audited on the same evidence and all three
+were refused. `cli-37e6602b` holds ALCO, Consumer Defensive / Farm Products
+graded `direct` against a land-development theme - the audit's second named
+example, found independently - and three of them carry junk restrictions
+(`['5']`, `['1']`, `['palantir']`) where a menu number leaked into the field.
+
+**The triage instrument was wrong twice, in opposite directions, on its first
+run.** A keyword rule was written to decide "is this industry inside this theme's
+sector" automatically. It flagged `Mounjaro FDA Approval Boost` against a drug
+manufacturer as a MISMATCH - the theme name contains no healthcare word, because
+the word it contains is the drug's brand name - and it passed Amazon against an
+AI theme because `Retail` contains `ai`. A false negative and a naive-substring
+false positive, in eight lines, in a session auditing a fix for exactly that. The
+verdict was deleted and the pairs were read by hand. **The check tested the words
+used to describe a company, not the company** - entry 57, verbatim, inside the
+tool built to catch entry 57.
+
+### 110. A name cut one character below the field width
+
+A live Energy run recommended three Indian oil companies and said of the third,
+**"we argued against this one and it held up"**. Its bear case had reviewed zero
+articles.
+
+`"BHARAT PETROLEUM CORPORATION L"` - thirty characters, the `L` beginning
+`LIMITED`. Entry 103 fixed exactly this failure at THIRTY-ONE, on the evidence
+that ten of 102 cached companies sat at exactly 31 and none were longer. The
+inference was sound and the constant was one character too high.
+
+    "BHARAT PETROLEUM CORPORATION L" lawsuit    ->  0 articles
+    "BHARAT PETROLEUM CORPORATION L" Refinery   ->  0 articles
+
+Both zero, and unmatchable by construction: no article contains `CORPORATION L`.
+Zero articles is zero risks is `survives`, and selection PREFERS that verdict, so
+for the second time a truncation promoted the company whose critique could never
+have run.
+
+**Lowering the constant was the wrong fix, and the cache says so.** Four other
+names sit at exactly thirty and are COMPLETE - `Ultragenyx Pharmaceutical Inc.`,
+`SolarWindow Technologies, Inc.`, `HOYMILES POWER ELECTRONICS INC`,
+`Fujiyama Power Systems Limited`. Length cannot separate them from BPCL at all.
+
+What separates them is the LONG name. BPCL's short form is a prefix of its long
+form and the character after the cut is a LETTER, so a word was severed.
+`HOYMILES` is also a prefix of its long form and is not a truncation, because
+what follows its cut is `.` - the name ended on a word boundary. Measured over
+all 125 distinct cached names: **zero false positives.**
+
+Both signals are kept, because neither subsumes the other:
+
+    width only      ASML, RWE, Carl Zeiss, Vox Valor - the short form carries
+                    text the long form does not, so it is no prefix of it
+    mid-word only   BHARAT PETROLEUM CORPORATION L, at thirty characters
+    both            Tencent Music, TSMC, Advanced Micro-Fabrication
+
+That is entry 5's rule arriving where it was needed: **when a check guards
+something important and rests on one external signal, get a second signal that
+fails differently.** A fund filter keyed on `quoteType` was defeated once by the
+provider reporting a different value an hour later; this is the same lesson about
+a field WIDTH rather than a field value.
+
+Broken on purpose twice before being trusted, per entry 51. Remove the new branch
+and BPCL goes red; loosen the mid-word test to any prefix and `HOYMILES` goes
+red, which is what proves the narrowness is load-bearing rather than decorative.
+Verified live afterwards: a 33-character name now arrives whole.
+
+### 111. The defect that was not one, and the measurement that said so
+
+The same cache read turned up something that looked worse than the truncation.
+`strip_legal_suffix` pops trailing legal words and strips punctuation only for
+the COMPARISON, never from the word it keeps - so `JD.com, Inc.` becomes
+`JD.com,` and is searched as a quoted phrase **ending in a comma**. Thirteen of
+the 52 candidate names this project has ever critiqued do this: `"Tesla,"`,
+`"Amazon.com,"`, `"Applied Materials,"`, `"Super Micro Computer,"`. A quarter of
+every bear case ever run.
+
+The module's own docstring supplies the indictment - *"over-specifying a phrase
+query is the quiet way to retrieve zero articles and conclude, wrongly, that
+there is no bad news"* - and the fix is two characters.
+
+**It was measured before it was made, and the measurement killed it.**
+
+    phrase ends on a word        56 critiques   16% zero-article   2.77 articles each
+    phrase ends in punctuation   15 critiques   13% zero-article   2.47 articles each
+
+`"Tesla,"` returned six articles. `"Amazon.com,"` four. `"Advanced Micro
+Devices,"` four. The provider does not require the comma, the punctuated group is
+not worse than the clean one, and the change would have been justified by
+reasoning about a query language rather than by evidence about it. **Not made.**
+
+The same read produced a second candidate fix and retired it the same way. The
+theme keyword for `Maruti Suzuki Massive Capex Expansion` is `Massive`, because
+the heuristic takes the longest surviving word and `massive` is not a stopword.
+Across every theme this project has produced it is **1 of 126**. Adding a word on
+one observation, hours after being burned by a threshold set on one observation,
+is entry 51's trap; recorded instead.
+
+What separates entry 110 from both of these is a mechanism rather than a
+correlation. `CORPORATION L` cannot appear in prose. A trailing comma
+demonstrably can.
+
+### 112. PPG is a lithium project in Argentina, not a paint company
+
+A Basic Materials run recommended **PPG Industries** - coatings for aerospace and
+cars - third, for a lithium theme, on this thesis: *"Its joint venture in Salta's
+lithium projects gives it a foothold in the battery-grade lithium supply
+chain."*
+
+The article it cites really does say it:
+
+    "China's Ganfeng signed definitive deals to consolidate three Salta lithium
+     projects into the PPG joint venture, targeting 150,000 tonnes a year"
+
+`PPG` there is **Pozuelos-Pastos Grandes**, the Salta project vehicle. PPG
+Industries has no lithium business. The extractor read `the PPG joint venture` as
+a company name, `resolve_company("PPG")` returned a real, investable, correctly
+matched security, and the exposure grade quoted the article back accurately:
+*"PPG is a joint venture partner in lithium projects."*
+
+**Every check in the system passed, and each one was right.** The citation
+resolves. The article is real reporting, not a press release. The industry -
+Specialty Chemicals - is genuinely Basic Materials, so entry 106's ceiling had no
+sector mismatch to catch. The rationale is grounded in the retrieved text. This
+is entry 20 in new clothes: **grounding in a retrieved article is necessary and
+not sufficient.** And it is entry 4's SMIC tie-break grown up - a plausible
+answer that does not look like a bug, because the company it names exists.
+
+**The obvious rule is provably wrong, and this log already says why.** A bare
+short acronym is an unreliable identifier, which `bear_queries.py` states in its
+own docstring - *"a ticker is a terrible news search term; PBK, C and TSM appear
+in prose constantly with no relation to the company"* - knowledge applied to
+SEARCHING and never to RESOLVING, which is entry 53's shape for the third time.
+But refusing bare acronyms would reject `AMD`, and making `AMD` resolve was a
+deliberate fix in session 1: "AMD" shares no word with "Advanced Micro Devices,
+Inc.", so resolution accepts a symbol match precisely so acronyms work. `IBM`,
+`BP`, `GE`, `RWE` and `SMIC` all ride on that rule.
+
+What actually separates them is grammatical rather than lexical. `AMD announced`
+has the acronym as an ACTOR; `the PPG joint venture` has it MODIFYING a noun, as
+the name of an asset. That is a judgement about prose, so it belongs to the
+extraction model rather than to a string rule - and changing what the extractor
+is told is a prompt change, which on this project is a hypothesis until measured,
+with no quota left to measure it.
+
+**Recorded with its evidence attached and deliberately not fixed**, on the
+standing convention of entries 68, 87 and 88. The run was NOT recorded: a paint
+company with a lithium joint venture it does not have is exactly the "picture of
+a system that never existed" of entry 95 - except worse, because this is a
+picture of a system that does exist and is wrong.
+
+### 113. Ten of eleven sectors, and the ceiling said so exactly
+
+Six live runs, five recorded, and the gallery went **five recordings to eleven** -
+ten of the eleven sectors, plus the run that recommends nothing.
+
+    Healthcare              cli-bff02452   triage, zero quota   LLY, ASTERDM.BO
+    Real Estate             cli-241f9faf   triage, zero quota   BAGMANE.BO
+    Consumer Cyclical       cli-a595031d   live                 MARUTI.NS, JD
+    Communication Services  cli-4d74517f   live                 CURI, ROKU, META
+    Consumer Defensive      cli-47dfd736   live                 HRL, SY1.F
+    Energy                  cli-68fa628c   live                 688309.SS, 87R.F
+
+**Energy took two runs and the first one was better-looking.** ONGC, Indian Oil
+and BPCL, all three genuinely oil and gas, on refinery-capacity themes - against
+the broad-name failure recorded in entry 106, where plain "Energy" had produced
+EV charging and solar. Leading the profile with the plain sector name and
+following it with the menu's OWN narrowing (`Energy - oil services, refining`)
+fixed that on the first attempt, which is entry 83's argument working as
+designed: the menu teaches the narrowing at the moment of choice.
+
+It was refused anyway, because BPCL is entry 110 and the fix changes the bear
+query that produced that brief. Recording it would have shipped behaviour the
+code no longer has, which is the test entry 107 set. The second Energy run drew
+entirely different companies from the same profile - entry 58's query variance -
+and it is the one in the gallery because it is the one current code produces.
+
+Worth a decision rather than a fix: that run recommends a **EUR 0.05** share to a
+low-risk 58-year-old holding GBP 250,000, carrying three fundamental risks, and
+prices it at 6,265,053 shares. Nothing is wrong by the system's own rules -
+selection orders by verdict tier then screen score, and risk tolerance gates
+nothing downstream, deliberately. It still reads badly on a page, and there is no
+price floor or liquidity screen anywhere in the pipeline.
+
+**Basic Materials is the one sector still missing**, and the ceiling arrived
+while trying it:
+
+    Limit 200000, Used 196148, Requested 5411
+
+Entry 66's instrument working exactly as recorded: the run was attempted rather
+than probed for, the refusal cost nothing, and it states the number. Six full
+runs plus the audits is roughly the day. `python -m evals.company_runner` against
+the buyer ceiling is owed and unaffordable, so that ceiling remains measured on
+one frozen state plus the five live runs above, all of which it graded
+defensibly.
+
+### 114. Three instruments wrong in one day, all of them mine
+
+Collected because the pattern was this session's real subject, and because the
+log has a standing entry for it.
+
+**The sector-matching heuristic** flagged a correct pair and passed a wrong one,
+on a two-letter substring. Entry 109.
+
+**The audit's truncation flag fired on its own fix's output** - a 33-character
+name read as "at the field width", when 33 characters is what a REPAIRED name
+looks like, the short form having been 31.
+
+**A gallery probe reported 2 recordings where 11 exist**, because it guessed the
+response key and counted the keys of the wrapper dict instead of the list inside
+it. Same shape as entry 90's `article_id` for `article_ids` and entry 54's
+`asked_by` - **the third and fourth time on this project that a wrong key in a
+throwaway probe nearly became a reported finding.**
+
+None of the three was in shipped code. All three were in the thing doing the
+measuring, written in the same hour as the question it answered, which is entry
+48's condition and entry 99's observation that the instrument is the finding. The
+cheap defence is the one that worked every time here: read the raw object once
+before trusting anything derived from it.
+
+1008 passed to **1032**, 1033 collected.
