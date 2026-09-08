@@ -874,3 +874,22 @@ def test_the_real_gallery_is_wired_up():
 
     assert body["runs"], "no committed recordings are being served"
     assert any(r["recommended_nothing"] for r in body["runs"])
+
+
+
+def test_a_live_failure_carries_the_same_hint_as_a_reloaded_one(whole_pipeline, profile):
+    """The live view of a failure must not say less than the reloaded view.
+
+    `render.describe_run` attaches RATE_LIMIT_HINT to a failed run read back
+    from state, and the streaming path used to hardcode an empty hint - so a
+    visitor WATCHING a run die got a bare exception string while the same person
+    reloading the page got guidance. On a deployed site the shared daily ceiling
+    is what usually ends a run, which makes the live view the one nearly every
+    visitor meets.
+    """
+    whole_pipeline(fail_at="research")
+
+    failures = [data for name, data in post(profile) if name == "failed"]
+
+    assert len(failures) == 1
+    assert failures[0]["hint"] == render.RATE_LIMIT_HINT

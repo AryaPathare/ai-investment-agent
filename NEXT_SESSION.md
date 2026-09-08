@@ -21,7 +21,7 @@ was the first thing session 20 did; there is nothing outstanding from it.
 Session 20 spent no news requests and shipped no behaviour change. It answered
 entry 112, and the answer was no - see below. Session 21 then began the deploy
 work and added the first tests the deployment config has ever had. The suite is
-**1039 passed, 1 skipped**.
+**1040 passed, 1 skipped**.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
@@ -347,10 +347,10 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **1039 passed, 1 skipped** - 1040 collected, and the distinction matters
+Expect **1040 passed, 1 skipped** - 1041 collected, and the distinction matters
 (entry 56). Counted at each session end: 760 after session 11, 797 after 12, 811
 after 13, 816 after 14, 814 then 856 after 17, 1008 after 18, 1032 after
-session 19, and 1039 after session 21, which added 12 tests for the truncation fix and its two mutations.
+session 19, and 1040 after session 21, which added 12 tests for the truncation fix and its two mutations.
 
 Suite time swung between 9s and 22s across runs today on an unchanged tree. Entry
 34 is the reason not to chase that: six seconds of work once went into
@@ -412,8 +412,8 @@ word of it.
 What the public documents actually had wrong was smaller, and **all four are
 FIXED in session 21**:
 
-    README.md:109    "1008 passed, 1 skipped"   ->  1039   FIXED
-    README.md:206    "1008 passed, 1 skipped"   ->  1039   FIXED, the check line
+    README.md:109    "1008 passed, 1 skipped"   ->  1040   FIXED
+    README.md:206    "1008 passed, 1 skipped"   ->  1040   FIXED, the check line
     README.md:346    "97 entries"               ->  118    FIXED
     docs/DESIGN.md:4 "97 entries"               ->  118    FIXED
 
@@ -940,7 +940,7 @@ python -m scripts.record_run --list          # runs that could join the gallery
 python -m scripts.record_run <id> --to demo/gallery/<sector>.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 1039 passed, 1 skipped; no network
+python -m pytest                        # 1040 passed, 1 skipped; no network
 
 python -m evals.runner                  # Agent 1: 32 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)

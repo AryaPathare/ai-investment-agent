@@ -434,7 +434,7 @@ function handle(name, data) {
     $("answer-help").textContent = data.blank_answer_hint;
     $("answer").focus();
   } else if (name === "failed") {
-    showBrief({ status: "failed", error: data.message, error_hint: "" });
+    showBrief({ status: "failed", error: data.message, error_hint: data.hint || "" });
   } else if (name === "done") {
     showBrief(data.brief);
   } else if (name === "refused") {

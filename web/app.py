@@ -96,7 +96,19 @@ def _run_graph(store, thread_id: str, start, emit) -> None:
                 # graph end cleanly, deliberately, so no traceback reaches a
                 # user. That makes it indistinguishable from success by shape
                 # alone (entry 88), which is why the error is read explicitly.
-                emit({"event": "failed", "data": {"message": update["error"]}})
+                emit({
+                    "event": "failed",
+                    "data": {
+                        "message": update["error"],
+                        # The same hint render.describe() attaches when this run
+                        # is read back later. Without it the LIVE view of a
+                        # failure said less than the reloaded view of the same
+                        # failure - and on a public site, where the shared daily
+                        # ceiling is what usually ends a run, the live view is
+                        # the one nearly every visitor sees.
+                        "hint": render.RATE_LIMIT_HINT,
+                    },
+                })
                 continue
 
             stage, label = render.STAGE_LABELS.get(node, (0, node))
@@ -161,7 +173,13 @@ async def _stream(thread_id: str, start):
             # must not be silence: the browser is holding an open connection and
             # a stream that simply stops is the blank screen this project
             # refuses everywhere else.
-            emit({"event": "failed", "data": {"message": f"{type(exc).__name__}: {exc}"}})
+            emit({
+                "event": "failed",
+                "data": {
+                    "message": f"{type(exc).__name__}: {exc}",
+                    "hint": render.RATE_LIMIT_HINT,
+                },
+            })
         finally:
             loop.call_soon_threadsafe(events.put_nowait, _SENTINEL)
 
