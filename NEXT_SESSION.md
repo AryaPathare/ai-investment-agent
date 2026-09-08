@@ -1,9 +1,10 @@
 # Start here
 
-**Written against `4bbb0ff`, 2026-09-08.** Before trusting a word of this:
+**Written against `d9ee48b`, 2026-09-08 (session 20).** Before trusting a word
+of this:
 
 ```powershell
-git log --oneline 4bbb0ff..HEAD
+git log --oneline d9ee48b..HEAD
 ```
 
 Thirty seconds, and it is here because of entry 92: session 15 opened this file,
@@ -14,21 +15,16 @@ neither was used. A handoff is a CLAIM about the repository, not the repository,
 and it is written by somebody who is about to stop working and cannot describe
 what happens next.
 
-**Session 19 is committed in four commits on `main`:**
+**Session 19's four commits are PUSHED and CI is green on all of them.** That
+was the first thing session 20 did; there is nothing outstanding from it.
 
-```
-  015fe91  Catch a name the provider cut one character early
-  7d544de  Six more sectors the gallery can show
-  4bbb0ff  Write down the day the gallery nearly doubled
-  (this file)
-```
-
-Nothing is pushed yet - `git status` will say how far ahead of `origin/main` you
-are. The suite is **1032 passed, 1 skipped**.
+Session 20 spent no news requests and shipped no behaviour change. It answered
+entry 112, and the answer was no - see below. The suite is **1032 passed,
+1 skipped**, unchanged, because nothing shipped.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **114**, 19 sessions
+- `docs/PROJECT_LOG.md` is current through entry **117**, 20 sessions
 - Tagged **`v1.0.0`** at `48f9c08`, which the case study quotes
 
 ---
@@ -57,7 +53,17 @@ daily ceiling landed first:
 
     Limit 200000, Used 196148, Requested 5411
 
-One run, ~28k tokens and ~13 news requests, and the slot is complete.
+One run, ~28k tokens and ~13 news requests, and the slot is complete. **Still
+outstanding after session 20**, which had 8 news requests left and did not
+attempt it: a token ceiling refuses for free and states the numbers, but a news
+shortfall lets the run start and die partway with Agents 1 and 2 already paid
+for. This is the first item to spend on.
+
+**A lithium-shaped Basic Materials profile is the one that produced entry 112.**
+That is now measured and unfixed, so a run down that theme can still put a
+project vehicle in front of a reader. `copper and specialty chemicals` is the
+narrowing suggested below partly for that reason; audit the mentions before
+recording whatever lands.
 
 **The profile shape that works, and it is not the plain sector name alone.** Lead
 with the plain sector name so a visitor can see which sector a run is, then add
@@ -106,7 +112,53 @@ whether the short name is the long name stopped in the middle of a word. Zero
 false positives over all 125 cached names, and both halves broken on purpose
 before being trusted. Verified live: a 33-character name now arrives whole.
 
-**Entry 112, PPG is a lithium project in Argentina - OPEN, NEEDS A DECISION.**
+**Entry 112 was ANSWERED in session 20, and the answer was to revert. Do not
+re-open it without reading entries 115-117 first.** The approach chosen was the
+narrow one - the missing member of the extraction prompt's own
+`WHAT IS NOT A COMPANY MENTION` list, since a named project or joint venture had
+no entry in it. Measured against the frozen research of `cli-66c74b37`, no news
+requests, control and treatment in the same session:
+
+    control (n=6)   PPG extracted 3/6   "China's Ganfeng" as the NAME 0/6
+    treated (n=4)   PPG extracted 0/4   "China's Ganfeng" as the NAME 2/4
+
+It removed PPG and, in half its runs, removed **Ganfeng** - the company that
+actually signed the deals, and a legitimate `direct` grade in the recorded run.
+`resolve_company("China's Ganfeng")` returns `None`. The criterion had been
+written before the first call and it said revert, so it was reverted.
+
+**Two things a next attempt must carry.** Entry 112's defect is INTERMITTENT -
+3 of 6, not 2 of 2 - so a pair of runs is not a baseline and any future
+measurement needs n of at least 6 per arm. And the treated prompt worked by
+making the model copy the article's phrasing verbatim, which is what dragged the
+possessive into the name; a rule that gets PPG out without increasing verbatim
+copying is the thing to look for.
+
+The triage that preceded it, all free and worth not repeating: an acronym
+modifying an asset noun appears **6 times in 841 cached articles**, and across
+**all 82 candidates this project has ever produced** PPG is the only one that is
+not a real company for its theme. Two other non-company acronyms were extracted
+and cost nothing - `TENER` (a Siemens Energy product) and `SEMI` (a trade body)
+both died downstream. The harm needs extracted AND resolvable AND unrelated, all
+at once.
+
+**Entry 116, `<Country>'s <Company>` does not resolve - OPEN, NEW, and a
+decision rather than a fix.** Found by the measurement above and NOT created by
+it. The extraction prompt says to write the name as the article writes it, and
+prose writes `China's Alibaba`, `China's Niutech`, `Canada's Fairfax` - **134
+hits across 122 distinct phrases in the same 841 articles.** A name in that
+shape resolves to `None`.
+
+Entry 53's trailing-legal-form retry does NOT reach it, and the reason is the
+whole decision: that fix is safe because the words it strips are already in
+`_NOISE_WORDS`, so scoring is unaffected. `resolve_company` scores hits against
+the ORIGINAL name at `NAME_MATCH_THRESHOLD = 0.6`, and `China's Ganfeng` against
+`Ganfeng Lithium Group Co. Ltd.` scores **0.33**. Retrying the SEARCH alone
+changes nothing; the possessive has to be normalised out before scoring, in a
+function `AMD`, `IBM`, `BP`, `GE`, `RWE` and `SMIC` all ride on. Verifiable
+entirely offline at zero model cost - resolution is Python plus a cached search.
+
+**Entry 112's original write-up, kept because the reasoning still holds:**
 A Basic Materials run recommended PPG Industries, a coatings company, for a
 lithium theme. The cited article says *"three Salta lithium projects into the PPG
 joint venture"* - `PPG` is Pozuelos-Pastos Grandes, the project vehicle. The
@@ -157,6 +209,11 @@ tolerance deliberately gates nothing downstream. There is no price floor and no
 liquidity screen anywhere in the pipeline. Decide whether there should be before
 adding one; it is the first time this has been visible on a page.
 
+**Entry 116, the possessive prefix.** Written up with the two defects above,
+because that is where it was found. It is the cheapest open item to settle -
+verifiable offline at zero model cost - and the riskiest to get wrong, because
+it touches the resolution function every acronym in the project depends on.
+
 **2.10's second half: making a failed run resumable.** Unchanged. It means
 re-entering a completed thread, which changes what `--resume` and `--list` mean
 for every run.
@@ -166,11 +223,21 @@ above: plain name first, menu narrowing second.
 
 ---
 
-## Quota, measured today rather than estimated
+## Quota, measured rather than estimated
 
-Today's runs were **14:06-14:35 UTC** and the ceiling landed at `Used 196148`.
-The window is a ROLLING 24 hours, so headroom returns across that same span
-tomorrow rather than at midnight. Six full runs plus the free audits was the day.
+Session 19's runs were **14:06-14:35 UTC on 2026-09-08** and the ceiling landed
+at `Used 196148`. The window is a ROLLING 24 hours, so headroom returns across
+that same span rather than at midnight. Six full runs plus the free audits was
+that day.
+
+**Session 20 spent 12 extraction calls and no news requests at all**, because
+every measurement it made came out of the checkpoint. That is the pattern worth
+copying: entry 69's replay costs one stage instead of twelve, removes retrieval
+variance from a measurement that has nothing to do with retrieval, and compares
+against a recorded result rather than a remembered one. The Basic Materials run
+was NOT attempted - it needs ~13 news requests against 8 remaining, and unlike
+the Groq ceiling a news shortfall is not free: the run would start, spend its
+tokens on Agents 1 and 2, and die partway.
 
 - **Do NOT probe for headroom.** Attempt the run; the 429 is free and states
   Limit, Used and Requested exactly. Entry 66 is the probe that could not fail.

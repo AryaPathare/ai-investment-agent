@@ -4357,3 +4357,126 @@ cheap defence is the one that worked every time here: read the raw object once
 before trusting anything derived from it.
 
 1008 passed to **1032**, 1033 collected.
+
+## Session 20 — 2026-09-08
+
+### 115. The rule worked, and cost the company that actually signed the deal
+
+Entry 112 was left open and needing a decision: the extractor read `the PPG
+joint venture` as a company, `resolve_company("PPG")` returned a real listed
+coatings business, and every check passed because every check was right. The
+decision taken was the narrow one - not a string rule about acronyms, which
+would reject `AMD` and the five other acronyms riding on session 1's symbol
+match, but the missing member of a list the extraction prompt already has.
+`WHAT IS NOT A COMPANY MENTION` names generic groups, publishers, funds,
+indices and agencies, and has nothing for a named PROJECT, MINE or JOINT
+VENTURE. So: a company ACTS, an asset is acted UPON, and a name appearing only
+as the label of a thing is not a mention.
+
+**Triage first, and it argued for caution.** Across the 841 distinct articles
+in the cache, an acronym modifying an asset noun appears **6 times** - `PPG`,
+`RIGI` (an Argentine incentive regime), `APT` (a tungsten chemical), `ESS`,
+`PV`. Across all **82 candidates this project has ever produced**, PPG is the
+only one that is not a real company for its theme. Two other non-company
+acronyms were extracted and cost nothing because they died downstream: `TENER`,
+a Siemens Energy product line, as `no_ticker_found`, and `SEMI`, an industry
+association, as `not_an_operating_company`. The harm needs three things at once
+- extracted, resolvable, and unrelated - and that had happened once.
+
+**Measured against the frozen research of `cli-66c74b37`**, entry 69's method:
+the exact five cited articles, no news requests, only the prompt varying. The
+acceptance criterion was written before the first call, per entry 9: PPG must
+disappear AND Ganfeng and Elevra must both survive; if a real company drops,
+revert.
+
+The first draft failed outright - PPG survived 2 of 2 - and the reason was
+mechanical rather than mysterious. The new rule sat immediately above
+*"Include a company even if you believe it is private or a subsidiary"*, so the
+last thing the model read on the subject invited it to keep exactly the thing
+just forbidden. A joint venture reads as a private company. The second draft
+resolved the contradiction and stated the expected ANSWER for the worked example
+rather than only the reasoning - entry 85's finding, that demonstrating beats
+asserting - and PPG went to 0 of 4.
+
+**Then the control was run again, and it moved the result out from under the
+change.**
+
+    control (n=6)   PPG extracted 3/6    "China's Ganfeng" as the NAME 0/6
+    treated (n=4)   PPG extracted 0/4    "China's Ganfeng" as the NAME 2/4
+
+Two things fall out, and the second is the reason this was reverted.
+
+**Entry 112's defect is intermittent.** PPG appears in three of six control
+runs, not in all of them. The first control pair returned it twice and that was
+read as deterministic; four more runs say otherwise. Every number in the first
+draft of this entry was computed against a baseline of 2/2, and the honest
+baseline is 3/6 - which does not change the direction of the result and does
+change what it would take to establish one. **A single pair of runs is not a
+baseline for an intermittent defect**, and this is entry 59's error bar arriving
+in a new place.
+
+**The treated prompt made the model copy the article's phrasing into the name.**
+The contexts went verbatim in the treated arm, and the name came with them:
+`"China's Ganfeng"` where the control wrote `Ganfeng` six times out of six. The
+control uses the possessive too, but only in the CONTEXT field, where it costs
+nothing. Checked rather than assumed:
+
+    resolve_company("Ganfeng")           ->  GNENF  Ganfeng Lithium Group Co. Ltd.
+    resolve_company("China's Ganfeng")   ->  None
+
+So the rule removed a company that should never have been there and, in half its
+runs, removed the company that actually signed the deals - the top candidate of
+that article and a legitimate `direct` grade in the recorded run. That is the
+false-negative direction the criterion named in advance, so the criterion was
+applied and the prompt reverted. **Reverted on evidence gathered after the idea
+looked good**, which entry 93 records as the shape of three of the last four
+rejections.
+
+### 116. A name shape that cannot resolve, and why entry 53's fix does not reach it
+
+The measurement above turned up a defect that has nothing to do with PPG and
+was not created by the change - only surfaced by it. The extraction prompt says
+to write the name **as the article writes it**, and news prose routinely writes
+a company as `<Country>'s <Company>`. Across the same 841 articles that is
+**134 hits over 122 distinct phrases**: `China's Alibaba`, `China's Niutech`,
+`Canada's Fairfax`, `Chile's First...`. Niutech is in the gallery today, which
+means the extractor simply happened to write it plainly that run.
+
+A name in that shape does not resolve, and this is entry 53 exactly - a real
+company lost to a modifier carrying no identifying information.
+
+**Entry 53's fix does not transfer, and the reason is worth keeping.** That fix
+retries the search with the trailing legal form stripped, and it is safe
+because the words it removes - `Ltd`, `Inc`, `Corp` - are ALREADY in
+`_NOISE_WORDS`, so the SCORING of whatever comes back is unaffected.
+`resolve_company` scores every hit against the ORIGINAL name at
+`NAME_MATCH_THRESHOLD = 0.6`, and `_tokens("China's Ganfeng")` is
+`{china, s, ganfeng}`. `Ganfeng Lithium Group Co. Ltd.` matches one of those
+three, scores **0.33**, and is refused - so retrying the SEARCH with the prefix
+stripped would still not resolve the company. The possessive would have to be
+normalised out of the name before it is scored, which is a different change to
+a function `AMD`, `IBM`, `BP`, `GE`, `RWE` and `SMIC` all depend on.
+
+Recorded with its evidence and NOT built, on entry 68's standing rule: fixing
+one thing while measuring another leaves neither measured, and this session's
+measurement was of the extraction prompt. It is a decision for whoever picks it
+up, and the corpus count is the argument for picking it up.
+
+### 117. What the day's instruments got right, and the one that was wrong
+
+Entry 114 collected three wrong instruments in a session and named the cheap
+defence: read the raw object once before trusting anything derived from it. It
+was followed here and it worked twice - `Theme.title` and
+`CompanyFindings.mentions_extracted` both blew up on the first read, the second
+because it is an integer COUNT and not the mentions themselves, which is the
+same wrong-key shape as `article_id` for `article_ids`. Both were caught in
+seconds because nothing was derived before the object was printed.
+
+The instrument that was wrong was the sample size, not the key. **Two runs were
+treated as a baseline for a defect that fires three times in six.** The
+correction cost four more calls and arrived only because the control was re-run
+after the treatment rather than before it alone - entry 87's discipline, which
+this log has now recorded three times and which was one decision away from being
+skipped here on the grounds that the first control had already been taken.
+
+Suite unchanged at **1032 passed, 1 skipped**: nothing shipped.
