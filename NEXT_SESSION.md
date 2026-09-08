@@ -19,8 +19,9 @@ what happens next.
 was the first thing session 20 did; there is nothing outstanding from it.
 
 Session 20 spent no news requests and shipped no behaviour change. It answered
-entry 112, and the answer was no - see below. The suite is **1032 passed,
-1 skipped**, unchanged, because nothing shipped.
+entry 112, and the answer was no - see below. Session 21 then began the deploy
+work and added the first tests the deployment config has ever had. The suite is
+**1039 passed, 1 skipped**.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
@@ -54,9 +55,12 @@ exactly how entry 69 played out.
 
 ### B. Free - no model calls at all
 
-**B3. The public-documents refresh.** The four stale numbers and the three
-missing limitations, both listed under "What is not written down" below. This is
-the file a stranger reads first and the work costs nothing.
+**B3. The public-documents refresh - HALF DONE in session 21.** The four stale
+numbers are FIXED (README twice, README's entry count, DESIGN's entry count),
+because session 21 added tests and so moved the count itself. **What remains is
+the limitations list**, which stops at entry 91 and therefore omits entry 112 -
+the one that can put a project vehicle in front of a reader - plus entries 116
+and 118. Free, and still the file a stranger reads first.
 
 **B4. Entry 116 - `<Country>'s <Company>` does not resolve.** The cheapest open
 item to VERIFY and the easiest to get wrong. Verifiable end to end offline,
@@ -343,10 +347,10 @@ python -m scripts.check_setup
 python -m pytest
 ```
 
-Expect **1032 passed, 1 skipped** - 1033 collected, and the distinction matters
+Expect **1039 passed, 1 skipped** - 1040 collected, and the distinction matters
 (entry 56). Counted at each session end: 760 after session 11, 797 after 12, 811
-after 13, 816 after 14, 814 then 856 after 17, 1008 after 18, and 1032 after
-session 19, which added 12 tests for the truncation fix and its two mutations.
+after 13, 816 after 14, 814 then 856 after 17, 1008 after 18, 1032 after
+session 19, and 1039 after session 21, which added 12 tests for the truncation fix and its two mutations.
 
 Suite time swung between 9s and 22s across runs today on an unchanged tree. Entry
 34 is the reason not to chase that: six seconds of work once went into
@@ -405,20 +409,21 @@ handoff carried the pre-fix description forward anyway. Entry 92 happening to
 this file again, which is why line 1 says to run `git log` before trusting a
 word of it.
 
-What the public documents actually have wrong is smaller, and was verified
-against the repository on 2026-09-08:
+What the public documents actually had wrong was smaller, and **all four are
+FIXED in session 21**:
 
-    README.md:109    "1008 passed, 1 skipped"   ->  1032
-    README.md:206    "1008 passed, 1 skipped"   ->  1032   <-- the check line
-    README.md:346    "97 entries"               ->  118
-    docs/DESIGN.md:4 "97 entries"               ->  118
+    README.md:109    "1008 passed, 1 skipped"   ->  1039   FIXED
+    README.md:206    "1008 passed, 1 skipped"   ->  1039   FIXED, the check line
+    README.md:346    "97 entries"               ->  118    FIXED
+    docs/DESIGN.md:4 "97 entries"               ->  118    FIXED
 
-**Line 206 is the one that matters**, and it is entry 94 verbatim: a stale
+**Line 206 was the one that mattered**, and it was entry 94 verbatim: a stale
 number in the VERIFICATION INSTRUCTION, the line telling a returning reader what
-a healthy suite looks like. Anybody following it runs pytest, sees 1032 against
-an expected 1008, and goes looking for what they broke. A stale number in a
+a healthy suite looks like. Anybody following it would have run pytest, seen a
+different number, and gone looking for what they broke. A stale number in a
 check does not merely fail to inform; it manufactures a discrepancy in a system
-that is fine.
+that is fine. They were fixed in the same commit that moved the count, which is
+the only discipline that keeps them true.
 
 **And the README's limitations list is missing the three newest ones.** That
 list is good and current through entry 91, which is what makes the gap easy to
@@ -935,7 +940,7 @@ python -m scripts.record_run --list          # runs that could join the gallery
 python -m scripts.record_run <id> --to demo/gallery/<sector>.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 1032 passed, 1 skipped; no network
+python -m pytest                        # 1039 passed, 1 skipped; no network
 
 python -m evals.runner                  # Agent 1: 32 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)

@@ -23,9 +23,25 @@ services:
     name: ai-investment-agent
     runtime: python
     plan: free
-    # Pinned, because every dependency is pinned exactly and CI has only ever
-    # run this version.
-    pythonVersion: "3.14"
+    # THE PYTHON VERSION IS NOT SET HERE, and the key that used to be is the
+    # reason this comment exists. `pythonVersion:` was written here on the
+    # reasonable assumption that a blueprint pinning everything else would pin
+    # this too. It is not a key Render's blueprint spec defines, so it was
+    # silently ignored - a config that says one thing and does another, which
+    # is only ever found by deploying it or by reading the spec.
+    #
+    # Render supports exactly two mechanisms: a fully qualified PYTHON_VERSION
+    # environment variable, or a `.python-version` file at the repository root.
+    # This project uses the FILE, and it holds "3.14" without a patch number,
+    # which is deliberate: `.github/workflows/tests.yml` also runs "3.14" and
+    # floats the patch, so the deployed interpreter and the tested interpreter
+    # move together. Pinning a patch here would be the more precise-looking
+    # choice and would quietly let CI and production diverge.
+    #
+    # It happens to be harmless TODAY, because Render's own default is already
+    # 3.14. That is luck, not the pin working, and the day the default moves to
+    # 3.15 is the day an unpinned service would have changed interpreter under
+    # a project that pins every dependency with ==.
     buildCommand: pip install -r requirements.txt
     # --workers is stated even though 1 is the default, so that raising it is a
     # deliberate act by somebody who has read the comment above.
