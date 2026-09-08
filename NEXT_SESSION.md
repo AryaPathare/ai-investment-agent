@@ -1,29 +1,211 @@
 # Start here
 
-**Written against `633458c`, 2026-09-07.** Before trusting a word of this:
+**Written against `4bbb0ff`, 2026-09-08.** Before trusting a word of this:
 
 ```powershell
-git log --oneline 633458c..HEAD
+git log --oneline 4bbb0ff..HEAD
 ```
 
 Thirty seconds, and it is here because of entry 92: session 15 opened this file,
 believed it, and spent a stretch working on a project four sessions out of date -
 planning tasks that were already done and nearly reverting a prompt section that
-four sessions of evals had since been run against. Two signals were available
-and neither was used. A handoff is a CLAIM about the repository, not the
-repository, and it is written by somebody who is about to stop working and
-cannot describe what happens next.
+four sessions of evals had since been run against. Two signals were available and
+neither was used. A handoff is a CLAIM about the repository, not the repository,
+and it is written by somebody who is about to stop working and cannot describe
+what happens next.
 
-**THE PROJECT IS OPEN AGAIN.** It was closed at entry 89 and tagged `v1.0.0`;
-it is now being extended with a web front end, and the pipeline itself has taken
-four fixes in a day. `v1.0.0` remains the fixed point the case study cites.
+**Session 19 is committed in four commits on `main`:**
+
+```
+  015fe91  Catch a name the provider cut one character early
+  7d544de  Six more sectors the gallery can show
+  4bbb0ff  Write down the day the gallery nearly doubled
+  (this file)
+```
+
+Nothing is pushed yet - `git status` will say how far ahead of `origin/main` you
+are. The suite is **1032 passed, 1 skipped**.
 
 - Repo: <https://github.com/AryaPathare/ai-investment-agent> (public, MIT)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- `docs/PROJECT_LOG.md` is current through entry **97** and OWES the whole of
-  session 18 - see "What is not written down" below
-- Tagged **`v1.0.0`** at `48f9c08`, which the case study quotes and which
-  predates everything below
+- `docs/PROJECT_LOG.md` is current through entry **114**, 19 sessions
+- Tagged **`v1.0.0`** at `48f9c08`, which the case study quotes
+
+---
+
+## Where the gallery got to
+
+**Eleven recordings: ten of the eleven sectors, plus the run that recommends
+nothing.** Was five.
+
+```
+  technology              semiconductors, chip manufacturing equipment
+  healthcare              Healthcare                      (triage, zero quota)
+  financial-services      cryptocurrency, banking
+  energy                  Energy, oil services and refining
+  utilities               renewable energy, wind power
+  industrials             Industrials
+  consumer-cyclical       Consumer Cyclical, carmakers
+  consumer-defensive      Consumer Defensive, food producers
+  communication-services  Communication Services, streaming and telecoms
+  real-estate             Real Estate                     (triage, zero quota)
+  nothing-recommended     renewable energy                (recommends nothing)
+```
+
+**Basic Materials is the only sector still missing.** It was attempted and the
+daily ceiling landed first:
+
+    Limit 200000, Used 196148, Requested 5411
+
+One run, ~28k tokens and ~13 news requests, and the slot is complete.
+
+**The profile shape that works, and it is not the plain sector name alone.** Lead
+with the plain sector name so a visitor can see which sector a run is, then add
+the menu's OWN narrowing from `render.SECTORS`:
+
+```json
+"sectors_of_interest": ["Basic Materials", "copper and specialty chemicals"]
+```
+
+Plain "Energy" had produced EV-charging and solar themes and nothing about oil.
+`["Energy", "oil services and refining"]` produced ONGC, Indian Oil and BPCL on
+refinery-capacity themes, first attempt. That is entry 83 working as designed -
+the menu teaches the narrowing at the moment of choice - and it is the single
+most useful thing to know before spending a run.
+
+Vary age, experience, risk, currency and amount; `scripts/` has no profile
+fixtures, so write the JSON and validate it through `UserInput` before spending
+anything on it. Record each run AS IT LANDS:
+
+```powershell
+python -m scripts.record_run <id> --to demo/gallery/basic-materials.json
+```
+
+**Audit a run before recording it.** Every check is free, and all of them come
+out of the checkpoint - industry versus theme sector for entry 106, name length
+for entry 110, restriction terms for entry 104, `holding_period` for entry 105.
+Session 19 refused four runs on that evidence without a single model call.
+
+**Do NOT record:** `web-4d0d8c07`, `web-6ec0f651`, `web-9f7f85af` (superseded by
+session 18), `cli-008657ee` (Amazon graded `partial` in a healthcare brief),
+`cli-37e6602b` (ALCO, farm products, in a technology brief), `cli-db89f371` (the
+good-looking Energy run, refused over entry 110), `cli-66c74b37` (the PPG run -
+see below).
+
+---
+
+## The two defects session 19 found, and what is owed on each
+
+**Entry 110, a name cut one character below the field width - FIXED in `015fe91`.**
+`"BHARAT PETROLEUM CORPORATION L"` is thirty characters and cut mid-word, so
+entry 103's `>= 31` test let it through, its bear case reviewed zero articles, and
+the brief said "we argued against this one and it held up" about its own third
+recommendation. Lowering the constant was wrong - four complete cached names sit
+at exactly thirty. There is now a SECOND signal, `_cut_mid_word`, which asks
+whether the short name is the long name stopped in the middle of a word. Zero
+false positives over all 125 cached names, and both halves broken on purpose
+before being trusted. Verified live: a 33-character name now arrives whole.
+
+**Entry 112, PPG is a lithium project in Argentina - OPEN, NEEDS A DECISION.**
+A Basic Materials run recommended PPG Industries, a coatings company, for a
+lithium theme. The cited article says *"three Salta lithium projects into the PPG
+joint venture"* - `PPG` is Pozuelos-Pastos Grandes, the project vehicle. The
+extractor read it as a company, `resolve_company("PPG")` returned a real and
+correctly matched security, and every check passed because every check was right:
+real citation, real reporting, industry genuinely Basic Materials so entry 106's
+ceiling saw no mismatch.
+
+**Do not reach for the obvious rule.** Refusing bare acronyms would reject `AMD`,
+and making `AMD` resolve was a deliberate session-1 fix - resolution accepts a
+symbol match precisely so acronyms work, and `IBM`, `BP`, `GE`, `RWE` and `SMIC`
+ride on it. What separates them is grammatical, not lexical: `AMD announced` has
+the acronym as an actor, `the PPG joint venture` has it modifying a noun. That is
+a judgement about prose, so it belongs to the extraction prompt - and a prompt
+change here is a hypothesis until measured. **Decide the approach before writing
+anything**, and measure it against the frozen research of `cli-66c74b37`, which
+is the exact input that produced it.
+
+**Entry 111, two fixes that were measured and NOT made.** Do not re-discover
+these and "fix" them:
+
+- `strip_legal_suffix` leaves a trailing comma, so 13 of 52 candidate names ever
+  critiqued were searched as `"Tesla,"`, `"Amazon.com,"`, `"Applied Materials,"`.
+  It costs nothing: 13% zero-article against 16% for clean phrases, and `"Tesla,"`
+  returned six articles. The provider does not require the comma.
+- `Massive` is chosen as a theme keyword for `Maruti Suzuki Massive Capex
+  Expansion`. One theme in 126.
+
+Both are real observations and neither changes an outcome. Entry 110 is different
+because it is a mechanism rather than a correlation - `CORPORATION L` cannot
+appear in prose.
+
+---
+
+## Still open, and needing a decision rather than a fix
+
+**`evals.company_runner` against the buyer ceiling is still owed.** Unchanged
+from the last handoff and still the honest gap: entry 106 is measured on one
+frozen state, plus session 19's five live runs, which it graded defensibly in
+every case. It also guards the other direction - a ceiling that is too aggressive
+empties briefs, which is how entry 69 played out. ~28k tokens.
+
+**A sub-penny share reached a low-risk brief.** The recorded Energy run
+recommends a EUR 0.05 share to a low-risk 58-year-old with GBP 250,000, carrying
+three fundamental risks, priced at 6,265,053 shares. Nothing is wrong by the
+system's own rules - selection orders by verdict tier then screen score, and risk
+tolerance deliberately gates nothing downstream. There is no price floor and no
+liquidity screen anywhere in the pipeline. Decide whether there should be before
+adding one; it is the first time this has been visible on a page.
+
+**2.10's second half: making a failed run resumable.** Unchanged. It means
+re-entering a completed thread, which changes what `--resume` and `--list` mean
+for every run.
+
+**Broad sector names research badly.** Settled in practice by the profile shape
+above: plain name first, menu narrowing second.
+
+---
+
+## Quota, measured today rather than estimated
+
+Today's runs were **14:06-14:35 UTC** and the ceiling landed at `Used 196148`.
+The window is a ROLLING 24 hours, so headroom returns across that same span
+tomorrow rather than at midnight. Six full runs plus the free audits was the day.
+
+- **Do NOT probe for headroom.** Attempt the run; the 429 is free and states
+  Limit, Used and Requested exactly. Entry 66 is the probe that could not fail.
+- News is as tight as tokens: ~13 requests/run against 100/day, 25-30k tokens
+  against 200k. Neither binds first; it flips with candidate count.
+- Set `PYTHONIOENCODING=utf-8` before printing any run state on Windows.
+- Persist before formatting: write the result to disk, then render it.
+
+---
+
+## 1. Check the environment
+
+```powershell
+python -m scripts.check_setup
+python -m pytest
+```
+
+Expect **1032 passed, 1 skipped** - 1033 collected, and the distinction matters
+(entry 56). Counted at each session end: 760 after session 11, 797 after 12, 811
+after 13, 816 after 14, 814 then 856 after 17, 1008 after 18, and 1032 after
+session 19, which added 12 tests for the truncation fix and its two mutations.
+
+Suite time swung between 9s and 22s across runs today on an unchanged tree. Entry
+34 is the reason not to chase that: six seconds of work once went into
+investigating a regression that was one cold run against one warm one.
+
+Do not add `-q`: pytest.ini already sets it, and `-qq` suppresses the summary
+line, which is how a wrong count once survived for two sessions.
+
+See the whole thing without spending quota:
+
+```powershell
+python -m cli --demo
+python -m uvicorn web.app:app --port 8000     # ONE worker only
+```
 
 ---
 
@@ -40,166 +222,58 @@ A web front end, built in the order the risk sat rather than the order it reads.
   render.py          what a reader is TOLD, shared by the CLI and the web
   recordings.py      real runs the repository can carry
   scripts/record_run.py   writes one
-  demo/gallery/      five of them
+  demo/gallery/      eleven of them
 ```
 
-**`render.py` is the piece to understand first.** The CLI used to walk the
-models and print in the same breath; a second front end would have been a second
-set of decisions about what a reader is told. Content lives in `render.py`,
-layout stays in the front end, and the test of the line is: if changing it would
-tell a reader something DIFFERENT it is content, and if it only moves the words
-on the page it is layout.
-
-Run it:
-
-```powershell
-python -m uvicorn web.app:app --port 8000     # then open http://127.0.0.1:8000
-python -m cli --demo                          # unchanged, still needs no key
-```
+**`render.py` is the piece to understand first.** The CLI used to walk the models
+and print in the same breath; a second front end would have been a second set of
+decisions about what a reader is told. Content lives in `render.py`, layout stays
+in the front end, and the test of the line is: if changing it would tell a reader
+something DIFFERENT it is content, and if it only moves the words on the page it
+is layout.
 
 **Deploy with ONE worker.** The queue that stops two runs writing to one SQLite
-file lives in a single process; two workers means two queues and the argument
-for having one comes straight back. Set `WEB_SESSION_SECRET` (see
-`.env.example`) or a restart stops visitors resuming a paused run.
-
----
-
-## The gallery, and why it is five and not eleven
-
-`demo/gallery/` holds recorded runs the site shows when the day's quota is gone.
-Every one is real: the same models, the same renderer, the same grounded exit
-conditions, loaded back through the Pydantic models the graph writes so a schema
-change breaks a test rather than the front page.
-
-The goal is **one successful run per sector**, where recommending nothing counts
-as successful - it is the outcome the whole design exists to make possible.
-
-Covered: Technology, Financial Services, Industrials, Utilities, and one that
-recommends nothing.
-
-**Missing: Healthcare, Energy, Consumer Cyclical, Consumer Defensive,
-Communication Services, Basic Materials, Real Estate.**
-
-The count is five rather than eleven because of the buyer-ceiling fix below.
-Runs made BEFORE it may contain companies today's code would drop - an audit of
-the saved runs found `direct` grades on companies outside their theme's sector,
-including Amazon in a healthcare brief and a farm-products company in a
-technology one. So:
-
-**Triage before spending anything.** Replay Agent 3 over each pre-fix run's
-frozen research and see whether the grading now differs: about 3k tokens, against
-28k to re-run. `cli-008657ee` (Healthcare), `cli-f01b668f` (Utilities),
-`cli-241f9faf` (Real Estate) and `cli-bff02452` (Healthcare) are the ones that
-would fill a slot. It can halve the number of runs needed.
-
-**Do not record a superseded run.** `web-4d0d8c07` (truncated names),
-`web-6ec0f651` (wrong exclusion) and `web-9f7f85af` (Walmart under Energy) all
-show behaviour the code no longer has.
-
-`python -m scripts.record_run --list` shows what could be recorded, and it
-refuses anything that did not finish.
+file lives in a single process; two workers means two queues and the argument for
+having one comes straight back. Set `WEB_SESSION_SECRET` (see `.env.example`) or
+a restart stops visitors resuming a paused run.
 
 ---
 
 ## What is not written down
 
-**`docs/PROJECT_LOG.md` stops at entry 97 and session 18 is not in it.** Nine
-commits: the renderer split, four steps of web front end, and four pipeline
-defects (the truncated name, the restriction matcher, the bare-number timeframe,
-the buyer ceiling), plus the gallery. `docs/project_log.html` must be
-regenerated in the same breath or its drift test fails - that test exists
-because the rendered copy went stale within four minutes of being committed
-(entry 63).
-
 `README.md` and `docs/DESIGN.md` both describe a system with no web layer, and
-the README still calls the CLI "the only way a person runs this".
+the README still calls the CLI "the only way a person runs this". Neither
+mentions the gallery. That is the oldest outstanding item in this file and it is
+the one a stranger hits first - entries 94 and 95 are about precisely this
+failure, twice.
 
 ---
 
-## What the last day found, in the pipeline rather than the web
+## What session 18 found, in the pipeline rather than the web
 
 Four defects, all found by running the thing rather than by any test, and each
-one is a shape this log already knew:
+one a shape this log already knew:
 
-**A name the provider cut off.** yfinance's `shortName` is a fixed-width field
-at 31 characters - ten of 102 cached companies sit exactly on it. Agent 4 wraps
-the name in quotes to search, so a phrase ending mid-word asks for something no
-article contains: `"ASML Holding N.V. - New York Re" lawsuit` returned nothing
-where `"ASML" lawsuit` returned two. Zero articles is zero risks is `survives`,
-which reads to a person as "we argued against this one and it held up" - and
-selection PREFERS that verdict, so the truncation promoted the company whose
-critique could never run.
+**A name the provider cut off.** yfinance's `shortName` is a fixed-width field at
+31 characters. Agent 4 wraps the name in quotes to search, so a phrase ending
+mid-word asks for something no article contains. Zero articles is zero risks is
+`survives`, which reads as "we argued against this one and it held up" - and
+selection PREFERS that verdict. **Session 19 found this again at THIRTY
+characters; see entry 110 above.**
 
 **A restriction matched by its words separately.** "No cryptocurrency or digital
 asset companies" became `['cryptocurrency', 'digital', 'asset']`, and 'digital'
-excluded a regional bank whose rationale said "digital transformation". This log
-predicted that exact failure and recorded it as not yet observed. Terms are
+excluded a regional bank whose rationale said "digital transformation". Terms are
 phrases now. The first draft of the fix was worse than the bug: putting
 "investment" in the noise list turned "No investment banks" into "no banks".
 
 **A timeframe that is only a number.** "8" could be months or years and nothing
-downstream can tell - and `mine.json` already carried a bare "8" in the field
-entry 96 deleted. Refused now, while every real answer passes untouched.
+downstream can tell. Refused now, while every real answer passes untouched.
 
 **The verb in the article deciding who is a buyer.** Entry 69's ceiling said a
-company qualifies if it is "producing, supplying or BUILDING", and its example
-of a participant ended "or BUILDING the automation" - so "Walmart builds
-charging stations" matched, and Walmart was recommended for Energy. The same
-word sat on both sides of the test.
-
----
-
-## Still open, and needing a decision rather than a fix
-
-**2.10's second half: making a failed run resumable.** Unchanged and still the
-standing decision. It means re-entering a completed thread, which changes what
-`--resume` and `--list` mean for every run.
-
-**The exposure prompt change is measured on ONE frozen state.** The replay moved
-Walmart and Tesla to `incidental_mention` and left a genuine renewable utility
-alone, which is the right shape - but `python -m evals.company_runner` is the
-fuller instrument, and this project's own rule is that an unmeasured prompt
-change is a hypothesis. It also guards the other direction: a ceiling that is
-too aggressive empties briefs, which is exactly how entry 69 played out.
-
-**Broad sector names research badly, and the gallery now shows it.** "Energy"
-produced themes about EV charging and Ontario battery storage and nothing about
-oil or refining. The menu already says narrower researches better; a gallery
-organised by broad sector name invites the opposite. Decided for now: type the
-plain sector name so a visitor can see which sector a run belongs to.
-
----
-
-## 1. Check the environment
-
-```powershell
-python -m scripts.check_setup
-python -m pytest
-```
-
-Expect **1008 passed, 1 skipped** in about fifteen seconds - 1009 collected, and
-the distinction matters (entry 56). Counted at each session end: 760 after
-session 11, 797 after session 12, 811 after session 13, 816 after session 14,
-814 then 856 after session 17 - entry 96 held the only DECREASE on record,
-because deleting one eval case removes two tests - and 1008 after session 18,
-which added the web front end, the shared renderer and the gallery.
-
-The suite is slower than it was: about fifteen seconds against nine, most of it
-the web tests standing up an ASGI app per request and one deliberate 0.4-second
-pause that makes the concurrency test actually concurrent. Entry 34 is the
-reason not to chase that number - six seconds of work once went into
-investigating a regression that turned out to be one cold run against one warm
-one.
-
-Do not add `-q`: pytest.ini already sets it, and `-qq` suppresses the summary
-line, which is how a wrong count once survived for two sessions.
-
-Then see it work, without spending quota on a real run:
-
-```powershell
-python -m cli --help
-```
-
+company qualifies if it is "producing, supplying or BUILDING", and its example of
+a participant ended "or BUILDING the automation" - so "Walmart builds charging
+stations" matched, and Walmart was recommended for Energy.
 ---
 
 ## 2. What the closing sessions did, kept for the arguments
@@ -571,10 +645,20 @@ absolute scores without changing any ordering that gets consumed. Documented in
 `agents/screening.py`. **Settled - do not reopen** without a reason that has
 actually changed.
 
-### The exclusion check matches naive substrings
+### The exclusion check matches naive substrings - **OBSERVED AND FIXED**
 
-"No crypto exposure" in a rationale would register as a violation. Not yet
-observed. Narrow it in ONE place for both agents if it ever fires falsely.
+Carried here for three sessions as "not yet observed". It was observed on
+2026-09-07 (entry 104): "No cryptocurrency or digital asset companies" became
+three separate terms, and 'digital' excluded a regional bank whose rationale said
+"digital transformation". Terms are phrases now, split on commas, "or" and "and",
+so "No coal, oil or gas" stays three prohibitions. Given up knowingly: a "digital
+currency exchange" no longer matches a restriction written as "digital asset".
+
+**This bullet is why entries 94 and 95 exist.** It sat in this file describing a
+defect as hypothetical for a day after it had fired on a live run, been
+diagnosed and been fixed - because nobody re-reads a limitation after fixing it.
+The "What is NOT verified" section below had the correct account the whole time,
+thirty lines away, and the two disagreed.
 
 ---
 
@@ -670,7 +754,7 @@ python -m scripts.record_run --list          # runs that could join the gallery
 python -m scripts.record_run <id> --to demo/gallery/<sector>.json
 
 python -m scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 1008 passed, 1 skipped; no network
+python -m pytest                        # 1032 passed, 1 skipped; no network
 
 python -m evals.runner                  # Agent 1: 32 labelled cases
 python -m evals.runner --tag hard       # just the 12 hard ones (12 calls)
