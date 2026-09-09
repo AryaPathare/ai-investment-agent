@@ -5235,3 +5235,82 @@ banner, so a tidy-up cannot leave a second nav behind; and the spines carrying
 
 1062 passed to **1065**. F3 - one live run against the deployed site - is
 untouched and remains the last genuinely unverified thing in this project.
+
+## Session 24 — 2026-09-09
+
+### 131. The last unverified path, and a driver that could not survive its own log line
+
+**F3 passed.** One live run against the deployed site, start to finish, through
+the browser as a visitor rather than through curl - because the open questions
+were whether a multi-minute stream survives Render's proxy and whether the page
+shows the right thing while it does, and both are browser questions.
+
+Profile: 27, intermediate, moderate risk, USD 8,000, 3-5 years, sector typed
+rather than picked - "lithium mining", narrow because narrow researches better
+and because Basic Materials is the corner the gallery is thinnest on.
+
+      8.0s  1. Checking your profile makes sense    profile valid
+     17.2s  2. Researching current themes           5 themes, 7 cited of 10 retrieved
+     65.5s  3. Finding companies genuinely exposed  2 of 7 examined: ELVR, SGML
+     98.9s  4. Stress-testing against bad news      ELVR survives, SGML weakened
+    141.2s  5. Writing the brief                    2 recommendations
+
+**Two minutes twenty-one, inside the 2-4 minutes the page promises.** All four
+things this was for:
+
+- **The three keys work server-side.** Model, news and company data all answered
+  from Render, which no local test can establish.
+- **The stream survived the proxy.** The single biggest unknown, and the reason
+  this could not be inferred from 1065 local tests.
+- **It ran in a real process**, with the queue in place - though at depth 0, so
+  the queue was PRESENT and not STRESSED. Two concurrent visitors remain
+  unobserved, and saying otherwise would be the kind of overclaim entry 129 was
+  about.
+- **The runs-served ledger incremented**, 1 to 2.
+
+**The brief is real work rather than a smoke test.** Citations two days old,
+prices from the day of the run, exit conditions specific enough to check - "fails
+to secure financing for the C$366 million expansion", "Brazilian judge suspends
+mine licences". SGML is recommended WITH its own suspension risk stated in the
+open, which is the whole point of having a critique stage. **Agent 4's source
+filter fired on live data** for the first time: one press release withheld on
+ELVR, one zerohedge.com article withheld on SGML. That filter has carried
+accepted limits for several sessions on recorded evidence; this is it working
+against sources nobody chose in advance.
+
+### The run before it, which was thrown away by a print statement
+
+The first attempt died at 8 seconds, mid-run, with `UnicodeEncodeError`. The
+driver logged each stage label as it landed; one label contained a non-breaking
+hyphen; stdout on this machine is cp1252; the process raised and exited **while
+the run it was paying for carried on without an observer.**
+
+**The instrument was less robust than the thing it measured.** The pipeline was
+fine - it had already answered stage 1 correctly - and the run was lost because
+the code watching it could not print a character. This log has recorded the
+inverse many times, a test too weak to catch a real defect; this is the same
+error pointed the other way, and it cost a share of a budget everybody visiting
+the site shares.
+
+Three things changed before the retry, all in the driver: stdout forced to
+UTF-8, the entire poll loop wrapped so that nothing incidental can ever again
+kill an expensive run, and the session cookie written to disk the moment it
+exists. **The third one did not work** - it read the cookies immediately after
+submitting, before the server's response had set one, and saved zero. Recorded
+rather than quietly fixed, because the retry succeeded and the gap is still
+open: a driver crash between submit and completion still loses the run.
+
+**And the wasted run demonstrated F4 rather than describing it.** Entry 129 wrote
+down that the run is checkpointed server-side while the reader has no way back
+to it, and chose to narrow the sentence rather than build the path. That is
+exactly what happened here: `web-bda74d08` completed or died on Render, and
+`GET /api/runs/web-bda74d08` answers **404** to anyone who cannot prove
+ownership - correct behaviour, deliberately identical to an unknown id so the
+endpoint cannot be used to enumerate other people's runs. The brief existed and
+was unreachable. **A gap that was a paragraph in a handoff became an experience
+in about ninety seconds**, which is the argument for F4's third option that no
+amount of writing it down produced.
+
+Two of the day's seven runs spent, five left. **Nothing in this project is now
+unverified in production except two visitors at once**, and the site has never
+had two.

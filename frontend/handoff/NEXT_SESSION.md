@@ -121,12 +121,23 @@ Suite: 1062 passed to **1065**.
 
 ## THE AGENDA — what the website still owes
 
-**F3 and F5 are what session 23 left. F7-F12 are what he added after seeing F6
-deployed** - they are written out below the F6 entry, and none of them was
-started.
+**F3 is DONE - session 24 ran it in production and it passed** (entry 131).
+**F5 is what is left of session 23's list; F7-F12 are what he added after
+seeing F6 deployed**, written out below the F6 entry.
 
-**F3. One live run against the DEPLOYED site, start to finish.** The last
-genuinely unverified thing in the whole project. Everything else about the
+**The site now has nothing unverified in production except two visitors at
+once.** The queue was present during the live run and never stressed - depth 0
+throughout - so concurrency is the one remaining gap, and the site has never
+had two visitors.
+
+**F3. DONE in session 24 (2026-09-09) - it passed.** Five stages in 2m21s,
+inside the 2-4 minutes the page promises; the brief rendered with citations two
+days old and prices from the day of the run. The three keys work server-side,
+the stream survived Render's proxy, the ledger incremented 1 to 2, and Agent 4's
+source filter fired on live data for the first time (a press release withheld,
+and a zerohedge.com article). Entry 131 has the timings and the run that was
+thrown away before it. ~~The last genuinely unverified thing in the whole
+project.~~ Everything else about the
 website has now been checked in production - health, gallery, form, tabs, deep
 links, the new page - and this has not. It is also the only path that spends a
 visitor's share of the quota, so it is the one where a failure costs something.
