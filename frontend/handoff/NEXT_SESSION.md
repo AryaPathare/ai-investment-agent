@@ -121,9 +121,31 @@ Suite: 1062 passed to **1065**.
 
 ## THE AGENDA — what the website still owes
 
-**F3 is DONE - session 24 ran it in production and it passed** (entry 131).
-**F5 is what is left of session 23's list; F7-F12 are what he added after
-seeing F6 deployed**, written out below the F6 entry.
+**Session 24 closed F3 and F7 to F12. F5 is the only thing left on this list**
+- open the live site on a phone, which is not a coding task and which no
+screenshot substitutes for.
+
+    F3   DONE - one live run in production, five stages in 2m21s (entry 131)
+    F7   DONE - stat tiles beside the intro, numbered 01-05 band (entry 132)
+    F8   DONE - menus start blank, "Currency of that amount" -> "Currency"
+    F9   DONE - the banner eyebrow is gone
+    F10  DONE - blue and black, from the three sites he gave
+    F11  DONE - the lede was DELETED, not moved; see below
+    F12  DONE - the Consumer Defensive example shortened, all 11 rows one line
+
+**Three things from session 24 worth carrying forward:**
+
+- **A real browser is now part of how this project is checked.** Playwright is
+  in the venv; `python -m uvicorn frontend.app:app --port 8321` plus a
+  screenshot found two defects reading the CSS could not, and measured the
+  sector rows rather than guessing at them. Reach for it before arguing about
+  layout.
+- **F11 was already done before anybody started it.** He asked for the
+  narrowing advice to move closer to the sector question; it was already
+  rendered directly under that question by `SECTOR_GUIDANCE`, so the fix was to
+  delete the page's duplicate. Check what exists before moving anything.
+- **`form_fields()` had no test at all** until F8 changed its contract. It has
+  three now. Worth assuming other seams are equally bare.
 
 **The site now has nothing unverified in production except two visitors at
 once.** The queue was present during the live run and never stressed - depth 0
@@ -227,7 +249,28 @@ check that settles it.
 
 ---
 
-## F7-F12 — HIS REVIEW OF THE F6 DESIGN, 2026-09-09
+## F7-F12 — ALL DONE IN SESSION 24 (2026-09-09)
+
+**Kept in full below rather than deleted, because the reasoning is the useful
+part and three of these were not what they looked like.** Entry 132 has the
+narrative. What actually shipped, against what he asked for:
+
+    F7   two-column intro row (tiles beside the prose, on every tab) plus a
+         full-width numbered band; the tiles state four things that CANNOT
+         drift, deliberately - a count would have gone stale
+    F8   blank menus; `required` derived from the model annotation and shipped
+         in /api/form, so an unanswered required question is blocked natively
+         and costs no quota, and an optional one sends null rather than ""
+    F9   done as asked
+    F10  one :root edit; the interface went sans and the BRIEF stayed serif,
+         which is a judgement call he accepted and is one line to reverse
+    F11  DELETED rather than moved - the advice already sat where he wanted it
+    F12  the example shortened, not the track widened; widening would have cost
+         a column and undone F7
+
+---
+
+## THE ORIGINAL ASK, 2026-09-09
 
 **Written from his own message and four screenshots at the end of session 23.
 Nothing here was started.** He looked at the live site after F6 deployed and

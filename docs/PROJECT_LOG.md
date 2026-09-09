@@ -5314,3 +5314,91 @@ amount of writing it down produced.
 Two of the day's seven runs spent, five left. **Nothing in this project is now
 unverified in production except two visitors at once**, and the site has never
 had two.
+
+### 132. The second design pass, and the item that was already done
+
+F7 to F12, his review after seeing F6 deployed. Six items, all free, and three
+of them were not the thing they looked like.
+
+**F10 - blue and black.** He gave three sites as references (racescout.ai,
+atonwebsites.com, 561roofers.com) and they run the same scheme: a light ground,
+charcoal text, ONE blue accent carrying every interactive element, a dark
+header, and card grids. The re-colour was a single `:root` block, which is the
+whole reason that block exists - **every rule downstream changed colour without
+being touched.** F6's note that a straight hue swap would flatten the accents
+held: the tab underline, the `h2` rules, the card borders and the disclaimer
+rule all needed a colour doing that job, which is why there is still a second
+blue rather than one.
+
+Two of the three references are sans throughout. This project's serif is
+load-bearing for exactly one thing - the brief, which is prose somebody reads
+end to end - so **the interface went sans and the document stayed serif.** That
+is `render.py`'s line drawn in a stylesheet: what a reader is TOLD versus how it
+is arranged.
+
+**F7 - the blank space.** F6 widened the shell to 72rem and kept prose at 46rem,
+which is what stopped the briefs getting harder to read and is also what created
+the emptiness he pointed at on all three tabs. The fix was not to widen the
+prose but to put something beside it: a two-column intro row, so the top of every
+tab uses the width, and a full-width numbered band for the five stages.
+
+Both devices are lifted from his references - two of the three use numbered
+`01/02/03` callouts, two use stat tiles - and they earn a place here because
+**this system actually has five ordered stages and four figures that cannot
+drift.** Five agents; the 2-4 minutes the page already promises; a schema with
+nowhere to put an uncited claim; no price target, by decision. A tile reading
+"11 recorded runs" was considered and rejected: that is a copy of a number, and
+entry 129's sibling test exists because `project_log.html` went stale within
+minutes of being created. **Decoration that states a fact has to state one that
+cannot go out of date.**
+
+**F11 - the item that was already done.** He wanted the narrowing advice "closer
+to that actual question". It already was: `SECTOR_GUIDANCE` renders as the help
+text directly under "Which parts of the market interest you?", one line below
+where he wanted it, saying nearly what the page's own lede said. Moving the lede
+down would have put two near-identical sentences side by side, so the lede was
+**deleted** and the server kept the words.
+
+The handoff had flagged this before any code was written, which is the only
+reason it was cheap. **A request to move something is worth checking against
+what is already there** - the answer was that his complaint was correct and the
+remedy was a deletion.
+
+### The form was answering its own questions
+
+**F8.** A `<select>` shows its first option, so the form arrived claiming the
+visitor was a `beginner` at `low` risk holding `USD` - three answers nobody had
+given, sitting in a profile that Agent 1 then validated as though they were
+deliberate. Every menu now starts blank.
+
+That opens a question the page cannot answer on its own: blank is a legal answer
+for `investment_currency`, annotated `Literal[...] | None`, and a 422 for the
+other two. **The difference is derived from the annotation** and shipped in
+`/api/form`, rather than listed in JavaScript - the same rule the options and
+the numeric bounds already follow, and entry 29's argument for the third time.
+Required menus are then blocked by native validation, so **an unanswered
+question costs no quota**, and an unanswered optional one sends `null` rather
+than `""`, which is neither of the things its annotation allows.
+
+`form_fields()` had **no test at all** before this, which was only noticed
+because its contract was being changed. It has three now.
+
+**F12.** "Consumer Defensive" plus "food producers, household goods" was 49
+characters against 42 for the next longest - one outlier seven clear of the
+field, not a grid that was too tight. Widening the track would have cost a
+column and put back the space F7 had just removed, so the example was shortened
+instead, to "packaged food, toiletries". All eleven rows now measure one line at
+22px. The `SECTORS` docstring is explicit that these examples teach the
+narrowing, so shorter had to mean sharper: "household goods" was the vaguest
+entry in the table and is not missed.
+
+**What the guards are for, stated because it is easy to mistake.** Five new
+tests: the three on `form_fields()`, and two on the page. The sector-length one
+is a character count standing in for a pixel measurement and its docstring says
+so, with the ceiling set just above the pack rather than at it - a reworded
+example should not fail a test, and one long enough to bring the wrap back
+should.
+
+1065 passed to **1070**. Six items, and the two that mattered most were an
+argument about where a sentence already lived and a form that had been quietly
+filling itself in since the day it was written.
