@@ -5069,3 +5069,44 @@ URL on a phone is still an unperformed check**, and it is the only one that
 would settle it.
 
 1045 passed to **1062**.
+
+### 129. Closing session 22, and the sentence that is true of the run but not of the reader
+
+The website work is done and deployed; what remains is written into
+`frontend/handoff/NEXT_SESSION.md` as F3 to F5. One of those was found while
+finishing F1 and is worth stating here, because it is a shape this log has
+recorded in other clothes.
+
+Two sentences sit on the page during a run:
+
+    "Keep the page open to see the result."
+    "saved as it goes, so closing this tab loses nothing."
+
+**Both are defensible and together they are confusing.** The run genuinely is
+checkpointed - the id is emitted before the first model call is paid for,
+precisely so a client that drops can pick it up - so from the SERVER's side
+nothing is lost. But the browser has no resume path. `--resume <id>` exists in
+the CLI and nothing in the page offers it, so a visitor who closes the tab has
+in fact lost their brief.
+
+The sentence is true of the RUN and false for the READER it is shown to, which
+is the same error as entry 8's currency field meaning one thing for a US company
+and another for a foreign one, and entry 96's timeframe question asking for an
+exit horizon while the agent read it as an entry time. **A statement is only as
+true as the frame the person reading it is in**, and a claim written from the
+system's point of view will keep being read from theirs.
+
+Recorded rather than fixed, because the honest options differ in cost - narrow
+the sentence, surface the run id as something a person could bring back, or give
+the page a real resume path the API already supports - and picking among them is
+a decision rather than an edit.
+
+**And what the session could not check is written down as a task rather than
+folded away.** F2 guarded four narrow-screen hazards and verified none of them
+on a device, because no browser runs in this suite. That is F5: open the live
+URL on a phone. It is ten seconds of work that no amount of reading substitutes
+for, and it is the only thing that would settle whether the mobile layout is
+actually right.
+
+Session 22 ends at **1062 passed, 1 skipped**, 128 entries, the site live and
+every part of it verified in production except the one path a visitor pays for.

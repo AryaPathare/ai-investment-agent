@@ -3,11 +3,11 @@
 The research pipeline: agents, models, evals, quota, the graph.
 For the website see [the frontend handoff](../../frontend/handoff/NEXT_SESSION.md).
 
-**Written against `4b4629d`, 2026-09-08, at the end of session 21.** Before
+**Written against `4c1e052`, 2026-09-09, at the end of session 22.** Before
 trusting a word of this:
 
 ```powershell
-git log --oneline 4b4629d..HEAD
+git log --oneline 4c1e052..HEAD
 ```
 
 Thirty seconds, and it is here because of entry 92: session 15 opened a handoff,
@@ -19,7 +19,7 @@ somebody about to stop working who cannot describe what happens next.
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1062 passed, 1 skipped** — 1063 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **128**, 22 sessions
+- `docs/PROJECT_LOG.md` is current through entry **129**, 22 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:

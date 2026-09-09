@@ -3,11 +3,11 @@
 The website: the page, the HTTP layer, the gallery and the deploy.
 For the pipeline see [the backend handoff](../../backend/handoff/NEXT_SESSION.md).
 
-**Written against `4b4629d`, 2026-09-08, at the end of session 21.** Before
+**Written against `4c1e052`, 2026-09-09, at the end of session 22.** Before
 trusting a word of this:
 
 ```powershell
-git log --oneline 4b4629d..HEAD
+git log --oneline 4c1e052..HEAD
 ```
 
 Thirty seconds, and it is here because of entry 92: session 15 opened a handoff,
@@ -19,7 +19,7 @@ somebody about to stop working who cannot describe what happens next.
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1062 passed, 1 skipped** — 1063 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **128**, 22 sessions
+- `docs/PROJECT_LOG.md` is current through entry **129**, 22 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -55,42 +55,68 @@ ever had. The suite is **1062 passed, 1 skipped**.
 
 ---
 
-## W1-W5 ARE DONE — shipped and deployed 2026-09-09
+## DONE AND DEPLOYED — W1-W5, F1, F2 (2026-09-09)
 
-All five landed in two commits and are live. Entry 127 has the reasoning.
+Seven items across three commits, all live. Entries 127 and 128 have the
+reasoning.
 
     W1  the CLI instruction is gone from what a browser visitor is told
     W2  the gallery one-way door is fixed - it has its OWN result area
-    W3  three tabs addressed by the location hash: Run it / Past runs / About
-    W4  h1 at 2.9rem, h2 bold rather than timid uppercase at 1.05rem
-    W5  copy that says switching tabs is fine, because it is
+    W3  three tabs on the location hash: Run it / Past runs / About
+    W4  h1 scales up to 2.9rem, h2 bold rather than timid uppercase
+    W5  copy saying switching tabs is fine, because it is
+    F1  deep links - #gallery/technology opens that brief, Back closes it,
+        and a link to a recording that no longer exists says so
+    F2  four narrow-screen fixes: clamped headline, overflow-wrap, a grid
+        that can shrink below its track, wrapping tabs
 
-**The backend is PARKED by decision** (2026-09-09) - the website is the focus
-now. `backend/handoff/NEXT_SESSION.md` still carries its list; nothing there is
-a live defect a visitor meets.
+**The backend is PARKED by decision.** `backend/handoff/NEXT_SESSION.md`
+carries its list; nothing there is a live defect a visitor meets. Do not start
+on it unprompted.
 
-## WHAT IS LEFT ON THE WEBSITE
+---
 
-**F1. Deep links to a recording, which W3 half-built.** `currentTab()` splits the
-hash on `/`, so `#gallery/technology` resolves to the gallery tab - but nothing
-consumes the second segment. Clicking a card calls `showRecording(name)` without
-touching the hash, so a specific brief still cannot be linked to and Back does
-not close one. That is the same class as W2: a way in with no way back out.
-Wiring it is small - set the hash on click, read it on `hashchange` - and it
-completes the navigation model rather than leaving it half-done. The comment in
-the page currently overclaims that "a specific view can be linked to"; either
-make it true or narrow the comment.
+## THE AGENDA — what the website still owes
 
-**F2. Nobody has looked at this on a phone.** The sector menu is a CSS grid at
-`minmax(15rem, 1fr)` and the brief carries long headlines, prices and links. The
-viewport meta is set and the layout is one column, so it is probably fine - but
-"probably fine" is not a check, and most people who open a link on a phone will
-not open it again on a laptop.
+**F3. One live run against the DEPLOYED site, start to finish.** The last
+genuinely unverified thing in the whole project. Everything else about the
+website has now been checked in production - health, gallery, form, tabs, deep
+links, the new page - and this has not. It is also the only path that spends a
+visitor's share of the quota, so it is the one where a failure costs something.
 
-**F3. A0, and it belongs here rather than in the backend list.** No live run has
-ever been made against the deployed site. Everything else about the website has
-now been verified in production; this has not, and it is the path a visitor
-actually pays for. Costs a normal run, so it waits for headroom.
+What it proves that no local test can: the three keys work server-side, a 2-4
+minute SSE stream survives Render's proxy (sse-starlette pings every 15s by
+default, so it should), the queue behaves in a real process, and the runs-served
+ledger increments. Open the site, fill the form, watch five stages land, read
+the brief.
+
+Costs a normal run: ~28k tokens and ~13 news requests. **Needs headroom** -
+session 19's usage ages out of the rolling 24h window from about 14:00 UTC.
+
+**F4. Two pieces of in-run copy that disagree with each other.** Found while
+finishing F1 and not fixed, because it needs a decision rather than an edit:
+
+    index.html:126   "Keep the page open to see the result."
+    index.html:549   "saved as it goes, so closing this tab loses nothing."
+
+Both are defensible and together they are confusing. The run genuinely IS
+checkpointed, so nothing is lost from the SERVER's point of view - but **the
+browser has no way to resume one.** `--resume <id>` exists in the CLI and
+nothing in the page offers it, so a visitor who closes the tab has in fact lost
+their brief. The second sentence overclaims for the reader it is shown to.
+
+Three ways out, in increasing order of work: narrow the sentence to what is true
+in a browser; show the run id as something a person could bring back; or give
+the page an actual resume-by-id path, which the API already supports since the
+id is emitted before the first model call is paid for. Free either way.
+
+**F5. Open the live site on a phone.** Not a coding task and the reason F2 is
+only half-checked. No browser runs in the test suite, so every F2 assertion says
+a CSS property is PRESENT, never that the result looks right. The four known
+hazards are guarded and the layout is fluid; whether it actually reads well on a
+360px screen is unknown and takes ten seconds to find out.
+
+    https://ai-investment-agent-gdjr.onrender.com
 
 ---
 

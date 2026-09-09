@@ -11,7 +11,7 @@ research pipeline and a website that share almost no decisions.
 **Before trusting a word of either:**
 
 ```powershell
-git log --oneline 4b4629d..HEAD
+git log --oneline 4c1e052..HEAD
 ```
 
 Thirty seconds. It is here because of entry 92: session 15 opened a handoff,
@@ -25,13 +25,13 @@ by somebody who is about to stop working and cannot describe what happens next.
 
 ---
 
-## Where things stand, 2026-09-08
+## Where things stand, 2026-09-09
 
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - **Live: <https://ai-investment-agent-gdjr.onrender.com>** — Render free plan, ONE worker
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1062 passed, 1 skipped**, 1063 collected
-- `docs/PROJECT_LOG.md` current through entry **128**, 22 sessions
+- `docs/PROJECT_LOG.md` current through entry **129**, 22 sessions
 - Tagged `v1.0.0` at `48f9c08`, which the case study quotes
 
 **The repository was restructured in session 22** into `backend/` and
@@ -53,13 +53,19 @@ when a history rewrite changed every commit SHA.
 
 ## The one thing to do first
 
-**The backend is PARKED** (decided 2026-09-09) - it works, it is verified
-against its own evals, and its list is kept in
+**The backend is PARKED** (decided 2026-09-09). It works, it is verified against
+its own evals, and its list is kept in
 [backend/handoff/NEXT_SESSION.md](backend/handoff/NEXT_SESSION.md) for if it is
-ever picked up again. Nothing there is a live defect a visitor meets.
+ever picked up again. Nothing there is a live defect a visitor meets. Do not
+start on it unprompted.
 
-**The website is the focus.** W1-W5 shipped and are deployed; what is left is
-F1-F3 in
-[frontend/handoff/NEXT_SESSION.md](frontend/handoff/NEXT_SESSION.md) - deep
-links to a recording, a look at the site on a phone, and one live run against
-the deployed site. Only the last needs quota.
+**The website is the focus, and its agenda is F3-F5** in
+[frontend/handoff/NEXT_SESSION.md](frontend/handoff/NEXT_SESSION.md):
+
+| | | |
+|---|---|---|
+| **F3** | One live run against the deployed site | needs quota, ~14:00 UTC |
+| **F4** | Two pieces of in-run copy that contradict each other | free, needs a decision |
+| **F5** | Open the live site on a phone | ten seconds, and the only thing that settles F2 |
+
+W1-W5, F1 and F2 are done and deployed. Entries 127 and 128 have the reasoning.
