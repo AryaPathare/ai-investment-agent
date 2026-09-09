@@ -116,6 +116,43 @@ titles are barely larger than body text. Worth pairing with W3 rather than doing
 separately, since tabs change the page's structure and the type scale should be
 designed against the structure it actually has.
 
+**W5. Text telling a visitor what to do while a run is going. HIS REQUEST WAS
+"say that viewing the gallery will interrupt the run" - and that turns out not
+to be true, so the wording is a decision rather than a transcription.**
+
+Checked in `web/static/index.html` before writing it down: the run stream is
+read with `fetch` and a `ReadableStream` (line ~229), NOT `EventSource` - a
+deliberate choice, because starting a run is a POST and EventSource can only
+GET. The reader therefore lives in JavaScript and keeps reading no matter which
+DOM section is visible. **If W3's tabs are show/hide within one page, switching
+to the gallery and back does not touch a running stream.** The only things that
+break it are leaving the page: a reload, a navigation away, or closing the tab.
+
+So there are two candidate texts and they are not equivalent:
+
+    "Stay on this tab while a run is going or it will be interrupted."
+        Untrue under show/hide tabs, and it is a label compensating for an
+        architecture problem instead of fixing it - the shape session 1 dealt
+        with when it DELETED a prompt rule that only existed to patch a schema
+        flaw. It also discourages the gallery, which is the thing most visitors
+        should look at while the seven daily runs are gone.
+
+    "This takes 2-4 minutes. Keep this page open - closing or reloading it
+     stops the run."
+        True regardless of how the tabs are built, useful on its own, and it
+        does not warn anybody off the gallery.
+
+**Recommended: build W3 so a run survives a tab switch (nearly free given the
+architecture above), and ship the second text.** Fall back to the first ONLY if
+the tab implementation turns out to tear the reader down, and if it does, that
+is a bug to fix rather than a caveat to publish.
+
+Worth adding either way: a run that DOES get dropped is resumable. The run id is
+emitted before the first model call is paid for, specifically so a client that
+drops mid-run can pick it up - `--resume <id>` in the CLI, and the same id over
+HTTP. Nothing in the browser surfaces that today, which is a small gap worth
+closing while the page is being rebuilt anyway.
+
 **One thing NOT to lose in W3 and W4.** The sector menu's narrowing examples -
 `Utilities — e.g. solar, grid storage` - are the single most useful thing this
 system knows about how to ask it, and entry 83 exists because a bare menu of
