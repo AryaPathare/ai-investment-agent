@@ -31,7 +31,7 @@ by somebody who is about to stop working and cannot describe what happens next.
 - **Live: <https://ai-investment-agent-gdjr.onrender.com>** — Render free plan, ONE worker
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1045 passed, 1 skipped**, 1046 collected
-- `docs/PROJECT_LOG.md` current through entry **126**, 22 sessions
+- `docs/PROJECT_LOG.md` current through entry **127**, 22 sessions
 - Tagged `v1.0.0` at `48f9c08`, which the case study quotes
 
 **The repository was restructured in session 22** into `backend/` and
@@ -53,12 +53,13 @@ when a history rewrite changed every commit SHA.
 
 ## The one thing to do first
 
-**A0 — one live run against the deployed site, start to finish.** It is the last
-genuinely unverified thing in the project: no live run has been made against the
-deployment, so the run path there rests on 1045 local tests and on session 18's
-runs against the same code. That is good evidence and it is not the same thing.
-It costs a normal run, so it competes with A1 for headroom.
+**The backend is PARKED** (decided 2026-09-09) - it works, it is verified
+against its own evals, and its list is kept in
+[backend/handoff/NEXT_SESSION.md](backend/handoff/NEXT_SESSION.md) for if it is
+ever picked up again. Nothing there is a live defect a visitor meets.
 
-Details in [backend/handoff/NEXT_SESSION.md](backend/handoff/NEXT_SESSION.md). The website work list W1-W5 in
-[frontend/handoff/NEXT_SESSION.md](frontend/handoff/NEXT_SESSION.md) needs **no quota at all**, so it is what
-to do on a day with no headroom - and W2 is a defect a real visitor hits today.
+**The website is the focus.** W1-W5 shipped and are deployed; what is left is
+F1-F3 in
+[frontend/handoff/NEXT_SESSION.md](frontend/handoff/NEXT_SESSION.md) - deep
+links to a recording, a look at the site on a phone, and one live run against
+the deployed site. Only the last needs quota.

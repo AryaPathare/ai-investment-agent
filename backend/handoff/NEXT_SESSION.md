@@ -19,13 +19,34 @@ somebody about to stop working who cannot describe what happens next.
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1045 passed, 1 skipped** — 1046 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **126**, 22 sessions
+- `docs/PROJECT_LOG.md` is current through entry **127**, 22 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
 `python -m backend.cli`, `python -m backend.evals.runner`,
 `python -m uvicorn frontend.app:app`. Log entries written before that session
 cite the OLD paths and are accurate as history.
+
+## THE BACKEND IS PARKED — decided 2026-09-09
+
+**He called the backend done and moved his focus to the website.** The pipeline
+works, it is verified against its own evals, and the items below are recorded so
+they can be picked up if he ever wants them - not because anything is owed. Do
+NOT start on them unprompted.
+
+Nothing here is a live defect a visitor meets. The nearest thing is entry 112 -
+a project vehicle can be recommended as a company - which is measured at 1 of 82
+candidates ever produced, and which a prompt change was already tried on and
+reverted because it cost a real company half the time.
+
+**The one item worth arguing about is A0**, and only because it is not really
+backend work: no live run has ever been made against the DEPLOYED site. The run
+path there rests on the local suite plus session 18's runs against the same
+code, which is good evidence and is not the same as having watched it work in
+production. It is the last unverified thing on his website rather than in his
+pipeline. It costs a normal run.
+
+---
 
 ## The task list, agreed at the end of session 20
 

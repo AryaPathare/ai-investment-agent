@@ -4957,3 +4957,61 @@ Cheap defence, and the one used for the rest of this session: run the suite as
 its own command and read the exit status, or let it print in full. Suppressing
 output and asserting on the result are different operations, and combining them
 in one line makes the second silently depend on the first.
+
+### 127. A navigation model, and the copy that had to change with it
+
+The website was given tabs. The interesting part is that three of the four items
+on the list turned out to be one job, and the fifth had to be rewritten rather
+than implemented.
+
+**The gallery one-way door was not its own defect.** Clicking a recorded run set
+`intro.hidden = true` and nothing ever set it back, so the live-run form vanished
+and only a page reload brought it back - found by a visitor on the deployed site,
+which is now the second time a real user has produced a defect no eval did. But
+the cause was not that line. The page was a single screen whose sections were
+toggled by `hidden`, with no navigation model at all, so **every "go somewhere"
+was a one-way hide** and this was simply the first one anybody walked through.
+Patching it would have added a second ad-hoc path to the same tangle.
+
+Three tabs now, addressed by the location hash so the browser Back button works
+and a view can be linked to. And the actual fix for the door is not the tabs: it
+is that **the gallery has its own result area**. One shared `#result` is what let
+a recording overwrite the form, and no amount of navigation would have stopped
+that.
+
+**A run survives a tab switch, and that is architecture rather than care.** The
+stream is read by a `fetch` ReadableStream loop living in JavaScript, not by the
+DOM - a deliberate choice from session 18, because starting a run is a POST and
+`EventSource` can only GET. Hiding the section it writes into does not interrupt
+it; the writes land on hidden nodes and are there on return.
+
+**Which is why the fifth item was rewritten.** The request was for text saying
+that viewing the gallery would interrupt a live run. Checking the code first
+showed it would not - so shipping that sentence would have published something
+untrue AND warned visitors away from the gallery, which is exactly what they
+should be looking at once the day's seven runs are gone. It says switching tabs
+is fine and to keep the page open to see the result, which is true whichever way
+the tabs had been built. **A caveat is a design decision wearing a label**, and
+this one was a label compensating for a problem that did not exist.
+
+The About tab carries what the system will NOT do - no position sizing, no price
+target, no sell date - because those are decisions with arguments behind them
+rather than gaps. The disclaimer stays outside the tabs: adding an About page is
+precisely the change that quietly relocates one into a page nobody opens, and a
+test now fails if it moves.
+
+**Verified three ways, because no one of them was enough.** `node --check` on the
+extracted script proves it parses and nothing else. The tab functions driven
+against a DOM stub proved the behaviour that cannot be read off the source -
+including that switching tabs leaves the run form alone. And the page was fetched
+from a running server, then from the deployment after Render rebuilt, because the
+first two run against a file rather than against what a visitor receives. Eight
+committed guards, each broken on purpose, one of which fails if `showRecording`
+ever touches the run tab again.
+
+**And it left something half-built, which is recorded rather than quietly
+dropped.** `currentTab()` splits the hash on `/`, so `#gallery/technology`
+resolves - but nothing consumes the second segment, and clicking a card never
+sets the hash. So a specific brief still cannot be linked to, and Back does not
+close one. That is the same shape as the defect this entry is about: a way in
+with no way back out. It is F1 in the frontend handoff.

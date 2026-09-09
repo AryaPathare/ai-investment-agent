@@ -19,7 +19,7 @@ somebody about to stop working who cannot describe what happens next.
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1045 passed, 1 skipped** — 1046 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **126**, 22 sessions
+- `docs/PROJECT_LOG.md` is current through entry **127**, 22 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -52,6 +52,45 @@ ever had. The suite is **1045 passed, 1 skipped**.
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - `docs/PROJECT_LOG.md` is current through entry **122**, 21 sessions
 - Tagged **`v1.0.0`** at `48f9c08`, which the case study quotes
+
+---
+
+## W1-W5 ARE DONE — shipped and deployed 2026-09-09
+
+All five landed in two commits and are live. Entry 127 has the reasoning.
+
+    W1  the CLI instruction is gone from what a browser visitor is told
+    W2  the gallery one-way door is fixed - it has its OWN result area
+    W3  three tabs addressed by the location hash: Run it / Past runs / About
+    W4  h1 at 2.9rem, h2 bold rather than timid uppercase at 1.05rem
+    W5  copy that says switching tabs is fine, because it is
+
+**The backend is PARKED by decision** (2026-09-09) - the website is the focus
+now. `backend/handoff/NEXT_SESSION.md` still carries its list; nothing there is
+a live defect a visitor meets.
+
+## WHAT IS LEFT ON THE WEBSITE
+
+**F1. Deep links to a recording, which W3 half-built.** `currentTab()` splits the
+hash on `/`, so `#gallery/technology` resolves to the gallery tab - but nothing
+consumes the second segment. Clicking a card calls `showRecording(name)` without
+touching the hash, so a specific brief still cannot be linked to and Back does
+not close one. That is the same class as W2: a way in with no way back out.
+Wiring it is small - set the hash on click, read it on `hashchange` - and it
+completes the navigation model rather than leaving it half-done. The comment in
+the page currently overclaims that "a specific view can be linked to"; either
+make it true or narrow the comment.
+
+**F2. Nobody has looked at this on a phone.** The sector menu is a CSS grid at
+`minmax(15rem, 1fr)` and the brief carries long headlines, prices and links. The
+viewport meta is set and the layout is one column, so it is probably fine - but
+"probably fine" is not a check, and most people who open a link on a phone will
+not open it again on a laptop.
+
+**F3. A0, and it belongs here rather than in the backend list.** No live run has
+ever been made against the deployed site. Everything else about the website has
+now been verified in production; this has not, and it is the path a visitor
+actually pays for. Costs a normal run, so it waits for headroom.
 
 ---
 
