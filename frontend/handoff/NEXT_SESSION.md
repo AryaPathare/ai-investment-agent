@@ -76,6 +76,49 @@ on it unprompted.
 
 ---
 
+## DONE IN SESSION 23 — F4 and F6 (2026-09-08)
+
+Entry 130 has the reasoning. Both were free; neither spent a news request.
+
+    F4  the in-run copy no longer overclaims - it says "keep this tab open"
+        rather than "closing this tab loses nothing", which was true of the
+        run and false for the reader
+    F6  the design pass, all five asks: palette and frame, a banner with the
+        title top-left and the tabs top-right, "Consumer Defensive" on one
+        line, and a 72rem shell with the reading column still at 46rem
+
+**Two corrections to what this file used to say**, both worth reading before
+trusting the rest of it:
+
+- **The browser is NOT without a resume path.** `GET /api/runs/{thread_id}`
+  already returns the finished brief, gated on the session cookie. F4's third
+  option - "give the page an actual resume-by-id path" - is a control that calls
+  an endpoint that exists, not new server work. It is still undone, and it is
+  cheaper than this file claimed.
+- **The wide shell did not cost the briefs anything.** The trap was real but
+  avoidable: only the PROSE containers keep 46rem, while the form and the
+  gallery take the full 72rem. Prose and layout are different things, which is
+  the line `render.py` already draws one level up.
+
+**A test was rewritten, deliberately.** `test_the_disclaimer_sits_outside_the_tabs`
+anchored on `<nav class="tabs">`; the banner moved the nav above the disclaimer
+and the test failed while the disclaimer had not moved. It now anchors on the
+tab panels - the thing that actually hides content - and asserts there is
+exactly one disclaimer in the file. Stronger than what it replaced. Entry 130
+explains why this is entry 125 in different clothes.
+
+**A real browser drove the page for the first time** (Playwright, already in the
+venv, against a local uvicorn). It found two things reading could not: the left
+gutter spine was off the bottom of the screen, because the individual `rotate`
+property composes BEFORE `transform`; and widening the panel let a 15rem sector
+track fit four columns, which re-broke the examples. It also answered the
+question the suite structurally cannot - 8 widths x 3 tabs, no horizontal
+overflow anywhere.
+
+Suite: 1062 passed to **1065**.
+
+---
+
 ## THE AGENDA — what the website still owes
 
 **F3. One live run against the DEPLOYED site, start to finish.** The last
@@ -93,7 +136,7 @@ the brief.
 Costs a normal run: ~28k tokens and ~13 news requests. **Needs headroom** -
 session 19's usage ages out of the rolling 24h window from about 14:00 UTC.
 
-**F4. Two pieces of in-run copy that disagree with each other.** Found while
+**F4. DONE in session 23.** ~~Two pieces of in-run copy that disagree with each other.~~ Found while
 finishing F1 and not fixed, because it needs a decision rather than an edit:
 
     index.html:126   "Keep the page open to see the result."
@@ -117,7 +160,7 @@ hazards are guarded and the layout is fluid; whether it actually reads well on a
 360px screen is unknown and takes ten seconds to find out.
 
     https://ai-investment-agent-gdjr.onrender.com
-**F6. A DESIGN PASS. His words after reviewing the live site: the tabs work and
+**F6. DONE in session 23.** ~~A DESIGN PASS. His words after reviewing the live site: the tabs work and
 the information is good, but "the website's design itself looks quite boring"
 and it lacks enthusiasm.** Five specific asks, and two traps in delivering them.
 

@@ -104,9 +104,18 @@ def test_the_disclaimer_sits_outside_the_tabs():
 
     An About tab is exactly the kind of change that quietly relocates a
     disclaimer into a page nobody opens.
+
+    This used to anchor on `<nav class="tabs">`, which stopped meaning anything
+    the moment F6 moved the nav into a banner ABOVE the disclaimer - the test
+    failed while the disclaimer had not moved at all. It now anchors on the
+    thing that actually does the hiding: the tab panels. The disclaimer must
+    appear before the first one opens, and exist exactly once, so there is no
+    second copy inside a panel and no way for a tab switch to take it off
+    screen.
     """
-    before_tabs = HTML[: HTML.index('<nav class="tabs">')]
-    assert 'id="disclaimer"' in before_tabs
+    first_panel = HTML.index('<div class="tab" id="tab-run">')
+    assert 'id="disclaimer"' in HTML[:first_panel]
+    assert HTML.count('id="disclaimer"') == 1
 
 
 def test_the_in_run_guidance_does_not_warn_people_off_the_tabs():
@@ -192,10 +201,51 @@ def test_long_provider_strings_can_break():
 
 
 def test_the_sector_grid_can_shrink_below_its_track():
-    """`minmax(15rem, 1fr)` keeps a 15rem column even when the screen is
-    narrower than 15rem, which overflows. min() lets the track shrink to the
-    container instead."""
-    assert "minmax(min(15rem, 100%), 1fr)" in HTML
+    """`minmax(21rem, 1fr)` keeps a 21rem column even when the screen is
+    narrower than 21rem, which overflows. min() lets the track shrink to the
+    container instead.
+
+    The track width itself is a layout choice and has moved once (15rem -> 21rem
+    when F6 widened the panel and a 15rem track started fitting four columns).
+    The `min()` wrapper is the part this test exists for: without it the grid
+    overflows every phone, whatever the number is."""
+    assert "minmax(min(21rem, 100%), 1fr)" in HTML
+
+
+def test_the_sector_name_cannot_be_the_thing_that_gives():
+    """"Consumer Defensive" wrapped and no other sector did.
+
+    It looked like a width problem and was not. `.sectors label` is a flex row
+    of three children - checkbox, name, example - and the NAME had no flex rule
+    of its own, so it was the child that gave when the row ran short. Consumer
+    Defensive is both the longest name and carries the longest example ("food
+    producers, household goods"), which made that one cell the tightest in the
+    grid and the only one to break.
+
+    Two halves, in different parts of the file, and the CSS is inert without
+    the class - so both are asserted here. Widening the page would have hidden
+    this without fixing it, and it would have returned at the next viewport.
+    """
+    assert ".sectors .nm { flex: none; white-space: nowrap; }" in HTML
+    assert 'el("span", option.name, "nm")' in HTML
+
+
+def test_the_tabs_live_in_the_banner():
+    """F6 moved the navigation into the banner. If a tidy-up ever leaves a
+    second `.tabs` nav behind in the page body, there are two navigation
+    models and only one of them gets `aria-current`."""
+    assert HTML.count('<nav class="tabs">') == 1
+    banner = HTML[HTML.index('<header class="banner">') : HTML.index("</header>")]
+    assert '<nav class="tabs">' in banner
+
+
+def test_the_gutter_decoration_is_hidden_from_assistive_tech():
+    """The spines repeat what the page says properly elsewhere. Decoration
+    that reads aloud is noise, and this decoration is the kind a redesign
+    forgets to mark."""
+    for spine in ('class="spine spine-l"', 'class="spine spine-r"'):
+        block = HTML[HTML.index(spine) :]
+        assert 'aria-hidden="true"' in block[: block.index(">") + 1]
 
 
 def test_the_tabs_wrap_rather_than_clip():

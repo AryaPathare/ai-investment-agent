@@ -5110,3 +5110,128 @@ actually right.
 
 Session 22 ends at **1062 passed, 1 skipped**, 128 entries, the site live and
 every part of it verified in production except the one path a visitor pays for.
+
+## Session 23 — 2026-09-08
+
+### 130. The design pass, and a test that failed while nothing had moved
+
+Two items off `frontend/handoff/NEXT_SESSION.md`: F4, the two sentences that
+disagreed with each other, and F6, the design pass he asked for after looking at
+the live site. Both free, neither spending a news request.
+
+**F4, and the handoff was wrong about why it was hard.** Entry 129 recorded three
+ways out and ordered them by cost, the expensive one being "give the page a real
+resume path". That ordering rested on the claim that *the browser has no way to
+resume a run*. It does. `GET /api/runs/{thread_id}` returns the finished brief,
+gated by `session.owns` on the cookie, and its own docstring says it exists so
+that "a person coming back tomorrow" can see the run again. What is missing is
+not the endpoint but a control that calls it.
+
+So the expensive option was never expensive. It was still not done, because he
+asked for the quick fix and the quick fix is honest: the in-run line now reads
+*"keep this tab open. The brief appears here when it is done."* It no longer
+claims anything about closing the tab, and it agrees with the sentence above the
+form instead of contradicting it.
+
+**Worth writing down separately: a handoff can be wrong about a REASON while
+being right about a FACT.** Entry 129's fact - the two sentences contradict each
+other - was correct and worth acting on. Its explanation of the cost of each fix
+was not, and nothing in the handoff flagged that half as less checked than the
+other. This is why the handoff opens by telling the next session to run
+`git log` against it: the same instinct, one level up.
+
+### The design pass, and the trap he named himself
+
+Five asks: more colour and a border, a banner with the title top-left, the tabs
+moved into it top-right, "Consumer Defensive" on one line, and use more of the
+screen. The handoff had already diagnosed the fourth and warned about the fifth.
+
+**The Consumer Defensive diagnosis held.** `.sectors label` is a flex row of
+three children and the NAME had no flex rule of its own, so the name was the
+child that gave. `flex: none; white-space: nowrap` on it, and the example
+absorbs the pressure instead. Confirmed at 360px, which is the width where it
+actually broke.
+
+**The fifth ask turned out not to be the tradeoff it looked like.** The warning
+was real - 46rem is about ninety characters and a brief is prose, so a blunt
+1400px `main` would have made every brief harder to read to fix a complaint
+about background. But prose and layout are different things, and this repository
+already has a line drawn exactly there: `render.py` owns what a reader is TOLD
+and the front end owns where it sits. The same split works in CSS. The shell
+went to 72rem; `.sub`, `.lede`, `#result`, `#gallery-result` and the About tab
+stayed at 46rem. The form became three columns and the gallery a three-column
+card grid; the brief did not move.
+
+He had pre-authorised the fallback - "if we are not going to do anything about
+the extra space then add some design in the white space" - and it was not
+needed for the reason he expected, but the margins still had room. They carry
+two vertical spines: the five stage names, and the rule that every claim cites
+what it read. Both are true statements about the system rather than ornament,
+both are `aria-hidden` because the page says them properly elsewhere, and both
+vanish under 1500px where there are no margins to put them in.
+
+### The test that failed while nothing had moved
+
+`test_the_disclaimer_sits_outside_the_tabs` asserted that `id="disclaimer"`
+appears before `<nav class="tabs">` in the source. Moving the nav into a banner
+above the disclaimer failed it. **The disclaimer had not moved at all.**
+
+The assertion was a proxy - when the nav sat directly above the tab panels,
+"before the nav" and "outside the panels" were the same statement. Putting the
+nav somewhere else separated them, and only the proxy broke.
+
+**This is entry 125 in different clothes.** There it was a `.gitignore` pattern
+that kept looking right after the directory it guarded moved; here it is a test
+that kept looking right until the landmark it measured from moved. Both guarded
+a real property through a coordinate that was only incidentally correct. The
+test now anchors on the tab panels themselves - the thing that actually does the
+hiding - and additionally asserts there is exactly one disclaimer in the file,
+so a second copy cannot appear inside a panel. It is a stronger test than the
+one it replaced, which is the only acceptable direction to move a guard while
+changing the thing it guards.
+
+The docstring says all of this, because the next person to move the banner
+deserves to know the anchor was chosen rather than inherited.
+
+### Two things that only a browser could have said
+
+Session 22 ended with F2's four narrow-screen guards asserted and none of them
+observed, and entry 128 said so plainly. This session drove a real browser over
+the page for the first time - Playwright, already in the venv, against a local
+uvicorn - and it immediately paid for itself twice.
+
+**The left spine was off the bottom of the screen.** Written as
+`transform: translateY(-50%)` with a separate `rotate: 180deg`, which reads
+correctly and is wrong: the individual `rotate` property composes BEFORE
+`transform`, so the translate was applied in the already-rotated frame and moved
+the element down instead of up. No amount of reading the rule finds that. One
+screenshot does.
+
+**Widening the panel re-broke the sector examples.** A 15rem track fits three
+columns in a 46rem column and FOUR in a 72rem one, which left "e.g. streaming,
+telecoms" wrapping over three lines. The track went to 21rem, which changes a
+constant an F2 test asserts - so that test's docstring now says which half of it
+is the point. The `min()` wrapper is the part that matters, and the number is a
+layout choice that has now moved once.
+
+Then the check entry 128 wanted and could not have: eight viewport widths from
+320px to 1920px, three tabs each, asking the browser directly whether
+`scrollWidth` exceeds `clientWidth`. Twenty-four combinations, no horizontal
+overflow anywhere. **That is a different KIND of statement from the five
+assertions guarding it** - those say a property is present in the file, this
+says the page does not scroll sideways - and it is worth having both, because
+the assertions are what stop a tidy-up reverting the fix and the browser is what
+proves the fix works.
+
+**What this still is not: F5.** No screenshot says whether the layout reads well
+in a hand, and the site on a phone remains an unperformed check. It is smaller
+than it was - the geometry is now observed rather than inferred - and it is not
+gone.
+
+Three guards added for what F6 introduced: the sector-name fix, whose CSS is
+inert without a class set in JavaScript forty lines away; the tabs living in the
+banner, so a tidy-up cannot leave a second nav behind; and the spines carrying
+`aria-hidden`, which is exactly the attribute a redesign forgets.
+
+1062 passed to **1065**. F3 - one live run against the deployed site - is
+untouched and remains the last genuinely unverified thing in this project.
