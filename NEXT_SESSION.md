@@ -46,6 +46,85 @@ ever had. The suite is **1040 passed, 1 skipped**.
 
 ---
 
+## THE WEBSITE WORK LIST — agreed 2026-09-08, for session 22
+
+Written down from his own list after the site went live. These are ordered by
+what BLOCKS a visitor, not by how interesting they are. **All of it is free** -
+no model calls, no news requests - so none of it competes with A0 or A1 for
+quota. It can be done on a day with no headroom at all.
+
+**W1. Drop the CLI instruction from the hint web visitors see.** `RATE_LIMIT_HINT`
+in `render.py` ends *"Run `python -m scripts.check_setup` to tell a configuration
+problem from an outage."* That is useful in a terminal and useless in a browser -
+it tells a stranger with no shell to run a command. It is also about to be the
+most-read sentence on the site, because hitting the shared daily ceiling is what
+usually ends a run and there is deliberately no global gate stopping anyone
+starting one. Keep it for the CLI, drop it for the web. Needs a second constant
+rather than a rewording, because both front ends read the same one today.
+
+**W2. The gallery is a ONE-WAY DOOR - the first defect a user found on the
+deployed site.** Click a recorded run and the live-run form disappears with no
+way back; only a page reload escapes. The mechanism, confirmed in
+`web/static/index.html` around line 517:
+
+    const body = await (await fetch("/api/gallery/" + name)).json();
+    $("intro").hidden = true;      // hides the live-run form
+    $("progress").hidden = true;
+    showBrief(body.brief);
+
+`$("intro").hidden = true` is never undone. There is no back control, no
+routing, and no history entry. **This is a symptom of W3 rather than a separate
+bug**: the page is one screen whose sections are toggled by `hidden`, with no
+navigation model, so every "go somewhere" is a one-way hide. Fixing W3 properly
+fixes this; patching it alone would add a second ad-hoc path to the same tangle.
+
+**W3. Restructure into tabs, with the live run as the landing page.** His layout,
+as stated:
+
+    Tab 1 (default)  A short description of what this is and what it does,
+                     and BELOW it the live-run form.
+    Tab 2            The gallery of recorded runs, readable by anyone whether
+                     or not they ever start a run.
+    Tab 3            Licensing, GitHub, and his own information.
+
+**Four decisions to take before writing any of it:**
+
+- **Hash routing, or show/hide only?** Show/hide alone leaves the browser Back
+  button still broken and makes the gallery unlinkable - somebody cannot send a
+  friend a link to a specific recorded brief. `#gallery`, `#about` and
+  `#gallery/technology` are cheap and fix both. Recommended.
+- **What happens to a RUN IN PROGRESS when a tab changes?** A run is a 2-4 minute
+  SSE stream. If a visitor starts one and clicks Gallery, the stream must keep
+  running and the progress must still be there on return. If it is not designed
+  for, this becomes W2 again in a new costume - and it is worse, because the
+  visitor has spent a share of a budget everybody else is sharing.
+- **The DISCLAIMER must not move off the brief.** It renders with every brief
+  today. An About tab can carry a fuller version, but a reader must never be able
+  to see a recommendation without it. Adding a tab is exactly the kind of change
+  that quietly relocates it.
+- **Where does the intro copy live?** Entry 98's test is: if changing it would
+  tell a reader something DIFFERENT it is content and belongs in `render.py`; if
+  it only moves words on the page it is layout. A description of what the system
+  does is content by that test. Against that: the CLI has its own opening and may
+  not want the same words. Decide deliberately rather than by default.
+
+**W4. A visual pass - bolder headers, bigger titles, more character.** The page
+is deliberately plain: one file, no build step, no framework, and that should
+stay - it is part of what the project demonstrates. What can change freely is
+type scale, weight and rhythm. Today `h2` is `1.05rem`, uppercase, letter-spaced;
+titles are barely larger than body text. Worth pairing with W3 rather than doing
+separately, since tabs change the page's structure and the type scale should be
+designed against the structure it actually has.
+
+**One thing NOT to lose in W3 and W4.** The sector menu's narrowing examples -
+`Utilities — e.g. solar, grid storage` - are the single most useful thing this
+system knows about how to ask it, and entry 83 exists because a bare menu of
+eleven broad sectors would have quietly made every run worse. They are served
+from `/api/form`. A redesign that tidies them away as clutter would remove the
+one piece of teaching the interface does.
+
+---
+
 ## The task list, agreed at the end of session 20
 
 Eight items, grouped by what BLOCKS each one rather than by how interesting it
@@ -117,7 +196,9 @@ critical.
 
 ### Order
 
-**A0 first the moment headroom returns** - the site is public now, so an
+**The website work list (W1-W4) above needs NO quota**, so it is what to do on a
+day with no headroom - and W2 is a defect a real visitor hits today. **A0 first
+the moment headroom returns** - the site is public now, so an
 unverified run path is a stranger's broken experience rather than an internal
 gap. **A1 next**, since every day it is missing is a day the live gallery shows
 ten of eleven sectors. Then **B3**'s remaining half, which is free. Then **A2**.
