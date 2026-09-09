@@ -638,7 +638,7 @@ SECTORS: tuple[tuple[str, str], ...] = (
     ("Utilities", "solar, grid storage"),
     ("Industrials", "aerospace, electrical equipment"),
     ("Consumer Cyclical", "carmakers, online retail"),
-    ("Consumer Defensive", "food producers, household goods"),
+    ("Consumer Defensive", "packaged food, toiletries"),
     ("Communication Services", "streaming, telecoms"),
     ("Basic Materials", "lithium mining, chemicals"),
     ("Real Estate", "data-centre REITs, logistics"),
@@ -677,6 +677,19 @@ def _bound(field, kind: str):
     return None
 
 
+def _required(field) -> bool:
+    """Whether a field must be answered, read off the model's own annotation.
+
+    ``investment_currency`` is ``Literal[...] | None``; experience and risk are
+    not. The page needs to know the difference so it can leave a menu blank
+    without either inventing a rule or sending an empty string the API answers
+    with a 422 - and the model is the only place that difference is already
+    written down. Hardcoding a list of optional fields in the front end would
+    give it two homes and one of them no test, which is entry 29 again.
+    """
+    return type(None) not in get_args(field.annotation)
+
+
 def form_fields() -> list[dict]:
     """Every question, once, for whatever is asking it.
 
@@ -703,12 +716,14 @@ def form_fields() -> list[dict]:
         },
         {
             "name": "investment_experience",
+            "required": _required(fields["investment_experience"]),
             "label": "Investment experience",
             "kind": "choice",
             "options": list(get_args(fields["investment_experience"].annotation)),
         },
         {
             "name": "risk_tolerance",
+            "required": _required(fields["risk_tolerance"]),
             "label": "Risk tolerance",
             "kind": "choice",
             "options": list(get_args(fields["risk_tolerance"].annotation)),
@@ -722,8 +737,9 @@ def form_fields() -> list[dict]:
         },
         {
             "name": "investment_currency",
-            "label": "Currency of that amount",
+            "label": "Currency",
             "kind": "choice",
+            "required": _required(fields["investment_currency"]),
             # The annotation is `Literal[...] | None`, so the codes sit one
             # level in. USD leads because most companies this finds trade in it,
             # and the share count only appears when the currencies match.

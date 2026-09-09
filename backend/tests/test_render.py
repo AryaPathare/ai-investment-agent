@@ -359,3 +359,58 @@ def test_the_review_date_is_three_months_out_not_the_holding_period(state):
 
     assert described["next_review"] == "2026-11-25"
     assert described["next_review_on"] == "25 Nov 2026"
+
+
+# --- The form contract -------------------------------------------------------
+#
+# `form_fields()` had no test before F8 changed it, which is why these exist.
+# The rule the whole function is built on is that the MODEL is the single source
+# for what it offers - options from Literal types, bounds from constraints, and
+# now which answers may be left alone. A front end that keeps its own copy of
+# any of those has given it two homes and one of them no test.
+
+
+def test_which_menus_may_be_left_blank_comes_from_the_model():
+    """`investment_currency` is `Literal[...] | None` and the other two are not.
+
+    F8 made the page start every menu blank. Blank is then a legal answer for
+    currency and a 422 for the other two, and the page has to tell them apart -
+    so the difference is derived from the annotation rather than listed in
+    JavaScript. Retype that list in the front end and this stops being true
+    silently.
+    """
+    by_name = {f["name"]: f for f in render.form_fields()}
+
+    assert by_name["investment_currency"]["required"] is False
+    assert by_name["investment_experience"]["required"] is True
+    assert by_name["risk_tolerance"]["required"] is True
+
+
+def test_every_choice_field_says_whether_it_is_required():
+    """A menu with no `required` key renders as optional by accident, because
+    `field.required` is undefined in JavaScript and undefined is falsy. A
+    required question that silently became optional is exactly the failure this
+    catches."""
+    for field in render.form_fields():
+        if field["kind"] == "choice":
+            assert "required" in field, field["name"]
+            assert isinstance(field["required"], bool)
+
+
+def test_no_sector_example_is_long_enough_to_wrap_its_row():
+    """Name plus example has to fit one row of the sector grid.
+
+    This is a proxy for a pixel measurement and says so. The grid track is
+    21rem; every sector at 42 characters or fewer fits, and "Consumer
+    Defensive" with "food producers, household goods" came to 49 and was the
+    only cell in the grid that wrapped - seven clear of the next longest, which
+    is what made shortening it the fix rather than widening the track.
+
+    The ceiling is deliberately just above the pack rather than at it, so an
+    example can be reworded without a test failing for no reason - but a new
+    one long enough to reintroduce the wrap fails here instead of in a
+    screenshot nobody takes.
+    """
+    longest = max(render.SECTORS, key=lambda pair: len(pair[0]) + len(pair[1]))
+    combined = len(longest[0]) + len(longest[1])
+    assert combined <= 44, f"{longest[0]} + {longest[1]!r} is {combined} chars"

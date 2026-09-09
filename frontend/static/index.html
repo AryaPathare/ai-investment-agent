@@ -23,30 +23,35 @@
      carry the project's identity; rust and amber exist to stop the page
      reading as a newspaper, which is what it did before. */
   :root {
-    --ink: #16201d; --muted: #5c6360; --line: #d9d3c8;
-    --paper: #f7f4ee; --panel: #fff;
-    --accent: #12695a; --accent-hot: #c8502a; --accent-warm: #dfa94b;
-    --deep: #0f3a31; --deep-2: #1d6553; --cream: #f4efe4;
-    --warn: #7a3b1f;
+    --ink: #0f172a; --muted: #5b6676; --line: #dce3ec;
+    --paper: #f4f7fb; --panel: #fff;
+    --accent: #2563eb; --accent-hot: #1d4ed8; --accent-warm: #60a5fa;
+    --deep: #0b1220; --deep-2: #16233b; --cream: #f8fafc;
+    /* Warning stays amber deliberately. A blue warning is not a warning, and
+       this is the colour on "nothing is being recommended" and on a failed
+       run - the two places the page most needs to stop reading as normal. */
+    --warn: #b45309;
     --frame: 12px;
+    --ui: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --doc: ui-serif, Georgia, "Times New Roman", serif;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; padding: 0 0 4rem; color: var(--ink);
-    font: 16px/1.55 ui-serif, Georgia, "Times New Roman", serif;
+    font: 16px/1.55 var(--ui);
     overflow-wrap: break-word;
     /* The frame he asked for, and a dot grid too faint to read as texture
        until the eye rests on the margin. */
     border: var(--frame) solid var(--deep);
     background:
-      radial-gradient(circle at 1px 1px, rgba(18,105,90,.13) 1px, transparent 0) 0 0 / 22px 22px,
-      radial-gradient(1200px 420px at 50% -140px, rgba(18,105,90,.10), transparent 70%),
+      radial-gradient(circle at 1px 1px, rgba(37,99,235,.10) 1px, transparent 0) 0 0 / 22px 22px,
+      radial-gradient(1200px 420px at 50% -140px, rgba(37,99,235,.09), transparent 70%),
       var(--paper);
   }
 
   /* BANNER. Title top-left, tabs top-right, full bleed inside the frame. */
   .banner {
-    background: linear-gradient(103deg, var(--deep) 0%, var(--deep-2) 62%, #24796a 100%);
+    background: linear-gradient(103deg, var(--deep) 0%, var(--deep-2) 62%, #1e3a5f 100%);
     color: var(--cream);
     border-bottom: 3px solid var(--accent-warm);
   }
@@ -56,19 +61,52 @@
     justify-content: space-between; gap: .4rem 2rem;
   }
   .banner h1 { color: var(--cream); margin: 0; padding-bottom: .3rem; }
-  .banner .mark { display: block; font-size: .72rem; letter-spacing: .19em;
-    text-transform: uppercase; color: var(--accent-warm); font-weight: 700;
-    margin-bottom: .35rem; }
 
   main { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1.5rem 0; }
+
+  /* The intro is a two-column row so the top of EVERY tab uses the width - the
+     emptiness he pointed at was beside this prose, on all three tabs, because
+     the reading column is 46rem inside a 72rem shell. */
+  .intro { display: grid; align-items: start; gap: 1.4rem 2.5rem;
+    grid-template-columns: minmax(0, 46rem) minmax(0, 1fr); }
+  .stats { display: grid; gap: .55rem; grid-template-columns: 1fr 1fr; }
+  .stat { background: var(--panel); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent); padding: .6rem .75rem; }
+  .stat b { display: block; font-size: 1.45rem; line-height: 1.1;
+    font-weight: 800; color: var(--accent); letter-spacing: -.02em; }
+  .stat span { color: var(--muted); font-size: .8rem; }
+
+  /* A full-width band, for the numbered pipeline. */
+  .band { background: var(--panel); border: 1px solid var(--line);
+    border-top: 3px solid var(--accent); padding: 1.3rem 1.5rem; margin: 2.2rem 0 0; }
+  .band h2 { margin: 0; }
+  .band h2::after { display: none; }
+  .band .band-sub { color: var(--muted); margin: .35rem 0 0; }
+  .steps { list-style: none; padding: 0; margin: 1.2rem 0 0; display: grid;
+    gap: 1rem 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr)); }
+  /* Five stages, so five columns once there is room. auto-fit alone gave four
+     and left 05 stranded on a row of its own, which reads as a wrap rather
+     than a sequence. */
+  @media (min-width: 66rem) { .steps { grid-template-columns: repeat(5, 1fr); } }
+  .steps li { border-top: 2px solid var(--line); padding-top: .55rem; }
+  .steps .n { display: block; font-size: 1.35rem; font-weight: 800;
+    color: var(--accent); letter-spacing: .02em; }
+  .steps strong { display: block; margin: .1rem 0 .25rem; }
+  .steps .d { color: var(--muted); font-size: .86rem; }
+
+  @media (max-width: 62rem) {
+    .intro { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr 1fr; }
+  }
 
   /* WIDE SHELL, NARROW PROSE. 46rem is about 90 characters, the top of the
      comfortable range for reading - and a brief IS prose: a thesis, exit
      conditions, an explanation of why nothing was recommended. So the shell
      widens and the reading column does not. The form panel and the gallery
      take the full width; everything listed here stays readable. */
-  .sub, .lede, .disclaimer, #progress, #clarify, #result,
-  #gallery-result, #gallery-note, #tab-about {
+  .sub, .disclaimer, #progress, #clarify, #result,
+  #gallery-result, #gallery-note, #tab-about p {
     max-width: 46rem; margin-left: 0; margin-right: auto;
   }
 
@@ -92,8 +130,6 @@
   }
   .tabs a:hover { color: var(--cream); border-bottom-color: rgba(223,169,75,.5); }
   .tabs a[aria-current="page"] { color: #fff; border-bottom-color: var(--accent-warm); }
-  .lede { font-size: 1.05rem; border-left: 4px solid var(--accent-warm); padding-left: .9rem; }
-  .lede strong { font-weight: 700; }
   .back {
     background: none; color: var(--accent); border: 0; padding: 0;
     font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline;
@@ -156,6 +192,9 @@
   .card .asked { font-weight: 600; }
   .card .who, .card .got { color: var(--muted); font-size: .85rem; }
   .card .got { margin-top: .15rem; }
+  /* The brief, and only the brief, is set in the reading face. Everything
+     else on this page is interface. */
+  #result, #gallery-result { font-family: var(--doc); font-size: 1.02rem; }
   code { font: .85em ui-monospace, Menlo, Consolas, monospace; }
   a { color: var(--accent); }
   [hidden] { display: none !important; }
@@ -197,7 +236,7 @@
      there are no gutters to put them in. -->
 <header class="banner">
   <div class="banner-in">
-    <h1><span class="mark">Five agents &middot; one brief</span>Investment research agent</h1>
+    <h1>Investment research agent</h1>
     <nav class="tabs">
       <a href="#run" data-tab="run">Run it</a>
       <a href="#gallery" data-tab="gallery">Past runs</a>
@@ -218,26 +257,32 @@
 </aside>
 
 <main>
-  <p class="sub">
-    Five agents read current news for the parts of the market you name, find
-    listed companies genuinely exposed to what they find, argue against each
-    one, and write up to three of them in plain language &mdash; or recommend
-    nothing, and say why.
-  </p>
+  <!-- Two columns. The prose keeps its reading width; the tiles take the space
+       to the right of it, which on every tab was empty. -->
+  <div class="intro">
+    <div>
+      <p class="sub">
+        Five agents read current news for the parts of the market you name, find
+        listed companies genuinely exposed to what they find, argue against each
+        one, and write up to three of them in plain language &mdash; or recommend
+        nothing, and say why.
+      </p>
 
-  <p class="disclaimer" id="disclaimer"></p>
+      <p class="disclaimer" id="disclaimer"></p>
+    </div>
+
+    <!-- Four figures that cannot drift: they are fixed by the design rather
+         than counted from anything. A tile reading "11 recorded runs" would be
+         a copy of a number, and this repository has a test about those. -->
+    <aside class="stats">
+      <div class="stat"><b>5</b><span>agents, in order</span></div>
+      <div class="stat"><b>2&ndash;4</b><span>minutes per run</span></div>
+      <div class="stat"><b>Every</b><span>claim cites what it read</span></div>
+      <div class="stat"><b>No</b><span>price targets, by design</span></div>
+    </aside>
+  </div>
 
   <div class="tab" id="tab-run">
-    <!-- The one thing worth saying before somebody answers: the specific
-         answer is the better one, and nobody knows that unless shown. A bare
-         menu of eleven broad sectors invites the broad end, which researches
-         worse - measured, not assumed. -->
-    <p class="lede">
-      <strong>Narrower questions research better.</strong> &ldquo;Grid
-      storage&rdquo; produces a sharper answer than &ldquo;Utilities&rdquo;, and
-      each sector below carries an example of what narrower looks like.
-    </p>
-
     <section id="intro" class="panel">
       <p class="quota" id="quota">Checking what is left today&hellip;</p>
       <form id="profile"></form>
@@ -268,6 +313,29 @@
     </section>
 
     <section id="result" hidden></section>
+
+    <section class="band">
+      <h2>How a run works</h2>
+      <p class="band-sub">Five agents, in order. Each hands the next only what it
+        could actually show.</p>
+      <ol class="steps">
+        <li><span class="n">01</span><strong>Validate</strong>
+          <span class="d">Checks your answers make sense together, and asks you
+          about it when two of them disagree.</span></li>
+        <li><span class="n">02</span><strong>Research</strong>
+          <span class="d">Reads current news for the parts of the market you
+          named, and keeps what it can cite.</span></li>
+        <li><span class="n">03</span><strong>Screen</strong>
+          <span class="d">Finds listed companies genuinely exposed to those
+          themes, and says why it dropped the rest.</span></li>
+        <li><span class="n">04</span><strong>Critique</strong>
+          <span class="d">Retrieves the bear case and argues against every
+          candidate before any of them survives.</span></li>
+        <li><span class="n">05</span><strong>Write</strong>
+          <span class="d">Writes up to three of them &mdash; or recommends
+          nothing, and says why.</span></li>
+      </ol>
+    </section>
   </div>
 
   <div class="tab" id="tab-gallery" hidden>
@@ -280,6 +348,29 @@
   </div>
 
   <div class="tab" id="tab-about" hidden>
+<section class="band">
+      <h2>How a run works</h2>
+      <p class="band-sub">Five agents, in order. Each hands the next only what it
+        could actually show.</p>
+      <ol class="steps">
+        <li><span class="n">01</span><strong>Validate</strong>
+          <span class="d">Checks your answers make sense together, and asks you
+          about it when two of them disagree.</span></li>
+        <li><span class="n">02</span><strong>Research</strong>
+          <span class="d">Reads current news for the parts of the market you
+          named, and keeps what it can cite.</span></li>
+        <li><span class="n">03</span><strong>Screen</strong>
+          <span class="d">Finds listed companies genuinely exposed to those
+          themes, and says why it dropped the rest.</span></li>
+        <li><span class="n">04</span><strong>Critique</strong>
+          <span class="d">Retrieves the bear case and argues against every
+          candidate before any of them survives.</span></li>
+        <li><span class="n">05</span><strong>Write</strong>
+          <span class="d">Writes up to three of them &mdash; or recommends
+          nothing, and says why.</span></li>
+      </ol>
+    </section>
+
     <h2>What this is</h2>
     <p>
       A five-agent research pipeline. It validates what you tell it, reads
@@ -404,6 +495,12 @@ async function loadForm() {
     if (field.kind === "choice") {
       const select = el("select");
       select.id = field.name;
+      // A <select> shows its first option, so the form used to arrive already
+      // claiming the visitor was a beginner at low risk holding USD - three
+      // answers nobody gave. It starts blank, and whether blank is ALLOWED
+      // comes from the model by way of /api/form rather than a list kept here.
+      select.append(new Option(field.required ? "Choose one" : "Not specified", ""));
+      if (field.required) select.required = true;
       for (const option of field.options) select.append(new Option(option, option));
       fld.append(select);
     } else if (field.kind === "number") {
@@ -461,6 +558,8 @@ function readProfile() {
       profile[field.name] = ($(field.name).value || "").split(",").map((s) => s.trim()).filter(Boolean);
     } else if (field.kind === "number") {
       profile[field.name] = Number($(field.name).value);
+    } else if (field.kind === "choice") {
+      profile[field.name] = $(field.name).value || null;
     } else {
       profile[field.name] = $(field.name).value;
     }

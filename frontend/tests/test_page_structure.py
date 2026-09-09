@@ -254,3 +254,19 @@ def test_the_tabs_wrap_rather_than_clip():
     destination."""
     tabs = HTML[HTML.index("  .tabs {") :]
     assert "flex-wrap: wrap" in tabs[: tabs.index("}")]
+
+
+def test_a_choice_menu_starts_blank():
+    """A <select> shows its first option, so before F8 the form arrived already
+    claiming the visitor was a beginner at low risk holding USD - three answers
+    nobody had given. The blank option must be added BEFORE the real ones, and
+    `required` must come from the server's field rather than a list kept here."""
+    assert 'select.append(new Option(field.required ? "Choose one" : "Not specified", ""))' in HTML
+    assert "if (field.required) select.required = true;" in HTML
+
+
+def test_an_unanswered_optional_menu_is_null_not_empty_string():
+    """`investment_currency` is `Literal[...] | None`. An empty string is
+    neither, and would come back as a 422 on a field the model says may be
+    skipped."""
+    assert 'profile[field.name] = $(field.name).value || null;' in HTML
