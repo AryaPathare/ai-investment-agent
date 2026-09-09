@@ -4763,6 +4763,17 @@ entry 115 treating 2-of-2 as a baseline for a defect that fires 3-in-6.
 **`.state/` was copied out first.** It is gitignored, so git could not have
 recovered it. The code was never at risk; the runs were.
 
+**Confirmed in production, which is the only check that settles it.** Render
+rebuilt from the new layout and the deploy is green on `4958df6`, running
+`uvicorn frontend.app:app --workers 1`. That confirmation had to come from the
+dashboard rather than from probing the site, and the reason is worth keeping:
+the restructure changed nothing the site SERVES - `frontend/static/index.html`
+is byte-identical to the old `web/static/index.html` and no API response moved -
+so a healthy 200 was equally consistent with the new build succeeding and with a
+failed build leaving the old container up. **A deploy that fails silently looks
+exactly like a deploy that worked**, whenever the change is invisible from
+outside, which is precisely when a restructure is involved.
+
 1040 passed before the move and **1040 passed after it**, which is the least
 interesting number here and the one worth stating: no test was lost, skipped or
 quietly rewritten to fit the new shape. Thirteen failed on the first run, every
