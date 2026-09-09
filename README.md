@@ -106,7 +106,7 @@ to the checkpoint file at once lives in a single process.
 python -m pytest
 ```
 
-**1045 passed, 1 skipped** in about fifteen seconds, no network and no
+**1062 passed, 1 skipped** in about fifteen seconds, no network and no
 credentials. If those work, your install is good.
 
 ### 3. Add an API key
@@ -203,7 +203,7 @@ profile on a different day finds different companies.
 ## Tests and evals
 
 ```powershell
-python -m pytest                        # 1045 passed, 1 skipped; no network
+python -m pytest                        # 1062 passed, 1 skipped; no network
 ```
 
 The evals make **real API calls** and are how the agents were developed. Start

@@ -18,8 +18,8 @@ somebody about to stop working who cannot describe what happens next.
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1045 passed, 1 skipped** — 1046 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **127**, 22 sessions
+- Suite: **1062 passed, 1 skipped** — 1063 collected, and the distinction matters
+- `docs/PROJECT_LOG.md` is current through entry **128**, 22 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -38,14 +38,14 @@ form with its sector menu, and the traversal guard. Entry 122 has the numbers.
 
 **The one thing NOT verified there is a real live run** - it costs ~28k tokens
 and ~13 news requests, and Basic Materials has first claim on the next headroom.
-The run path in production rests on 1045 local tests plus session 18's live runs
+The run path in production rests on 1062 local tests plus session 18's live runs
 against the same code. That is good evidence and it is not the same thing. **It
 is now the last genuinely unverified thing in this project.**
 
 Session 20 spent no news requests and shipped no behaviour change; it answered
 entry 112, and the answer was no. Session 21 deployed, moved the repository to
 the professional account, and gave the deployment config the first tests it has
-ever had. The suite is **1045 passed, 1 skipped**.
+ever had. The suite is **1062 passed, 1 skipped**.
 
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, one worker)

@@ -30,8 +30,8 @@ by somebody who is about to stop working and cannot describe what happens next.
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - **Live: <https://ai-investment-agent-gdjr.onrender.com>** — Render free plan, ONE worker
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1045 passed, 1 skipped**, 1046 collected
-- `docs/PROJECT_LOG.md` current through entry **127**, 22 sessions
+- Suite: **1062 passed, 1 skipped**, 1063 collected
+- `docs/PROJECT_LOG.md` current through entry **128**, 22 sessions
 - Tagged `v1.0.0` at `48f9c08`, which the case study quotes
 
 **The repository was restructured in session 22** into `backend/` and

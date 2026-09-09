@@ -18,8 +18,8 @@ somebody about to stop working who cannot describe what happens next.
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1045 passed, 1 skipped** — 1046 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **127**, 22 sessions
+- Suite: **1062 passed, 1 skipped** — 1063 collected, and the distinction matters
+- `docs/PROJECT_LOG.md` is current through entry **128**, 22 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -383,10 +383,11 @@ python -m backend.scripts.check_setup
 python -m pytest
 ```
 
-Expect **1045 passed, 1 skipped** - 1046 collected, and the distinction matters
+Expect **1062 passed, 1 skipped** - 1063 collected, and the distinction matters
 (entry 56). Counted at each session end: 760 after session 11, 797 after 12, 811
 after 13, 816 after 14, 814 then 856 after 17, 1008 after 18, 1032 after
-session 19, 1040 after session 21, and 1045 after session 22's repository-hygiene guard.
+session 19, 1040 after session 21, and 1062 after session 22, which added the
+repository-hygiene guard and then the website's page-structure guards.
 
 Suite time swung between 9s and 22s across runs today on an unchanged tree. Entry
 34 is the reason not to chase that: six seconds of work once went into
@@ -946,7 +947,7 @@ python -m backend.scripts.record_run --list          # runs that could join the 
 python -m backend.scripts.record_run <id> --to shared/gallery/<sector>.json
 
 python -m backend.scripts.check_setup           # health check - run this first when stuck
-python -m pytest                        # 1045 passed, 1 skipped; no network
+python -m pytest                        # 1062 passed, 1 skipped; no network
 
 python -m backend.evals.runner                  # Agent 1: 32 labelled cases
 python -m backend.evals.runner --tag hard       # just the 12 hard ones (12 calls)

@@ -5015,3 +5015,57 @@ resolves - but nothing consumes the second segment, and clicking a card never
 sets the hash. So a specific brief still cannot be linked to, and Back does not
 close one. That is the same shape as the defect this entry is about: a way in
 with no way back out. It is F1 in the frontend handoff.
+
+### 128. Finishing the navigation model, and four things a phone would have found
+
+Two items, both cheap, and the first exists only because entry 127 left it
+half-built.
+
+**F1: the hash split on `/` and nothing read the second half.** `currentTab()`
+was written as `hash.slice(1).split("/")[0]`, which implies `#gallery/technology`
+means something - and the comment beside it claimed a specific view could be
+linked to. Neither was true. Clicking a card called `showRecording(name)`
+directly and never touched the address bar, so a brief could not be linked to
+and Back did not close one.
+
+**That is the defect entry 127 was about, one level down**: a way in with no way
+back out. The tabs fixed it for the page and left it in place for the gallery.
+
+Fixed by making the hash the only thing that decides what is on screen. A card
+sets `#gallery/<name>`; `route()` reads it and opens the recording; the back
+control sets `#gallery` and lets the same function close it. Nothing shows or
+hides a panel on its own any more, which is the property that stops this being
+rewritten by accident - **the original one-way door was one line of a click
+handler doing its own navigation.**
+
+A link can also outlive what it points at. `/api/gallery/<unknown>` answers 404,
+and rendering that as a brief would throw and leave a blank panel, so a missing
+recording now says so. Same rule as recommending nothing out loud.
+
+**F2: nobody had opened the site on a phone.** Reading the CSS found four
+hazards, none of them visible on a laptop:
+
+    h1 at 2.9rem            46px, most of the width of a small phone
+    no overflow-wrap        one long provider string scrolls the whole page
+    minmax(15rem, 1fr)      keeps a 15rem column on a narrower screen
+    .tabs without wrap      three bold tabs, and the third falls off the edge
+
+The third is the interesting one. `minmax(15rem, 1fr)` reads as "at least 15rem,
+share what is left", and the first half holds even when the container is
+narrower than 15rem - so the grid overflows rather than shrinking.
+`minmax(min(15rem, 100%), 1fr)` is the fix. **A rule that is correct at every
+width the author tested is not the same as a rule that is correct**, which is
+this log's recurring shape arriving in a stylesheet.
+
+Every one is a single character away from being reverted by a tidy-up, so each
+is asserted, and all five guards were broken on purpose.
+
+**What was NOT done, stated because the tests could imply otherwise.** No
+browser runs in this suite. Every assertion here says a CSS property is present,
+never that the result looks right. The first draft of one docstring claimed the
+layout "was checked by looking at the site on a phone", which had not happened -
+caught while reading the file back, and corrected to say so. **Opening the live
+URL on a phone is still an unperformed check**, and it is the only one that
+would settle it.
+
+1045 passed to **1062**.

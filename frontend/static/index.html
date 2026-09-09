@@ -26,9 +26,10 @@
   body {
     margin: 0; padding: 2rem 1.25rem 4rem; background: var(--paper); color: var(--ink);
     font: 16px/1.55 ui-serif, Georgia, "Times New Roman", serif;
+    overflow-wrap: break-word;
   }
   main { max-width: 46rem; margin: 0 auto; }
-  h1 { font-size: 2.9rem; line-height: 1.05; margin: 0 0 .5rem; letter-spacing: -.025em; font-weight: 700; }
+  h1 { font-size: clamp(2rem, 8vw, 2.9rem); line-height: 1.05; margin: 0 0 .5rem; letter-spacing: -.025em; font-weight: 700; }
   h2 { font-size: 1.5rem; margin: 2.2rem 0 .6rem; letter-spacing: -.015em; font-weight: 700; }
   h3 { font-size: 1.15rem; margin: 1.6rem 0 .2rem; font-weight: 700; }
   p { margin: .5rem 0; }
@@ -37,7 +38,7 @@
   /* Tabs. A navigation model, not decoration: without one, every "go
      somewhere" on this page was a one-way hide, and opening a recorded run
      left no way back to the form. */
-  .tabs { display: flex; gap: .3rem; border-bottom: 2px solid var(--line); margin: 0 0 1.5rem; }
+  .tabs { display: flex; flex-wrap: wrap; gap: .3rem; border-bottom: 2px solid var(--line); margin: 0 0 1.5rem; }
   .tabs a {
     padding: .55rem .95rem; text-decoration: none; color: var(--muted);
     font-weight: 700; font-size: .97rem; border-bottom: 3px solid transparent;
@@ -63,7 +64,7 @@
     background: var(--accent); color: #fff; border: 0;
   }
   button[disabled] { background: #9aa5a0; cursor: not-allowed; }
-  .sectors { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .3rem; }
+  .sectors { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr)); gap: .3rem; }
   .sectors label { font-weight: 400; margin: 0; display: flex; gap: .45rem; align-items: baseline; font-size: .9rem; }
   .sectors .eg { color: var(--muted); font-size: .8rem; }
   ol.stages { list-style: none; padding: 0; margin: .5rem 0; }
@@ -239,7 +240,26 @@ function currentTab() {
   return (location.hash || "#run").slice(1).split("/")[0];
 }
 
-window.addEventListener("hashchange", () => showTab(currentTab()));
+// `#gallery/technology` names a recording in its second segment, so a specific
+// brief can be linked to and the Back button closes it. Without this the
+// gallery had a way in and no way back out, which is the defect the tabs were
+// built to remove, one level down.
+function currentRecording() {
+  const parts = (location.hash || "").slice(1).split("/");
+  return parts[0] === "gallery" && parts[1] ? decodeURIComponent(parts[1]) : null;
+}
+
+// One place decides what is on screen, driven by the hash. Anything that wants
+// to navigate sets the hash and lets this run, rather than showing and hiding
+// nodes itself - which is how the original one-way door got written.
+async function route() {
+  showTab(currentTab());
+  const name = currentRecording();
+  if (name) await showRecording(name);
+  else $("gallery-result").hidden = true;
+}
+
+window.addEventListener("hashchange", route);
 
 // --- The form, built from the server's field definitions ---------------------
 
@@ -617,7 +637,11 @@ async function loadGallery() {
       card.append(el("div", "run on " + when.toLocaleDateString(undefined,
         { day: "numeric", month: "short", year: "numeric" }), "who"));
     }
-    card.addEventListener("click", () => showRecording(run.name));
+    // Sets the hash rather than opening the brief directly, so the address bar
+    // matches what is on screen and Back closes it. `route` does the opening.
+    card.addEventListener("click", () => {
+      location.hash = "#gallery/" + encodeURIComponent(run.name);
+    });
     list.append(card);
   }
 }
@@ -627,13 +651,22 @@ async function loadGallery() {
 // OWN result area, inside the gallery tab, and leaves everything on the run tab
 // exactly as it was - including a run that is still going.
 async function showRecording(name) {
-  const body = await (await fetch("/api/gallery/" + encodeURIComponent(name))).json();
-  showBrief(body.brief, "gallery-result");
-
   const out = $("gallery-result");
+  const response = await fetch("/api/gallery/" + encodeURIComponent(name));
+
+  if (!response.ok) {
+    // A link can outlive the recording it points at. Saying so beats an empty
+    // panel, which is the same rule as recommending nothing out loud.
+    out.replaceChildren(el("p", "That recorded run could not be found.", "help"));
+    out.hidden = false;
+    return;
+  }
+
+  showBrief((await response.json()).brief, "gallery-result");
+
   const back = el("button", "← back to all runs", "back");
   back.addEventListener("click", () => {
-    out.hidden = true;
+    location.hash = "#gallery";
     $("gallery-list").scrollIntoView({ behavior: "smooth" });
   });
   out.prepend(
@@ -643,6 +676,6 @@ async function showRecording(name) {
   out.scrollIntoView({ behavior: "smooth" });
 }
 
-showTab(currentTab());
+route();
 loadForm().then(loadQuota).then(loadGallery);
 </script>
