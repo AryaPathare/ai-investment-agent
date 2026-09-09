@@ -19,7 +19,7 @@ somebody about to stop working who cannot describe what happens next.
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1045 passed, 1 skipped** — 1046 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **125**, 22 sessions
+- `docs/PROJECT_LOG.md` is current through entry **126**, 22 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:

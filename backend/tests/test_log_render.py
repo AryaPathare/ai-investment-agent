@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pytest
 
+import re
+
 from backend.scripts.build_log_html import SOURCE, TARGET, to_html
 
 
@@ -55,7 +57,20 @@ def test_no_markdown_survives_into_the_document():
     """Bold markers and fences leaking through mean a converter gap, and the
     reader sees raw syntax. Both happened on the first build."""
     rendered = to_html(SOURCE.read_text(encoding="utf-8"))
-    assert "**" not in rendered
+
+    # Code spans are exempt, for the same reason the pipe assertion below
+    # exists: a literal that is ALSO markdown syntax is legitimate content when
+    # the log is quoting it. Entry 125 quotes the gitignore glob `**/`, which
+    # renders as <code>**/</code> - converted correctly, and indistinguishable
+    # from a converter gap to a check that reads the whole document at once.
+    # Narrowed rather than deleted: outside a code span, a surviving ** is
+    # still the defect this was written for.
+    outside_code = re.sub(r"<code>.*?</code>", "", rendered, flags=re.S)
+    assert "**" not in outside_code
+
+    # And the exemption has to be load-bearing, or it is just a hole: the glob
+    # entry 125 quotes must actually reach the reader.
+    assert "<code>**/</code>" in rendered
 
     # A pipe inside a table cell must survive the column split - the provider
     # facts table documents TheNewsAPI's own "|" operator.

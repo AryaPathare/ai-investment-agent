@@ -4918,3 +4918,42 @@ found by a question rather than by anything in the repository. The structure now
 answers what it needs to - where a change goes, which half owns a file, which
 way dependencies point - and every further move would invalidate more prose in a
 125-entry log for less return. 1040 passed to **1045**.
+
+### 126. A guard that fired correctly, and a chain that did not guard at all
+
+Entry 125 was committed with a failing test, and the two halves of that are
+worth separating because only one of them is a defect.
+
+**The test was right to fail.** `test_no_markdown_survives_into_the_document`
+asserts no bold marker survives into the rendered log, and entry 125 quotes a
+gitignore glob whose two leading characters ARE the bold marker. It rendered
+correctly - inside a code span - and the check reads the whole document at once,
+so a correctly converted literal is indistinguishable from a converter gap.
+
+Narrowed rather than deleted, on the precedent already sitting three lines
+below it: that test has always asserted a pipe survives inside a table cell,
+because the provider-facts table documents TheNewsAPI's own `|` operator. Same
+situation - a literal that is also markdown syntax is legitimate content when
+the log is quoting it. Code spans are now exempt, everything outside one is
+still checked, and **the exemption is asserted rather than assumed** - the glob
+must actually reach the reader, or the exemption would be a hole. Verified by
+appending real unconverted bold outside a code span and watching it go red.
+
+**The chain that let it through is the actual defect, and it was mine.** The
+command was `pytest ... | tail -2 && git commit`, and a shell pipeline exits
+with the status of its LAST command. `tail` succeeded. So the `&&` that was
+there to stop a commit on a red suite was reading the exit code of a program
+that only prints lines, and it would have passed a suite of any colour.
+
+That is this log's oldest lesson wearing yet another costume: **a test that
+cannot fail is not evidence.** Here it was not a test but a gate, and the gate
+had been quietly disconnected by a pipe added to keep the output short. The
+guard reported success because the thing it was measuring was not the thing it
+was checking - the same shape as the quota probe of entry 66, which could not
+have failed, and the concurrency test of entry 108, which had nothing to be
+concurrent.
+
+Cheap defence, and the one used for the rest of this session: run the suite as
+its own command and read the exit status, or let it print in full. Suppressing
+output and asserting on the result are different operations, and combining them
+in one line makes the second silently depend on the first.
