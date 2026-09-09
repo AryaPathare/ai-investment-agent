@@ -19,8 +19,8 @@ import json
 
 import pytest
 
-from clients import news
-from clients.news import PROVENANCE_KEY, _write_cache
+from backend.clients import news
+from backend.clients.news import PROVENANCE_KEY, _write_cache
 
 
 @pytest.fixture
@@ -181,10 +181,10 @@ def test_both_agents_tag_themselves_distinctly():
     Read out of the source rather than by running the agents, which would need
     a model and a news key.
     """
-    from config import PROJECT_ROOT
+    from backend.config import PROJECT_ROOT
 
-    research = (PROJECT_ROOT / "agents" / "research_agent.py").read_text(encoding="utf-8")
-    risk = (PROJECT_ROOT / "agents" / "risk_agent.py").read_text(encoding="utf-8")
+    research = (PROJECT_ROOT / "backend" / "agents" / "research_agent.py").read_text(encoding="utf-8")
+    risk = (PROJECT_ROOT / "backend" / "agents" / "risk_agent.py").read_text(encoding="utf-8")
 
     assert 'asked_by="research"' in research
     assert 'asked_by="risk_critic"' in risk

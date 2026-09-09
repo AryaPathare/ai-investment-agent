@@ -9,7 +9,7 @@ undo it without anything else complaining.
 import pytest
 from pydantic import ValidationError
 
-from models.research import (
+from backend.models.research import (
     Article,
     Evidence,
     ResearchFindings,

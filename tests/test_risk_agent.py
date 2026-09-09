@@ -10,18 +10,18 @@ from datetime import datetime, timezone
 
 import pytest
 
-from agents import risk_agent
-from agents.risk_agent import critique_companies
-from clients.news import NewsAPIError
-from models.companies import (
+from backend.agents import risk_agent
+from backend.agents.risk_agent import critique_companies
+from backend.clients.news import NewsAPIError
+from backend.models.companies import (
     CompanyCandidate,
     CompanyFindings,
     ComparableMetrics,
     CurrencyAmounts,
     Fundamentals,
 )
-from models.research import Article
-from models.risk import NewsRiskAssessment, Risk
+from backend.models.research import Article
+from backend.models.risk import NewsRiskAssessment, Risk
 
 
 def article(uuid, title="Regulator opens probe"):

@@ -7,16 +7,16 @@ promoted on an unearned verdict, and that "nothing" says which kind of nothing.
 
 import pytest
 
-from agents.selection import restriction_terms, select
-from models.companies import (
+from backend.agents.selection import restriction_terms, select
+from backend.models.companies import (
     CompanyCandidate,
     CompanyFindings,
     ComparableMetrics,
     CurrencyAmounts,
     Fundamentals,
 )
-from models.profile import InvestorProfile
-from models.risk import CandidateCritique, Risk, RiskFindings
+from backend.models.profile import InvestorProfile
+from backend.models.risk import CandidateCritique, Risk, RiskFindings
 
 
 def profile(restrictions=()):

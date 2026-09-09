@@ -4666,3 +4666,106 @@ disk fixes both and is the first thing to add if this ever sees real traffic.
 1032 passed to **1040**, and the four stale counts in `README.md` and
 `docs/DESIGN.md` were corrected in the same commits that moved them - which is
 the only discipline that keeps a documented number true.
+
+## Session 22 — 2026-09-08
+
+### 123. Two folders, and the saved runs that nearly did not survive them
+
+The repository was reorganised into `backend/` and `frontend/`. The mapping,
+recorded here for the same reason entry 40 recorded the SHA rewrite - **prose
+that cites a path is making a promise the repository can break, and this broke
+every such promise at once:**
+
+    agents/  clients/  models/  evals/  scripts/   ->  backend/<same>
+    cli.py  config.py  checkpoints.py               ->  backend/<same>
+    workflow.py  render.py  recordings.py           ->  backend/<same>
+    web/                                            ->  frontend/
+    NEXT_SESSION.md                                 ->  docs/handoff/backend.md
+                                                      + docs/handoff/frontend.md
+
+    python -m cli            ->  python -m backend.cli
+    python -m evals.runner   ->  python -m backend.evals.runner
+    python -m scripts.*      ->  python -m backend.scripts.*
+    uvicorn web.app:app      ->  uvicorn frontend.app:app
+
+**Every entry before this one cites the old paths.** They are not rewritten.
+They are accurate as history, and editing 122 entries to match a later layout
+would be falsifying a record of what was true at the time - which is the one
+thing this document exists not to do.
+
+**The split is by WHAT PRODUCES THE ANSWER, not by what runs in a browser.**
+`frontend/app.py` is server code and sits in `frontend/` anyway, because it
+belongs to the website rather than to the pipeline. A literal server/browser
+split would have put one HTML file in `frontend/` and separated it from the
+handler that serves it.
+
+### The three things that would have broken silently
+
+**1. `PROJECT_ROOT` moved down a level.** `config.py` computes it as
+`Path(__file__).resolve().parent`, and it anchors `.env`, `.state/`, `.cache/`
+and `demo/`. Moving the file to `backend/` silently relocated all four - the
+checkpoint database and 598 cached news responses would have read as simply
+absent rather than as an error. Now `.parent.parent`. Two `scripts/` modules and
+`cli.py`'s `DEMO_PATH` computed their own roots the same way and needed the same
+correction.
+
+**2. The start commands the live site runs on.** `render.yaml` and `Procfile`
+both said `web.app:app`, and the site auto-redeploys on every push to `main`, so
+a stale start command would have taken the deployment down rather than failing a
+test. **The deployment tests written three hours earlier caught it** - the guard
+that asserts the module named in both start commands actually imports. It was
+written for a rename that had not happened yet and earned its keep the same day.
+
+**3. The saved runs, which is the one that needed real work.** Every checkpoint
+carries `models.companies`, `models.decision` and four more baked into its
+msgpack blob as a literal string. The strict allowlist now registers
+`backend.models.*`, so the stored names no longer match. Measured before and
+after rather than assumed:
+
+    before the move   35 runs deserialize as ResearchFindings, 0 as dicts
+    after the move     0 runs deserialize as ResearchFindings, 35 as dicts
+
+**That is session 5's defect, applied to every saved run at once** - an
+unregistered type comes back as a plain dict and fails later, elsewhere, on the
+first property access. It would have cost the frozen-state replay technique that
+entries 69, 72, 106, 109 and 115 all used, including `cli-66c74b37`, which is
+the exact input entry 112 is measured against and which the handoff names.
+
+**The blobs were not rewritten by hand.** A byte-level substitution is wrong
+here: `models.companies` and `backend.models.companies` differ in length, and
+msgpack strings are length-prefixed, so a naive replace corrupts the frame. Both
+directions use LangGraph's own codec instead - read with the PERMISSIVE
+serializer, which reconstructs anything and merely warns (entry 30 established
+that distinction), then write with the project's own STRICT serializer, which
+stamps the new paths because that is where the classes now live.
+
+Reading permissively still has to IMPORT `models.user_input`, which no longer
+exists. Rather than leave shim packages behind - the clutter the restructure
+exists to remove - the old names were aliased into `sys.modules` for the life of
+the migration script only.
+
+**Run against a copy, verified, then swapped.** 645 blobs re-stamped, 0 skipped,
+and the copy checked against the recorded baseline before it replaced anything:
+35 and 0 again, plus 31 `Decision` objects whose `recommended_nothing` property
+reads - which is the actual session-5 failure mode rather than a type check
+standing in for it. `cli-66c74b37` and `cli-163fffe8` were confirmed by name,
+with their themes and article counts intact.
+
+### What made this safe rather than lucky
+
+**The baseline was taken before anything moved.** "35 runs deserialize as
+ResearchFindings" is a number that only exists if somebody measures it first,
+and without it the migration would have been verified against a memory of how
+things used to look. This project has recorded that mistake twice - entry 34
+chasing a performance regression that was one cold run against one warm one, and
+entry 115 treating 2-of-2 as a baseline for a defect that fires 3-in-6.
+
+**`.state/` was copied out first.** It is gitignored, so git could not have
+recovered it. The code was never at risk; the runs were.
+
+1040 passed before the move and **1040 passed after it**, which is the least
+interesting number here and the one worth stating: no test was lost, skipped or
+quietly rewritten to fit the new shape. Thirteen failed on the first run, every
+one of them a hardcoded module path or literal file path inside a test, and
+every one a real reference that needed updating rather than a test that had been
+asserting nothing.

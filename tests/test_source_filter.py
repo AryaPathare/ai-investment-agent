@@ -13,7 +13,7 @@ rather than silent, and that the filter does not quietly widen.
 
 import pytest
 
-from clients.news import LOW_QUALITY_SOURCES, drop_low_quality
+from backend.clients.news import LOW_QUALITY_SOURCES, drop_low_quality
 from tests.conftest import make_article
 
 
@@ -125,7 +125,7 @@ def test_a_legitimate_publisher_is_not_caught_by_a_similar_name():
 
 
 def _candidate():
-    from models.companies import (
+    from backend.models.companies import (
         CompanyCandidate, ComparableMetrics, CurrencyAmounts, Fundamentals,
     )
 
@@ -143,8 +143,8 @@ def _candidate():
 
 def test_the_critique_records_which_publishers_were_withheld(monkeypatch):
     """The end of the chain that used to stop at `_dropped`."""
-    from agents import risk_agent
-    from models.risk import NewsRiskAssessment
+    from backend.agents import risk_agent
+    from backend.models.risk import NewsRiskAssessment
 
     articles = [
         make_article("u1", "Real reporting on a probe", source="reuters.com"),
@@ -165,8 +165,8 @@ def test_the_critique_records_which_publishers_were_withheld(monkeypatch):
 
 def test_nothing_withheld_records_nothing(monkeypatch):
     """An empty list, not a missing field - "none withheld" is information."""
-    from agents import risk_agent
-    from models.risk import NewsRiskAssessment
+    from backend.agents import risk_agent
+    from backend.models.risk import NewsRiskAssessment
 
     articles = [make_article("u1", source="reuters.com")]
     monkeypatch.setattr(risk_agent, "search_many", lambda q, **k: (articles, list(q)))
@@ -180,8 +180,8 @@ def test_nothing_withheld_records_nothing(monkeypatch):
 
 
 def test_a_provider_failure_withholds_nothing_rather_than_crashing(monkeypatch):
-    from agents import risk_agent
-    from clients.news import NewsAPIError
+    from backend.agents import risk_agent
+    from backend.clients.news import NewsAPIError
 
     def boom(*a, **k):
         raise NewsAPIError("provider down")
@@ -195,8 +195,8 @@ def test_a_provider_failure_withholds_nothing_rather_than_crashing(monkeypatch):
 def test_the_cli_prints_what_was_withheld(capsys):
     """Recording it in state and not showing it would move the silence rather
     than end it."""
-    import cli
-    from models.risk import CandidateCritique, RiskFindings
+    from backend import cli
+    from backend.models.risk import CandidateCritique, RiskFindings
 
     update = {
         "risk_findings": RiskFindings(

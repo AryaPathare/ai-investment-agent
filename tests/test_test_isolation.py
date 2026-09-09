@@ -17,8 +17,8 @@ import re
 
 import pytest
 
-import config
-from config import PROJECT_ROOT
+from backend import config
+from backend.config import PROJECT_ROOT
 
 
 def _credential_fields() -> list[str]:
@@ -134,5 +134,5 @@ def test_the_guard_above_is_actually_looking_at_something():
     """
     found = set(_state_paths())
 
-    assert "checkpoints.DB_PATH" in found
-    assert "web.quota.LEDGER" in found
+    assert "backend.checkpoints.DB_PATH" in found
+    assert "frontend.quota.LEDGER" in found

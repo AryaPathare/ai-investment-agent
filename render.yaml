@@ -45,7 +45,7 @@ services:
     buildCommand: pip install -r requirements.txt
     # --workers is stated even though 1 is the default, so that raising it is a
     # deliberate act by somebody who has read the comment above.
-    startCommand: python -m uvicorn web.app:app --host 0.0.0.0 --port $PORT --workers 1
+    startCommand: python -m uvicorn frontend.app:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /api/health
     envVars:
       # Signs the cookie saying which runs a visitor may answer. generateValue

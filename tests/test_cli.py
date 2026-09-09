@@ -18,15 +18,15 @@ from datetime import date, datetime, timezone
 
 import pytest
 
-import cli
-import render
-import workflow
-from config import get_settings
-from models.companies import CompanyFindings
-from models.decision import Decision, ExcludedCompany, ExitCondition, Recommendation
-from models.research import ResearchFindings
-from models.risk import RiskFindings
-from models.user_input import UserInput
+from backend import cli
+from backend import render
+from backend import workflow
+from backend.config import get_settings
+from backend.models.companies import CompanyFindings
+from backend.models.decision import Decision, ExcludedCompany, ExitCondition, Recommendation
+from backend.models.research import ResearchFindings
+from backend.models.risk import RiskFindings
+from backend.models.user_input import UserInput
 from tests.conftest import make_article
 
 
@@ -189,7 +189,7 @@ def test_an_incomplete_profile_lists_what_was_expected(tmp_path):
 
 def test_every_shipped_example_profile_loads():
     """These are the demo path. A stale one fails in front of an audience."""
-    from config import PROJECT_ROOT
+    from backend.config import PROJECT_ROOT
 
     examples = sorted((PROJECT_ROOT / "examples").glob("*.json"))
     assert examples, "the examples directory should not be empty"
@@ -400,7 +400,7 @@ def stub_pipeline(monkeypatch):
 
 @pytest.fixture
 def always_valid(monkeypatch):
-    from models.profile import InvestorProfile
+    from backend.models.profile import InvestorProfile
 
     monkeypatch.setattr(
         workflow, "create_investor_profile",
@@ -428,7 +428,7 @@ def test_a_clarification_answer_is_carried_in_and_the_graph_resumes(
 ):
     """THE test for this file. Agent 1 stops, the CLI asks, and the run
     continues from exactly where it paused rather than starting over."""
-    from models.profile import InvestorProfile
+    from backend.models.profile import InvestorProfile
 
     seen = []
 
@@ -461,7 +461,7 @@ def test_a_clarification_answer_is_carried_in_and_the_graph_resumes(
 def test_a_blank_clarification_is_refused_rather_than_wasting_an_attempt(
     monkeypatch, stub_pipeline, conflicted_user, answers, capsys
 ):
-    from models.profile import InvestorProfile
+    from backend.models.profile import InvestorProfile
 
     def blocks_once(user_input, clarifications=None):
         if clarifications:
@@ -487,7 +487,7 @@ def test_the_cli_stops_when_the_graph_gives_up(
 ):
     """The loop bound belongs to the graph. The CLI must respect it and not
     keep asking, and must not hang waiting for an answer nobody will give."""
-    from models.profile import InvestorProfile
+    from backend.models.profile import InvestorProfile
 
     monkeypatch.setattr(
         workflow, "create_investor_profile",
@@ -575,7 +575,7 @@ def db(tmp_path):
 @pytest.fixture
 def blocks_once(monkeypatch):
     """Agent 1 asks a question the first time and accepts the answer after."""
-    from models.profile import InvestorProfile
+    from backend.models.profile import InvestorProfile
 
     def _profile(user_input, clarifications=None):
         if clarifications:
@@ -591,8 +591,7 @@ def blocks_once(monkeypatch):
 
 def _paused_run(db, thread_id="saved-1"):
     """Leave a run paused at a clarification, as a killed process would."""
-    import checkpoints
-
+    from backend import checkpoints
     with checkpoints.open_store(db) as store:
         store.graph.invoke(
             {"user_input": cli.load_profile("examples/conflicted_crypto.json")},
@@ -672,8 +671,7 @@ def test_resuming_a_finished_run_reprints_it_rather_than_refusing(
 ):
     """"It already finished" is not a useful reply to somebody who wants to see
     the result again."""
-    import checkpoints
-
+    from backend import checkpoints
     stub_pipeline(Decision(recommendations=[_recommendation()]))
     with checkpoints.open_store(db) as store:
         store.graph.invoke(
@@ -775,8 +773,8 @@ def test_ctrl_c_during_the_run_is_not_a_traceback(
 def test_a_long_url_is_printed_whole(articles):
     """textwrap breaks a long URL mid-token, and a link the reader cannot copy
     defeats the only reason the grounds block exists."""
-    from models.research import Article, ResearchFindings
-    from models.decision import ExitCondition
+    from backend.models.research import Article, ResearchFindings
+    from backend.models.decision import ExitCondition
 
     long_url = "https://example.com/" + "a" * 90 + "/story"
     article = Article(
@@ -877,7 +875,7 @@ def _affordable(rec, user):
 
 
 def _priced(currency="USD", amount=100.0, shares=None, own=None, **kw):
-    from models.companies import MarketPrice
+    from backend.models.companies import MarketPrice
     rec = _recommendation(**kw)
     rec.price = MarketPrice(
         amount=amount, currency=currency,
@@ -1022,8 +1020,7 @@ def test_resuming_a_failed_run_says_it_failed(
     the branch above and announced "already finished, showing what it produced"
     directly above THE RUN COULD NOT FINISH. The error always reached the
     reader; the sentence introducing it said the opposite."""
-    import checkpoints
-
+    from backend import checkpoints
     stub_pipeline()
     monkeypatch.setattr(
         workflow, "decide",
@@ -1047,8 +1044,7 @@ def test_a_failed_run_is_listed_as_failed_not_finished(
     always_valid, stub_pipeline, db, capsys, monkeypatch
 ):
     """--list is where somebody goes to find a run worth returning to."""
-    import checkpoints
-
+    from backend import checkpoints
     stub_pipeline()
     monkeypatch.setattr(
         workflow, "decide",

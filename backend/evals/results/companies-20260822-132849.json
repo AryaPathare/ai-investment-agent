@@ -1,0 +1,53 @@
+{
+  "timestamp": "20260822-132849",
+  "summary": {
+    "cases": 1,
+    "errored": 0,
+    "total_mentions": 7,
+    "total_candidates": 0,
+    "hard_failures": 0,
+    "drop_profile": {
+      "no_ticker_found": 4,
+      "not_an_operating_company": 2,
+      "no_fundamentals": 1
+    },
+    "exposure_profile": {},
+    "saturated_candidates": 0,
+    "cases_finding_nothing": 1,
+    "growth_outliers": [],
+    "sources": {}
+  },
+  "results": [
+    {
+      "case": "banking_excluding_crypto",
+      "themes": 5,
+      "articles": 5,
+      "mentions": 7,
+      "companies_examined": 7,
+      "candidates": 0,
+      "untraceable_candidates": [],
+      "incidental_candidates": [],
+      "misranked": false,
+      "over_cap": false,
+      "unit_failures": [],
+      "funds_in_candidates": [],
+      "unaccounted_mentions": 0,
+      "restriction_violations": [],
+      "growth_outliers": [],
+      "drop_summary": {
+        "no_ticker_found": 4,
+        "not_an_operating_company": 2,
+        "no_fundamentals": 1
+      },
+      "exposures": {},
+      "sources": {},
+      "currencies": {},
+      "saturated": 0,
+      "scores": [],
+      "tickers": [],
+      "avg_completeness": 0.0,
+      "notes": null,
+      "error": null
+    }
+  ]
+}

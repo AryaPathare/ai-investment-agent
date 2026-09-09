@@ -11,13 +11,13 @@ suite, not here.
 
 import pytest
 
-from agents import research_agent
-from agents.research_agent import (
+from backend.agents import research_agent
+from backend.agents.research_agent import (
     _format_articles,
     _resolve_citations,
     research_themes,
 )
-from models.research import (
+from backend.models.research import (
     Article,
     Evidence,
     ResearchFindings,

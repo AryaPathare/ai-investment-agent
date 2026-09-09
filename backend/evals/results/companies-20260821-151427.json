@@ -1,0 +1,152 @@
+{
+  "timestamp": "20260821-151427",
+  "summary": {
+    "cases": 3,
+    "errored": 0,
+    "total_mentions": 9,
+    "total_candidates": 5,
+    "hard_failures": 0,
+    "drop_profile": {
+      "incidental_mention": 2
+    },
+    "exposure_profile": {
+      "direct": 5
+    },
+    "saturated_candidates": 1,
+    "cases_finding_nothing": 0,
+    "growth_outliers": [
+      [
+        "SKHY",
+        2.568
+      ]
+    ],
+    "sources": {
+      "yfinance": 5
+    }
+  },
+  "results": [
+    {
+      "case": "renewables_excluding_fossil_fuels",
+      "themes": 2,
+      "articles": 4,
+      "mentions": 4,
+      "companies_examined": 2,
+      "candidates": 2,
+      "untraceable_candidates": [],
+      "incidental_candidates": [],
+      "misranked": false,
+      "over_cap": false,
+      "unit_failures": [],
+      "funds_in_candidates": [],
+      "unaccounted_mentions": 0,
+      "restriction_violations": [],
+      "growth_outliers": [],
+      "drop_summary": {},
+      "exposures": {
+        "direct": 2
+      },
+      "sources": {
+        "yfinance": 2
+      },
+      "currencies": {
+        "INR": 1,
+        "CAD": 1
+      },
+      "saturated": 0,
+      "scores": [
+        0.6641,
+        0.3733
+      ],
+      "tickers": [
+        "UTLSOLAR.BO",
+        "PBK"
+      ],
+      "avg_completeness": 0.875,
+      "notes": null,
+      "error": null
+    },
+    {
+      "case": "healthcare_low_risk_near_retirement",
+      "themes": 4,
+      "articles": 4,
+      "mentions": 2,
+      "companies_examined": 2,
+      "candidates": 2,
+      "untraceable_candidates": [],
+      "incidental_candidates": [],
+      "misranked": false,
+      "over_cap": false,
+      "unit_failures": [],
+      "funds_in_candidates": [],
+      "unaccounted_mentions": 0,
+      "restriction_violations": [],
+      "growth_outliers": [],
+      "drop_summary": {},
+      "exposures": {
+        "direct": 2
+      },
+      "sources": {
+        "yfinance": 2
+      },
+      "currencies": {
+        "USD": 2
+      },
+      "saturated": 0,
+      "scores": [
+        0.0,
+        0.0
+      ],
+      "tickers": [
+        "CRVO",
+        "PMN"
+      ],
+      "avg_completeness": 0.5,
+      "notes": null,
+      "error": null
+    },
+    {
+      "case": "sports_and_technology_beginner",
+      "themes": 1,
+      "articles": 3,
+      "mentions": 3,
+      "companies_examined": 3,
+      "candidates": 1,
+      "untraceable_candidates": [],
+      "incidental_candidates": [],
+      "misranked": false,
+      "over_cap": false,
+      "unit_failures": [],
+      "funds_in_candidates": [],
+      "unaccounted_mentions": 0,
+      "restriction_violations": [],
+      "growth_outliers": [
+        [
+          "SKHY",
+          2.568
+        ]
+      ],
+      "drop_summary": {
+        "incidental_mention": 2
+      },
+      "exposures": {
+        "direct": 1
+      },
+      "sources": {
+        "yfinance": 1
+      },
+      "currencies": {
+        "KRW": 1
+      },
+      "saturated": 1,
+      "scores": [
+        1.0
+      ],
+      "tickers": [
+        "SKHY"
+      ],
+      "avg_completeness": 1.0,
+      "notes": null,
+      "error": null
+    }
+  ]
+}

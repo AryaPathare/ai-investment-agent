@@ -1,0 +1,73 @@
+{
+  "timestamp": "20260826-153452",
+  "summary": {
+    "cases": 1,
+    "errored": 0,
+    "themes_total": 5,
+    "unresolved_citations": 0,
+    "restriction_violations": 0,
+    "dead_urls": 0,
+    "cases_at_cap": 1,
+    "single_source_themes": 5,
+    "cases_with_dissenting_evidence": 0,
+    "cases_returning_nothing": 0,
+    "on_topic_themes": 5,
+    "queries_total": 5,
+    "long_queries": 0,
+    "queries_naming_companies": 0,
+    "avg_query_words": 4.8
+  },
+  "results": [
+    {
+      "case": "renewables_excluding_fossil_fuels",
+      "themes": 5,
+      "articles_retrieved": 14,
+      "articles_cited": 5,
+      "citations": 5,
+      "unresolved_citations": [],
+      "restriction_violations": [],
+      "dead_urls": [],
+      "unreachable_urls": 0,
+      "at_theme_cap": true,
+      "single_source_themes": [
+        "Denmark Offshore Wind Auction Success",
+        "Solar\u2011Grazing Synergy in Texas",
+        "Battery Storage for AI Data Centers",
+        "Northland Power Q2 Performance",
+        "PowerBank Solar Project Permit"
+      ],
+      "low_confidence_themes": [],
+      "avg_citations_per_theme": 1.0,
+      "stances": {
+        "supports": 5
+      },
+      "confidences": {
+        "medium": 5
+      },
+      "timeframes": {
+        "already_underway": 5
+      },
+      "on_topic_themes": 5,
+      "queries": [
+        "solar panel manufacturing capacity expansion",
+        "grid scale battery storage contracts",
+        "green hydrogen production facility expansion",
+        "offshore wind project financing",
+        "utility\u2011scale solar farm construction contracts"
+      ],
+      "avg_query_words": 4.8,
+      "long_queries": [],
+      "queries_naming_companies": {},
+      "found_nothing": false,
+      "theme_names": [
+        "Denmark Offshore Wind Auction Success",
+        "Solar\u2011Grazing Synergy in Texas",
+        "Battery Storage for AI Data Centers",
+        "Northland Power Q2 Performance",
+        "PowerBank Solar Project Permit"
+      ],
+      "notes": null,
+      "error": null
+    }
+  ]
+}

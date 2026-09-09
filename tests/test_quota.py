@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from web import quota
+from frontend import quota
 
 NOW = datetime(2026, 9, 7, 12, 0, tzinfo=timezone.utc)
 

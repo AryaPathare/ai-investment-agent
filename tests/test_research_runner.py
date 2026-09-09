@@ -11,10 +11,10 @@ five queries that each named a company returned one article between them and
 the runner had no way to say so.
 """
 
-from evals.research_cases import ResearchCase
-from evals.research_runner import _proper_nouns, score, summarise
-from models.profile import InvestorProfile
-from models.research import ResearchFindings
+from backend.evals.research_cases import ResearchCase
+from backend.evals.research_runner import _proper_nouns, score, summarise
+from backend.models.profile import InvestorProfile
+from backend.models.research import ResearchFindings
 
 
 def profile() -> InvestorProfile:

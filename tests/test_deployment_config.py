@@ -28,7 +28,7 @@ from pathlib import Path
 
 import pytest
 
-from config import PROJECT_ROOT
+from backend.config import PROJECT_ROOT
 
 RENDER_YAML = PROJECT_ROOT / "render.yaml"
 PROCFILE = PROJECT_ROOT / "Procfile"
@@ -119,7 +119,7 @@ def test_the_health_check_path_is_a_real_route():
     declared = re.search(r"healthCheckPath:\s*(\S+)", _settings(RENDER_YAML))
     assert declared, "render.yaml declares no healthCheckPath"
 
-    from web.app import app
+    from frontend.app import app
 
     routes = {getattr(route, "path", None) for route in app.routes}
     assert declared.group(1) in routes, (
@@ -130,7 +130,7 @@ def test_the_health_check_path_is_a_real_route():
 
 @pytest.mark.parametrize("path", [RENDER_YAML, PROCFILE])
 def test_every_start_command_names_an_importable_app(path):
-    """`web.app:app` has to resolve, or the container starts and dies.
+    """`frontend.app:app` has to resolve, or the container starts and dies.
 
     Cheap to check and the exact failure a rename would cause: the module moves,
     every test still passes because the tests import it by name, and the only

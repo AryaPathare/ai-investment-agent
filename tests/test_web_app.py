@@ -27,15 +27,15 @@ import json
 import httpx
 import pytest
 
-import checkpoints
-import workflow
-from models.companies import CompanyFindings
-from models.decision import Decision
-from models.profile import InvestorProfile
-from models.research import ResearchFindings
-from models.risk import RiskFindings
-import render
-from web.app import app, read_recording
+from backend import checkpoints
+from backend import workflow
+from backend.models.companies import CompanyFindings
+from backend.models.decision import Decision
+from backend.models.profile import InvestorProfile
+from backend.models.research import ResearchFindings
+from backend.models.risk import RiskFindings
+from backend import render
+from frontend.app import app, read_recording
 
 
 # --- Driving the endpoint ----------------------------------------------------
@@ -378,8 +378,8 @@ def test_a_described_brief_survives_json(clean_user):
     """
     from datetime import datetime, timezone
 
-    from models.decision import Decision, ExitCondition, Recommendation
-    from models.research import Article
+    from backend.models.decision import Decision, ExitCondition, Recommendation
+    from backend.models.research import Article
 
     article = Article(
         uuid="u1",
@@ -730,7 +730,7 @@ def test_the_estimate_never_refuses_a_run_by_itself(whole_pipeline, profile, mon
     exactly, and adds nothing to the window it reports on. Refusing on the
     strength of a guess would turn a bad estimate into a closed site.
     """
-    from web import quota
+    from frontend import quota
 
     monkeypatch.setattr(quota, "RUNS_PER_DAY", 0)
     whole_pipeline()
@@ -755,10 +755,10 @@ def gallery(tmp_path, monkeypatch, clean_user):
     real runs happen to be committed."""
     import json
 
-    import recordings
-    from models.decision import Decision
-    from models.research import ResearchFindings
-    from models.risk import RiskFindings
+    from backend import recordings
+    from backend.models.decision import Decision
+    from backend.models.research import ResearchFindings
+    from backend.models.risk import RiskFindings
 
     directory = tmp_path / "gallery"
     directory.mkdir()
@@ -843,8 +843,7 @@ def test_a_name_cannot_walk_out_of_the_gallery(gallery, name):
 def test_an_empty_gallery_is_an_empty_list_rather_than_an_error(tmp_path, monkeypatch):
     """A deployment whose recordings were not checked out must still serve the
     page. Nothing about the gallery is load-bearing for running the pipeline."""
-    import recordings
-
+    from backend import recordings
     monkeypatch.setattr(recordings, "GALLERY_DIR", tmp_path / "nothing-here")
     body = visit(lambda c: c.get("/api/gallery"))
 
@@ -856,8 +855,7 @@ def test_showing_a_recording_never_opens_the_checkpoint_database(gallery, monkey
     """The same rule --demo has followed since session 12: a recording exists so
     the system can be seen with NO configuration, and opening the store builds
     the graph, which imports every agent."""
-    import checkpoints
-
+    from backend import checkpoints
     def refuse(*args, **kwargs):
         raise AssertionError("the gallery opened the checkpoint store")
 

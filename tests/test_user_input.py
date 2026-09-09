@@ -8,7 +8,7 @@ following the project's rule: Python for what Python can check.
 import pytest
 from pydantic import ValidationError
 
-from models.user_input import UserInput
+from backend.models.user_input import UserInput
 
 
 def _fields(**overrides):
@@ -217,7 +217,7 @@ def test_the_check_is_on_the_model_not_the_question():
     the "none" restriction filter."""
     import inspect
 
-    from models.user_input import UserInput
+    from backend.models.user_input import UserInput
 
     source = inspect.getsource(UserInput)
     assert "could mean months or years" in source

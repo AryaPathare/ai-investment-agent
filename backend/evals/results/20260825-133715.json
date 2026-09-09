@@ -1,0 +1,275 @@
+{
+  "timestamp": "20260825-133715",
+  "model": "openai/gpt-oss-20b",
+  "temperature": 0.0,
+  "repeat": 3,
+  "summary": {
+    "total": 12,
+    "passed": 12,
+    "accuracy": 100.0,
+    "by_tag": {
+      "clarification": {
+        "passed": 3,
+        "total": 3,
+        "accuracy": 100.0
+      },
+      "false-positive": {
+        "passed": 5,
+        "total": 5,
+        "accuracy": 100.0
+      },
+      "hard": {
+        "passed": 12,
+        "total": 12,
+        "accuracy": 100.0
+      },
+      "true-positive": {
+        "passed": 4,
+        "total": 4,
+        "accuracy": 100.0
+      }
+    }
+  },
+  "results": [
+    {
+      "name": "hard_restriction_blocks_interest_semantically",
+      "tags": [
+        "hard",
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "problems": [],
+      "reason": "Sectors of interest includes coal mining while restriction prohibits investments that damage the environment",
+      "sectors_of_interest": [
+        "coal mining"
+      ],
+      "restrictions": [
+        "Nothing that damages the environment"
+      ],
+      "error": null,
+      "seconds": 1.46
+    },
+    {
+      "name": "hard_defence_versus_profiting_from_war",
+      "tags": [
+        "hard",
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "problems": [],
+      "reason": "Interest in defence primes conflicts with restriction against companies that profit from war.",
+      "sectors_of_interest": [
+        "defence primes"
+      ],
+      "restrictions": [
+        "No companies that profit from war"
+      ],
+      "error": null,
+      "seconds": 11.6
+    },
+    {
+      "name": "hard_betting_versus_addiction",
+      "tags": [
+        "hard",
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "problems": [],
+      "reason": "Interest in online sports betting conflicts with restriction against profiting from addiction",
+      "sectors_of_interest": [
+        "online sports betting"
+      ],
+      "restrictions": [
+        "Nothing that profits from addiction"
+      ],
+      "error": null,
+      "seconds": 7.93
+    },
+    {
+      "name": "hard_low_risk_with_implicitly_speculative_sectors",
+      "tags": [
+        "hard",
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "problems": [],
+      "reason": "risk tolerance low conflicts with interest in high-risk sectors",
+      "sectors_of_interest": [
+        "SPACs",
+        "pre-revenue biotech startups"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 25.51
+    },
+    {
+      "name": "hard_restriction_narrows_energy_without_blocking_it",
+      "tags": [
+        "hard",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "problems": [],
+      "reason": null,
+      "sectors_of_interest": [
+        "energy"
+      ],
+      "restrictions": [
+        "No fossil fuel companies"
+      ],
+      "error": null,
+      "seconds": 0.52
+    },
+    {
+      "name": "hard_restriction_names_the_sector_but_not_all_of_it",
+      "tags": [
+        "hard",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "problems": [],
+      "reason": null,
+      "sectors_of_interest": [
+        "technology"
+      ],
+      "restrictions": [
+        "No financial technology companies"
+      ],
+      "error": null,
+      "seconds": 24.77
+    },
+    {
+      "name": "hard_restriction_excludes_one_kind_of_bank",
+      "tags": [
+        "hard",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "problems": [],
+      "reason": null,
+      "sectors_of_interest": [
+        "banking"
+      ],
+      "restrictions": [
+        "No investment banks"
+      ],
+      "error": null,
+      "seconds": 6.67
+    },
+    {
+      "name": "hard_restriction_is_geographic_not_sectoral",
+      "tags": [
+        "hard",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "problems": [],
+      "reason": null,
+      "sectors_of_interest": [
+        "semiconductors"
+      ],
+      "restrictions": [
+        "No companies headquartered in China"
+      ],
+      "error": null,
+      "seconds": 20.58
+    },
+    {
+      "name": "hard_high_risk_tolerance_with_conservative_sectors",
+      "tags": [
+        "hard",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "problems": [],
+      "reason": null,
+      "sectors_of_interest": [
+        "treasury bonds",
+        "money market funds"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 11.07
+    },
+    {
+      "name": "hard_clarification_defers_the_choice_back",
+      "tags": [
+        "hard",
+        "clarification"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "problems": [],
+      "reason": "Do you want to keep technology in your sectors of interest or remove it?",
+      "sectors_of_interest": [
+        "sports",
+        "technology"
+      ],
+      "restrictions": [
+        "Do not invest in technology companies"
+      ],
+      "error": null,
+      "seconds": 17.13
+    },
+    {
+      "name": "hard_clarification_is_confidently_off_topic",
+      "tags": [
+        "hard",
+        "clarification"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "problems": [],
+      "reason": "sectors_of_interest includes 'technology' while restrictions prohibit investing in technology companies",
+      "sectors_of_interest": [
+        "sports",
+        "technology"
+      ],
+      "restrictions": [
+        "Do not invest in technology companies"
+      ],
+      "error": null,
+      "seconds": 14.78
+    },
+    {
+      "name": "hard_second_clarification_resolves_after_a_vague_first",
+      "tags": [
+        "hard",
+        "clarification"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "problems": [],
+      "reason": null,
+      "sectors_of_interest": [
+        "sports"
+      ],
+      "restrictions": [
+        "Do not invest in technology companies"
+      ],
+      "error": null,
+      "seconds": 0.6
+    }
+  ]
+}

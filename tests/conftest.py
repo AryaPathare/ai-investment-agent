@@ -14,12 +14,12 @@ from datetime import datetime, timezone
 
 import pytest
 
-import checkpoints
-import config
-from clients import news
-from models.profile import InvestorProfile, ProfileAssessment
-from models.research import Article
-from models.user_input import UserInput
+from backend import checkpoints
+from backend import config
+from backend.clients import news
+from backend.models.profile import InvestorProfile, ProfileAssessment
+from backend.models.research import Article
+from backend.models.user_input import UserInput
 
 DEFAULT_DB_PATH = checkpoints.DB_PATH
 """The real checkpoint path, captured before any test can redirect it.
@@ -135,7 +135,7 @@ def isolated_quota(tmp_path, monkeypatch):
     one of them is redirected here, so the third does not have to be found by
     noticing a wrong number.
     """
-    from web import quota
+    from frontend import quota
 
     monkeypatch.setattr(quota, "LEDGER", tmp_path / "runs_served.json")
 
@@ -186,8 +186,7 @@ def no_accidental_research(monkeypatch):
     Extended for Agent 3, which reaches two data providers as well as the model.
     Each new agent extends the graph and inherits the same hazard.
     """
-    import workflow
-
+    from backend import workflow
     def guard(*args, **kwargs):
         raise AssertionError(
             "This test reached the real research agent, which would call the "
@@ -228,7 +227,6 @@ def isolated_checkpoints(checkpoint_dir, request, monkeypatch):
     - about six seconds of pure filesystem overhead for a guard that most tests
     never trigger. The file itself is only created if something opens it.
     """
-    import checkpoints
-
+    from backend import checkpoints
     safe = re.sub(r"[^A-Za-z0-9_.-]", "_", request.node.nodeid)
     monkeypatch.setattr(checkpoints, "DB_PATH", checkpoint_dir / f"{safe}.sqlite")

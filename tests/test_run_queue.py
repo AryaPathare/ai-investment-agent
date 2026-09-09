@@ -9,7 +9,7 @@ at all, because the visitor is being told something specific and false.
 import asyncio
 
 
-from web.runqueue import RunQueue
+from frontend.runqueue import RunQueue
 
 
 def run(coro):

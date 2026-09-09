@@ -14,8 +14,8 @@ import json
 import pytest
 from pydantic import BaseModel, Field
 
-from agents.structured import failed_generation, invoke_structured, salvage
-from models.companies import ExposureAssessment
+from backend.agents.structured import failed_generation, invoke_structured, salvage
+from backend.models.companies import ExposureAssessment
 
 
 class Item(BaseModel):

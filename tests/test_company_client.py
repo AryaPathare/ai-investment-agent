@@ -9,8 +9,8 @@ coming back.
 import pytest
 import requests
 
-from clients import companies as C
-from clients.companies import (
+from backend.clients import companies as C
+from backend.clients.companies import (
     CompanyDataError,
     ResolvedCompany,
     _looks_like_a_fund,

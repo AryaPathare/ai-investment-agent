@@ -12,8 +12,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-import config
-from web import session
+from backend import config
+from frontend import session
 
 NOW = datetime(2026, 9, 7, 12, 0, tzinfo=timezone.utc)
 

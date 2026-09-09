@@ -1,0 +1,210 @@
+{
+  "timestamp": "20260825-011710",
+  "model": "openai/gpt-oss-20b",
+  "temperature": 0.0,
+  "repeat": 3,
+  "summary": {
+    "total": 12,
+    "passed": 0,
+    "accuracy": 0.0,
+    "by_tag": {
+      "clarification": {
+        "passed": 0,
+        "total": 3,
+        "accuracy": 0.0
+      },
+      "false-positive": {
+        "passed": 0,
+        "total": 5,
+        "accuracy": 0.0
+      },
+      "hard": {
+        "passed": 0,
+        "total": 12,
+        "accuracy": 0.0
+      },
+      "true-positive": {
+        "passed": 0,
+        "total": 4,
+        "accuracy": 0.0
+      }
+    }
+  },
+  "results": [
+    {
+      "name": "hard_restriction_blocks_interest_semantically",
+      "tags": [
+        "hard",
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": false,
+      "problems": [],
+      "reason": "Sector of interest includes coal mining, but restriction excludes environment-damaging investments.",
+      "sectors_of_interest": [
+        "coal mining"
+      ],
+      "restrictions": [
+        "Nothing that damages the environment"
+      ],
+      "error": null,
+      "seconds": 1.31,
+      "inconsistent": [
+        "None",
+        "needs_clarification"
+      ]
+    },
+    {
+      "name": "hard_defence_versus_profiting_from_war",
+      "tags": [
+        "hard",
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": null,
+      "passed": false,
+      "problems": [],
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01kvszk6yhez598cw5mp30zgp7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 197105, Requested 3359. Please try again in 3m20.448s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "seconds": 0.1
+    },
+    {
+      "name": "hard_betting_versus_addiction",
+      "tags": [
+        "hard",
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": null,
+      "passed": false,
+      "problems": [],
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01kvszk6yhez598cw5mp30zgp7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 197100, Requested 3358. Please try again in 3m17.856s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "seconds": 0.1
+    },
+    {
+      "name": "hard_low_risk_with_implicitly_speculative_sectors",
+      "tags": [
+        "hard",
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": null,
+      "passed": false,
+      "problems": [],
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01kvszk6yhez598cw5mp30zgp7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 197096, Requested 3355. Please try again in 3m14.832s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "seconds": 0.1
+    },
+    {
+      "name": "hard_restriction_narrows_energy_without_blocking_it",
+      "tags": [
+        "hard",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": null,
+      "passed": false,
+      "problems": [],
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01kvszk6yhez598cw5mp30zgp7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 197092, Requested 3355. Please try again in 3m13.104s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "seconds": 0.09,
+      "inconsistent": [
+        "None",
+        "valid"
+      ]
+    },
+    {
+      "name": "hard_restriction_names_the_sector_but_not_all_of_it",
+      "tags": [
+        "hard",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": null,
+      "passed": false,
+      "problems": [],
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01kvszk6yhez598cw5mp30zgp7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 198516, Requested 3355. Please try again in 13m28.272s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "seconds": 0.12,
+      "inconsistent": [
+        "None",
+        "valid"
+      ]
+    },
+    {
+      "name": "hard_restriction_excludes_one_kind_of_bank",
+      "tags": [
+        "hard",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": null,
+      "passed": false,
+      "problems": [],
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01kvszk6yhez598cw5mp30zgp7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199935, Requested 3355. Please try again in 23m41.28s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "seconds": 0.08
+    },
+    {
+      "name": "hard_restriction_is_geographic_not_sectoral",
+      "tags": [
+        "hard",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": null,
+      "passed": false,
+      "problems": [],
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01kvszk6yhez598cw5mp30zgp7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199930, Requested 1524. Please try again in 10m28.128s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "seconds": 0.1
+    },
+    {
+      "name": "hard_high_risk_tolerance_with_conservative_sectors",
+      "tags": [
+        "hard",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": null,
+      "passed": false,
+      "problems": [],
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01kvszk6yhez598cw5mp30zgp7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199926, Requested 3353. Please try again in 23m36.528s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "seconds": 0.08
+    },
+    {
+      "name": "hard_clarification_defers_the_choice_back",
+      "tags": [
+        "hard",
+        "clarification"
+      ],
+      "expected": "needs_clarification",
+      "actual": null,
+      "passed": false,
+      "problems": [],
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01kvszk6yhez598cw5mp30zgp7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199921, Requested 3430. Please try again in 24m7.631999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "seconds": 0.09
+    },
+    {
+      "name": "hard_clarification_is_confidently_off_topic",
+      "tags": [
+        "hard",
+        "clarification"
+      ],
+      "expected": "needs_clarification",
+      "actual": null,
+      "passed": false,
+      "problems": [],
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01kvszk6yhez598cw5mp30zgp7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199916, Requested 1605. Please try again in 10m57.072s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "seconds": 0.08
+    },
+    {
+      "name": "hard_second_clarification_resolves_after_a_vague_first",
+      "tags": [
+        "hard",
+        "clarification"
+      ],
+      "expected": "valid",
+      "actual": null,
+      "passed": false,
+      "problems": [],
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01kvszk6yhez598cw5mp30zgp7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199912, Requested 3444. Please try again in 24m9.792s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "seconds": 0.13
+    }
+  ]
+}

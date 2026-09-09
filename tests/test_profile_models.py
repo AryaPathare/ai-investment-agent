@@ -12,8 +12,8 @@ Two things are being protected here:
 import pytest
 from pydantic import ValidationError
 
-from models.profile import InvestorProfile, ProfileAssessment, build_profile
-from models.user_input import UserInput
+from backend.models.profile import InvestorProfile, ProfileAssessment, build_profile
+from backend.models.user_input import UserInput
 
 # --- ProfileAssessment: the trust boundary ----------------------------------
 

@@ -8,8 +8,8 @@ properly".
 
 import pytest
 
-from agents.bear_queries import bear_queries, strip_legal_suffix
-from models.companies import (
+from backend.agents.bear_queries import bear_queries, strip_legal_suffix
+from backend.models.companies import (
     CompanyCandidate,
     ComparableMetrics,
     CurrencyAmounts,
@@ -143,7 +143,7 @@ def test_a_theme_contributes_exactly_one_keyword():
 def test_filler_words_never_become_the_theme_keyword():
     """"Demand", "growth" and "shifts" are connective tissue an LLM writes to
     make a phrase read well; ANDing on them retrieves noise."""
-    from agents.bear_queries import _theme_keyword
+    from backend.agents.bear_queries import _theme_keyword
     assert _theme_keyword("Vaccine Demand Shifts") == "Vaccine"
     assert _theme_keyword("Storage Market Growth") == "Storage"
 

@@ -1,0 +1,196 @@
+{
+  "timestamp": "20260820-221142",
+  "summary": {
+    "cases": 5,
+    "errored": 1,
+    "themes_total": 16,
+    "unresolved_citations": 0,
+    "restriction_violations": 0,
+    "dead_urls": 0,
+    "cases_at_cap": 2,
+    "single_source_themes": 8,
+    "cases_with_dissenting_evidence": 1,
+    "cases_returning_nothing": 0,
+    "on_topic_themes": 15
+  },
+  "results": [
+    {
+      "case": "renewables_excluding_fossil_fuels",
+      "themes": 4,
+      "articles_retrieved": 11,
+      "articles_cited": 7,
+      "citations": 7,
+      "unresolved_citations": [],
+      "restriction_violations": [],
+      "dead_urls": [],
+      "unreachable_urls": 0,
+      "at_theme_cap": false,
+      "single_source_themes": [
+        "Solar Irrigation Adoption",
+        "Solar Farm Flexibility"
+      ],
+      "low_confidence_themes": [],
+      "avg_citations_per_theme": 1.75,
+      "stances": {
+        "supports": 6,
+        "weakens": 1
+      },
+      "confidences": {
+        "medium": 3,
+        "high": 1
+      },
+      "timeframes": {
+        "within_6_months": 4
+      },
+      "on_topic_themes": 4,
+      "found_nothing": false,
+      "theme_names": [
+        "Green Hydrogen Expansion",
+        "Battery Storage Market Growth",
+        "Solar Irrigation Adoption",
+        "Solar Farm Flexibility"
+      ],
+      "notes": null,
+      "error": null
+    },
+    {
+      "case": "healthcare_low_risk_near_retirement",
+      "themes": 2,
+      "articles_retrieved": 10,
+      "articles_cited": 3,
+      "citations": 3,
+      "unresolved_citations": [],
+      "restriction_violations": [],
+      "dead_urls": [],
+      "unreachable_urls": 0,
+      "at_theme_cap": false,
+      "single_source_themes": [
+        "AI Cardiac Imaging Subscription Expansion"
+      ],
+      "low_confidence_themes": [],
+      "avg_citations_per_theme": 1.5,
+      "stances": {
+        "supports": 3
+      },
+      "confidences": {
+        "medium": 2
+      },
+      "timeframes": {
+        "already_underway": 1,
+        "within_6_months": 1
+      },
+      "on_topic_themes": 2,
+      "found_nothing": false,
+      "theme_names": [
+        "AI Cardiac Imaging Subscription Expansion",
+        "FDA Leadership Change Impact"
+      ],
+      "notes": null,
+      "error": null
+    },
+    {
+      "case": "sports_and_technology_beginner",
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': 'Tool choice is required, but model did not call a tool', 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': ''}}",
+      "themes": 0,
+      "unresolved_citations": [],
+      "restriction_violations": [],
+      "dead_urls": [],
+      "found_nothing": true,
+      "theme_names": [],
+      "stances": {},
+      "confidences": {},
+      "at_theme_cap": false,
+      "single_source_themes": [],
+      "low_confidence_themes": [],
+      "articles_retrieved": 0,
+      "articles_cited": 0,
+      "citations": 0,
+      "avg_citations_per_theme": 0.0,
+      "on_topic_themes": 0,
+      "notes": null,
+      "unreachable_urls": 0,
+      "timeframes": {}
+    },
+    {
+      "case": "semiconductors_high_risk",
+      "themes": 5,
+      "articles_retrieved": 18,
+      "articles_cited": 8,
+      "citations": 8,
+      "unresolved_citations": [],
+      "restriction_violations": [],
+      "dead_urls": [],
+      "unreachable_urls": 0,
+      "at_theme_cap": true,
+      "single_source_themes": [
+        "NVIDIA Spectrum\u2011X Production Launch",
+        "SMIC Capacity Expansion for AI Chips"
+      ],
+      "low_confidence_themes": [],
+      "avg_citations_per_theme": 1.6,
+      "stances": {
+        "supports": 8
+      },
+      "confidences": {
+        "high": 3,
+        "medium": 2
+      },
+      "timeframes": {
+        "already_underway": 3,
+        "within_6_months": 1,
+        "6_to_18_months": 1
+      },
+      "on_topic_themes": 5,
+      "found_nothing": false,
+      "theme_names": [
+        "AMD AI Inference Expansion",
+        "Intel AI Chip Expansion Funding",
+        "Export Control Tightening on Advanced Chips",
+        "NVIDIA Spectrum\u2011X Production Launch",
+        "SMIC Capacity Expansion for AI Chips"
+      ],
+      "notes": null,
+      "error": null
+    },
+    {
+      "case": "banking_excluding_crypto",
+      "themes": 5,
+      "articles_retrieved": 10,
+      "articles_cited": 7,
+      "citations": 7,
+      "unresolved_citations": [],
+      "restriction_violations": [],
+      "dead_urls": [],
+      "unreachable_urls": 0,
+      "at_theme_cap": true,
+      "single_source_themes": [
+        "ING Share Buyback Program",
+        "ING Divestment in Thai Bank",
+        "Aviva CEO\u2011Led Revival"
+      ],
+      "low_confidence_themes": [],
+      "avg_citations_per_theme": 1.4,
+      "stances": {
+        "supports": 7
+      },
+      "confidences": {
+        "high": 2,
+        "medium": 3
+      },
+      "timeframes": {
+        "already_underway": 5
+      },
+      "on_topic_themes": 4,
+      "found_nothing": false,
+      "theme_names": [
+        "FIS APAC Digital Banking Expansion",
+        "Banking Regulatory Easing",
+        "ING Share Buyback Program",
+        "ING Divestment in Thai Bank",
+        "Aviva CEO\u2011Led Revival"
+      ],
+      "notes": null,
+      "error": null
+    }
+  ]
+}

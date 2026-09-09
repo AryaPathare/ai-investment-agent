@@ -17,9 +17,9 @@ from collections import Counter
 
 import pytest
 
-from evals.cases import CASES, EvalCase, _mentions, check_expectations
-from models.profile import InvestorProfile
-from models.user_input import UserInput
+from backend.evals.cases import CASES, EvalCase, _mentions, check_expectations
+from backend.models.profile import InvestorProfile
+from backend.models.user_input import UserInput
 
 
 def _profile(sectors=(), restrictions=(), status="valid") -> InvestorProfile:

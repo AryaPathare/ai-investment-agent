@@ -8,11 +8,11 @@ terminates should not depend on an LLM happening to behave a certain way.
 import pytest
 from langgraph.types import Command
 
-import workflow
-from models.decision import Decision
-from models.risk import RiskFindings
-from models.profile import InvestorProfile
-from workflow import investment_graph, profile_node, route_profile
+from backend import workflow
+from backend.models.decision import Decision
+from backend.models.risk import RiskFindings
+from backend.models.profile import InvestorProfile
+from backend.workflow import investment_graph, profile_node, route_profile
 
 # --- route_profile: a pure function, so it can be tested directly -----------
 
@@ -176,7 +176,7 @@ def test_graph_ends_cleanly_when_the_model_is_down(monkeypatch, clean_user):
 @pytest.fixture
 def fake_research(monkeypatch):
     """Replace Agent 2 with a fake that records whether it ran."""
-    from models.research import ResearchFindings
+    from backend.models.research import ResearchFindings
 
     calls = []
 
@@ -259,7 +259,7 @@ def test_finding_no_themes_is_not_an_error(
     always_valid, fake_research, fake_companies, clean_user
 ):
     """Returning nothing is a designed outcome, so `error` must stay unset."""
-    from models.research import ResearchFindings
+    from backend.models.research import ResearchFindings
 
     fake_research(ResearchFindings(articles_retrieved=4, notes="Nothing cleared the bar."))
     fake_companies()
@@ -273,7 +273,7 @@ def test_research_receives_the_clarified_profile(
     monkeypatch, fake_research, conflicted_user
 ):
     """Agent 2 must see the profile AFTER clarification, not the original input."""
-    from models.profile import InvestorProfile
+    from backend.models.profile import InvestorProfile
 
     resolved = InvestorProfile(
         **{**conflicted_user.model_dump(), "restrictions": []}, status="valid"
@@ -292,7 +292,7 @@ def test_research_receives_the_clarified_profile(
 @pytest.fixture
 def fake_companies(monkeypatch):
     """Replace Agent 3 with a fake that records whether it ran."""
-    from models.companies import CompanyFindings
+    from backend.models.companies import CompanyFindings
 
     calls = []
 
@@ -327,7 +327,7 @@ def test_company_analysis_receives_the_research_findings(
     always_valid, fake_research, fake_companies, clean_user
 ):
     """Agent 3 must see what Agent 2 produced, not the raw profile."""
-    from models.research import ResearchFindings
+    from backend.models.research import ResearchFindings
 
     research = ResearchFindings(articles_retrieved=11, notes="from agent 2")
     fake_research(research)
@@ -368,8 +368,8 @@ def test_finding_no_themes_still_runs_company_analysis(
 ):
     """Empty research is a real result, and Agent 3 reports why it found nothing
     rather than the key being silently absent from state."""
-    from models.companies import CompanyFindings
-    from models.research import ResearchFindings
+    from backend.models.companies import CompanyFindings
+    from backend.models.research import ResearchFindings
 
     fake_research(ResearchFindings(notes="nothing cleared the bar"))
     company_calls = fake_companies(
@@ -399,7 +399,7 @@ def test_finding_no_companies_is_not_an_error(
     always_valid, fake_research, fake_companies, clean_user
 ):
     """Themes can be real while no company alongside them is investable."""
-    from models.companies import CompanyFindings
+    from backend.models.companies import CompanyFindings
 
     fake_research()
     fake_companies(CompanyFindings(mentions_extracted=6, companies_examined=4,
@@ -464,7 +464,7 @@ def test_the_critic_receives_the_company_findings(
     always_valid, fake_research, fake_companies, fake_critic, clean_user
 ):
     """Agent 4 must see what Agent 3 produced, not the research."""
-    from models.companies import CompanyFindings
+    from backend.models.companies import CompanyFindings
 
     fake_research()
     fake_companies(CompanyFindings(mentions_extracted=9, companies_examined=7))
@@ -494,7 +494,7 @@ def test_finding_no_companies_still_runs_the_critic(
     """The critic records that there was nothing to criticise. Skipping the
     node would leave the key missing, which Agent 5 cannot tell apart from
     "the critic has not run yet"."""
-    from models.companies import CompanyFindings
+    from backend.models.companies import CompanyFindings
 
     fake_research()
     fake_companies(CompanyFindings(mentions_extracted=6, companies_examined=4))
@@ -579,8 +579,8 @@ def test_the_decision_receives_candidates_criticism_the_profile_and_research(
     restrictions are re-checked at this last gate. The RESEARCH matters because
     it holds the Articles a candidate was selected for, and a candidate whose
     risks are all metric thresholds has nothing else it is allowed to cite."""
-    from models.companies import CompanyFindings
-    from models.risk import RiskFindings
+    from backend.models.companies import CompanyFindings
+    from backend.models.risk import RiskFindings
 
     fake_research()
     fake_companies(CompanyFindings(companies_examined=7))
@@ -686,8 +686,8 @@ def test_every_type_that_reaches_state_is_registered_with_the_checkpointer():
     """
     from typing import get_type_hints
 
-    from models.state import InvestmentState
-    from workflow import CHECKPOINTED_TYPES
+    from backend.models.state import InvestmentState
+    from backend.workflow import CHECKPOINTED_TYPES
 
     seen: set = set()
     required: set = set()
@@ -706,8 +706,8 @@ def test_the_registry_has_no_types_that_cannot_reach_state():
     and usually means a model was renamed and the old name left behind."""
     from typing import get_type_hints
 
-    from models.state import InvestmentState
-    from workflow import CHECKPOINTED_TYPES
+    from backend.models.state import InvestmentState
+    from backend.workflow import CHECKPOINTED_TYPES
 
     seen: set = set()
     reachable: set = set()

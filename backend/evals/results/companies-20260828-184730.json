@@ -1,0 +1,63 @@
+{
+  "timestamp": "20260828-184730",
+  "summary": {
+    "cases": 1,
+    "errored": 0,
+    "total_mentions": 5,
+    "total_candidates": 1,
+    "hard_failures": 0,
+    "drop_profile": {
+      "incidental_mention": 4
+    },
+    "exposure_profile": {
+      "direct": 1
+    },
+    "saturated_candidates": 0,
+    "cases_finding_nothing": 0,
+    "growth_outliers": [],
+    "sources": {
+      "yfinance": 1
+    }
+  },
+  "results": [
+    {
+      "case": "renewables_excluding_fossil_fuels",
+      "themes": 3,
+      "articles": 5,
+      "mentions": 5,
+      "companies_examined": 5,
+      "candidates": 1,
+      "untraceable_candidates": [],
+      "incidental_candidates": [],
+      "misranked": false,
+      "over_cap": false,
+      "unit_failures": [],
+      "funds_in_candidates": [],
+      "unaccounted_mentions": 0,
+      "restriction_violations": [],
+      "growth_outliers": [],
+      "drop_summary": {
+        "incidental_mention": 4
+      },
+      "exposures": {
+        "direct": 1
+      },
+      "sources": {
+        "yfinance": 1
+      },
+      "currencies": {
+        "CNY": 1
+      },
+      "saturated": 0,
+      "scores": [
+        0.6327
+      ],
+      "tickers": [
+        "3750.HK"
+      ],
+      "avg_completeness": 1.0,
+      "notes": null,
+      "error": null
+    }
+  ]
+}

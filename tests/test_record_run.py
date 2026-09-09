@@ -18,13 +18,13 @@ from pathlib import Path
 
 import pytest
 
-import cli
-from config import PROJECT_ROOT
-from models.decision import Decision
-from models.research import ResearchFindings
-from models.risk import RiskFindings
-from models.user_input import UserInput
-from scripts.record_run import NotRecordable, build, record, verify
+from backend import cli
+from backend.config import PROJECT_ROOT
+from backend.models.decision import Decision
+from backend.models.research import ResearchFindings
+from backend.models.risk import RiskFindings
+from backend.models.user_input import UserInput
+from backend.scripts.record_run import NotRecordable, build, record, verify
 
 GALLERY = PROJECT_ROOT / "demo" / "gallery"
 

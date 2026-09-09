@@ -10,10 +10,10 @@ from datetime import datetime, timezone
 
 import pytest
 
-from agents import company_agent
-from agents.company_agent import analyse_companies
-from clients.companies import CompanyDataError, ResolvedCompany
-from models.companies import (
+from backend.agents import company_agent
+from backend.agents.company_agent import analyse_companies
+from backend.clients.companies import CompanyDataError, ResolvedCompany
+from backend.models.companies import (
     ComparableMetrics,
     CompanyMention,
     CurrencyAmounts,
@@ -22,7 +22,7 @@ from models.companies import (
     Fundamentals,
     MentionExtraction,
 )
-from models.research import Article, Evidence, ResearchFindings, Theme
+from backend.models.research import Article, Evidence, ResearchFindings, Theme
 
 
 def article(uuid, title="A headline", source="reuters.com", day=18):

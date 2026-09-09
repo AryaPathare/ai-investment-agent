@@ -17,14 +17,14 @@ import sqlite3
 
 import pytest
 
-import checkpoints
-import workflow
-from models.companies import CompanyFindings
-from models.decision import Decision
-from models.profile import InvestorProfile
-from models.research import ResearchFindings
-from models.risk import RiskFindings
-from models.user_input import UserInput
+from backend import checkpoints
+from backend import workflow
+from backend.models.companies import CompanyFindings
+from backend.models.decision import Decision
+from backend.models.profile import InvestorProfile
+from backend.models.research import ResearchFindings
+from backend.models.risk import RiskFindings
+from backend.models.user_input import UserInput
 from tests.conftest import DEFAULT_DB_PATH
 
 
@@ -94,7 +94,7 @@ def test_importing_the_module_creates_no_database():
     import subprocess
     import sys
 
-    from config import PROJECT_ROOT
+    from backend.config import PROJECT_ROOT
 
     if DEFAULT_DB_PATH.exists():
         pytest.skip("a real run has already created the database")
@@ -273,7 +273,7 @@ def test_a_stopped_run_resumes_without_repeating_finished_stages(db, agents):
         raise KeyboardInterrupt("user pressed Ctrl-C")
 
     agents(research=killed)
-    import workflow as wf
+    import backend.workflow as wf
 
     wf.create_investor_profile = counted_profile
     with checkpoints.open_store(db) as store:

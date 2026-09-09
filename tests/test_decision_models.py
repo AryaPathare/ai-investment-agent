@@ -13,7 +13,7 @@ anything else complaining.
 import pytest
 from pydantic import ValidationError
 
-from models.decision import (
+from backend.models.decision import (
     MAX_RECOMMENDATIONS,
     Decision,
     ExcludedCompany,

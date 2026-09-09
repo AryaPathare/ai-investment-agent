@@ -12,8 +12,8 @@ this agent no longer requires an API key.
 
 import pytest
 
-from agents import profile_agent
-from models.profile import InvestorProfile, ProfileAssessment
+from backend.agents import profile_agent
+from backend.models.profile import InvestorProfile, ProfileAssessment
 
 
 class FakeStructuredLLM:

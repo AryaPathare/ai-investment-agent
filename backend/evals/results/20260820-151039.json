@@ -1,0 +1,355 @@
+{
+  "timestamp": "20260820-151039",
+  "model": "openai/gpt-oss-20b",
+  "temperature": 0.0,
+  "repeat": 1,
+  "summary": {
+    "total": 18,
+    "passed": 18,
+    "accuracy": 100.0,
+    "by_tag": {
+      "clarification": {
+        "passed": 3,
+        "total": 3,
+        "accuracy": 100.0
+      },
+      "edge": {
+        "passed": 2,
+        "total": 2,
+        "accuracy": 100.0
+      },
+      "false-positive": {
+        "passed": 11,
+        "total": 11,
+        "accuracy": 100.0
+      },
+      "regression": {
+        "passed": 3,
+        "total": 3,
+        "accuracy": 100.0
+      },
+      "true-positive": {
+        "passed": 4,
+        "total": 4,
+        "accuracy": 100.0
+      }
+    }
+  },
+  "results": [
+    {
+      "name": "window_vs_holding_period",
+      "tags": [
+        "regression",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 1.16
+    },
+    {
+      "name": "interest_vs_restriction_conflict",
+      "tags": [
+        "regression",
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "reason": "Interest in technology conflicts with restriction not to invest in technology companies",
+      "interests": [
+        "sports",
+        "technology"
+      ],
+      "restrictions": [
+        "Do not invest in technology companies"
+      ],
+      "error": null,
+      "seconds": 0.44
+    },
+    {
+      "name": "beginner_with_long_horizon",
+      "tags": [
+        "regression",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 0.5
+    },
+    {
+      "name": "plain_uncontroversial_profile",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 0.46
+    },
+    {
+      "name": "restriction_unrelated_to_interests",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "technology"
+      ],
+      "restrictions": [
+        "No tobacco companies",
+        "No gambling companies"
+      ],
+      "error": null,
+      "seconds": 0.33
+    },
+    {
+      "name": "high_risk_with_speculative_interest",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "cryptocurrency",
+        "biotech"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 0.41
+    },
+    {
+      "name": "low_risk_with_conservative_interests",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "utilities",
+        "dividend stocks"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 0.52
+    },
+    {
+      "name": "small_amount_young_investor",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 0.42
+    },
+    {
+      "name": "older_investor_short_horizon",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 6.98
+    },
+    {
+      "name": "large_amount_low_risk",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 6.56
+    },
+    {
+      "name": "no_interests_given",
+      "tags": [
+        "edge",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [],
+      "restrictions": [],
+      "error": null,
+      "seconds": 6.6
+    },
+    {
+      "name": "broad_interests_narrow_restriction",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "technology",
+        "healthcare",
+        "energy"
+      ],
+      "restrictions": [
+        "No fossil fuel companies"
+      ],
+      "error": null,
+      "seconds": 7.73
+    },
+    {
+      "name": "low_risk_wants_speculative",
+      "tags": [
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "reason": "risk tolerance low conflicts with interest in extremely speculative investments",
+      "interests": [
+        "extremely speculative penny stocks",
+        "high-risk crypto"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 7.53
+    },
+    {
+      "name": "restriction_blocks_every_interest",
+      "tags": [
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "reason": "Interest in renewable energy conflicts with restriction not to invest in renewable energy or energy companies",
+      "interests": [
+        "renewable energy"
+      ],
+      "restrictions": [
+        "Do not invest in renewable energy or energy companies"
+      ],
+      "error": null,
+      "seconds": 5.54
+    },
+    {
+      "name": "restriction_contradicts_one_of_two_interests",
+      "tags": [
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "reason": "Interest in pharmaceuticals conflicts with restriction not to invest in pharmaceutical companies",
+      "interests": [
+        "healthcare",
+        "pharmaceuticals"
+      ],
+      "restrictions": [
+        "Never invest in pharmaceutical companies"
+      ],
+      "error": null,
+      "seconds": 5.57
+    },
+    {
+      "name": "clarification_resolves_conflict",
+      "tags": [
+        "clarification"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "sports",
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 4.64
+    },
+    {
+      "name": "unhelpful_clarification_keeps_asking",
+      "tags": [
+        "clarification",
+        "edge"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "reason": "User is uncertain about whether to invest in technology despite restrictions",
+      "interests": [
+        "sports",
+        "technology"
+      ],
+      "restrictions": [
+        "Do not invest in technology companies"
+      ],
+      "error": null,
+      "seconds": 7.3
+    },
+    {
+      "name": "clarification_drops_the_interest_instead",
+      "tags": [
+        "clarification"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "interests": [
+        "sports"
+      ],
+      "restrictions": [
+        "Do not invest in technology companies"
+      ],
+      "error": null,
+      "seconds": 12.51
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "timestamp": "20260825-004953",
+  "summary": {
+    "cases": 1,
+    "errored": 0,
+    "total_mentions": 7,
+    "total_candidates": 3,
+    "hard_failures": 0,
+    "drop_profile": {
+      "no_ticker_found": 2,
+      "incidental_mention": 2
+    },
+    "exposure_profile": {
+      "direct": 1,
+      "partial": 2
+    },
+    "saturated_candidates": 0,
+    "cases_finding_nothing": 0,
+    "growth_outliers": [],
+    "sources": {
+      "yfinance": 2,
+      "fmp": 1
+    }
+  },
+  "results": [
+    {
+      "case": "renewables_excluding_fossil_fuels",
+      "themes": 5,
+      "articles": 7,
+      "mentions": 7,
+      "companies_examined": 7,
+      "candidates": 3,
+      "untraceable_candidates": [],
+      "incidental_candidates": [],
+      "misranked": false,
+      "over_cap": false,
+      "unit_failures": [],
+      "funds_in_candidates": [],
+      "unaccounted_mentions": 0,
+      "restriction_violations": [],
+      "growth_outliers": [],
+      "drop_summary": {
+        "no_ticker_found": 2,
+        "incidental_mention": 2
+      },
+      "exposures": {
+        "direct": 1,
+        "partial": 2
+      },
+      "sources": {
+        "yfinance": 2,
+        "fmp": 1
+      },
+      "currencies": {
+        "INR": 1,
+        "USD": 2
+      },
+      "saturated": 0,
+      "scores": [
+        0.4856,
+        0.4495,
+        0.2861
+      ],
+      "tickers": [
+        "SUZLON.BO",
+        "GOOG",
+        "AMZN"
+      ],
+      "avg_completeness": 1.0,
+      "notes": null,
+      "error": null
+    }
+  ]
+}

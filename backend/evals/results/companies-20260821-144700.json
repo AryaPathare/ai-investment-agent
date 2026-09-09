@@ -1,0 +1,64 @@
+{
+  "timestamp": "20260821-144700",
+  "summary": {
+    "cases": 1,
+    "errored": 0,
+    "total_mentions": 4,
+    "total_candidates": 1,
+    "hard_failures": 0,
+    "drop_profile": {
+      "no_ticker_found": 1,
+      "not_an_operating_company": 1,
+      "incidental_mention": 1
+    },
+    "exposure_profile": {
+      "direct": 1
+    },
+    "saturated_candidates": 0,
+    "cases_finding_nothing": 0,
+    "sources": {
+      "yfinance": 1
+    }
+  },
+  "results": [
+    {
+      "case": "banking_excluding_crypto",
+      "themes": 3,
+      "articles": 3,
+      "mentions": 4,
+      "companies_examined": 4,
+      "candidates": 1,
+      "untraceable_candidates": [],
+      "incidental_candidates": [],
+      "misranked": false,
+      "over_cap": false,
+      "unit_failures": [],
+      "funds_in_candidates": [],
+      "unaccounted_mentions": 0,
+      "drop_summary": {
+        "no_ticker_found": 1,
+        "not_an_operating_company": 1,
+        "incidental_mention": 1
+      },
+      "exposures": {
+        "direct": 1
+      },
+      "sources": {
+        "yfinance": 1
+      },
+      "currencies": {
+        "INR": 1
+      },
+      "saturated": 0,
+      "scores": [
+        0.3094
+      ],
+      "tickers": [
+        "IDBI.BO"
+      ],
+      "avg_completeness": 0.75,
+      "notes": null,
+      "error": null
+    }
+  ]
+}

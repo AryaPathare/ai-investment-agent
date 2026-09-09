@@ -9,20 +9,20 @@ This is the same failure as prose drifting from behaviour, and it gets the same
 instrument. Nothing here is about how the document LOOKS; it fails when the
 committed file is not what the current markdown produces.
 
-    python -m scripts.build_log_html
+    python -m backend.scripts.build_log_html
 """
 
 from pathlib import Path
 
 import pytest
 
-from scripts.build_log_html import SOURCE, TARGET, to_html
+from backend.scripts.build_log_html import SOURCE, TARGET, to_html
 
 
 def test_the_rendered_log_is_current():
     """Regenerate and compare. The fix when this fails is to run the builder."""
     if not TARGET.exists():  # pragma: no cover - only on a fresh clone
-        pytest.fail(f"{TARGET.name} is missing. Run: python -m scripts.build_log_html")
+        pytest.fail(f"{TARGET.name} is missing. Run: python -m backend.scripts.build_log_html")
 
     expected = to_html(SOURCE.read_text(encoding="utf-8"))
     committed = TARGET.read_text(encoding="utf-8")
@@ -33,7 +33,7 @@ def test_the_rendered_log_is_current():
     is_current = expected in committed
     assert is_current, (
         "docs/project_log.html is out of date with docs/PROJECT_LOG.md.\n"
-        "Fix: python -m scripts.build_log_html"
+        "Fix: python -m backend.scripts.build_log_html"
     )
 
 

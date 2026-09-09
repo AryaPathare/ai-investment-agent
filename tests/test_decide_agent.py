@@ -10,19 +10,19 @@ from datetime import datetime, timezone
 
 import pytest
 
-from agents import decide_agent
-from agents.decide_agent import decide
-from models.companies import (
+from backend.agents import decide_agent
+from backend.agents.decide_agent import decide
+from backend.models.companies import (
     CompanyCandidate,
     CompanyFindings,
     ComparableMetrics,
     CurrencyAmounts,
     Fundamentals,
 )
-from models.decision import CompanyBrief, ExitCondition
-from models.profile import InvestorProfile
-from models.research import Article, ResearchFindings
-from models.risk import CandidateCritique, Risk, RiskFindings
+from backend.models.decision import CompanyBrief, ExitCondition
+from backend.models.profile import InvestorProfile
+from backend.models.research import Article, ResearchFindings
+from backend.models.risk import CandidateCritique, Risk, RiskFindings
 
 
 def article(uuid):
@@ -363,7 +363,7 @@ def test_a_caller_with_no_research_still_gets_the_risk_articles(writer):
 
 
 def _price(currency, amount):
-    from models.companies import MarketPrice
+    from backend.models.companies import MarketPrice
     return MarketPrice(
         amount=amount, currency=currency,
         as_of=datetime(2026, 8, 27, tzinfo=timezone.utc),

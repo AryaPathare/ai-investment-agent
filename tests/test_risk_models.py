@@ -11,7 +11,7 @@ output is indistinguishable from fluent guessing.
 import pytest
 from pydantic import ValidationError
 
-from models.risk import (
+from backend.models.risk import (
     CandidateCritique,
     NewsRiskAssessment,
     Risk,

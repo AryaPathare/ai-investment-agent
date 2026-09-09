@@ -7,14 +7,14 @@ answer, which is exactly what a model-generated score could never offer.
 
 import pytest
 
-from agents.screening import (
+from backend.agents.screening import (
     EXPOSURE_WEIGHTS,
     MIN_COMPLETENESS,
     component_scores,
     score,
     screen,
 )
-from models.companies import ComparableMetrics
+from backend.models.companies import ComparableMetrics
 
 
 def metrics(**overrides) -> ComparableMetrics:

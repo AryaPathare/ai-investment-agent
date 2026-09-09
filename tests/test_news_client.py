@@ -8,8 +8,8 @@ place.
 import pytest
 import requests
 
-from clients import news
-from clients.news import (
+from backend.clients import news
+from backend.clients.news import (
     NewsAPIError,
     _normalise_title,
     _normalise_url,
@@ -228,8 +228,7 @@ def test_missing_api_key_is_reported_clearly(fake_get, monkeypatch):
     # Deleting the env var is not enough: get_settings() calls load_dotenv(),
     # which would read the real .env straight back in. Override the settings
     # object the client actually uses instead.
-    import config
-
+    from backend import config
     without_key = config.get_settings().model_copy(update={"news_api_key": None})
     monkeypatch.setattr(news, "get_settings", lambda: without_key)
     fake_get(FakeResponse())

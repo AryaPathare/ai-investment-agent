@@ -22,7 +22,7 @@ MIT licensed — see [LICENSE](LICENSE).
 ## What it produces
 
 Each recommendation gives a thesis, the conditions that would break it and what
-grounds each one, then what to do next. From `python -m cli --demo`:
+grounds each one, then what to do next. From `python -m backend.cli --demo`:
 
 ```
      What would mean the idea has stopped working
@@ -83,7 +83,7 @@ pip install -r requirements.txt
 ### 2. See it work — no API key needed
 
 ```
-python -m cli --demo
+python -m backend.cli --demo
 ```
 
 Prints a real recorded run — same renderer, same models, same grounded exit
@@ -93,7 +93,7 @@ what the project produces.
 Or in a browser, which also needs no key to look around:
 
 ```
-python -m uvicorn web.app:app --port 8000
+python -m uvicorn frontend.app:app --port 8000
 ```
 
 The page asks the same questions the CLI does, streams each stage as it lands
@@ -136,7 +136,7 @@ far. Without the FMP key it still works — non-US companies fall back to
 Check everything is wired up:
 
 ```
-python -m scripts.check_setup
+python -m backend.scripts.check_setup
 ```
 
 It verifies `.env` exists, the settings validate, and the model actually
@@ -147,13 +147,13 @@ wrong layer.
 ### 4. Run it
 
 ```
-python -m cli --profile examples/semiconductors_high_risk.json
+python -m backend.cli --profile examples/semiconductors_high_risk.json
 ```
 
 Or answer the nine questions yourself:
 
 ```
-python -m cli                             # then --save-profile mine.json to keep them
+python -m backend.cli                             # then --save-profile mine.json to keep them
 ```
 
 The sector question lists the eleven sectors the market is divided into, with a
@@ -171,8 +171,8 @@ Every step is checkpointed to SQLite, so closing the terminal at a prompt — or
 Ctrl-C during the long research call — loses nothing.
 
 ```
-python -m cli --list             # saved runs, and which can be resumed
-python -m cli --resume <id>      # continue one
+python -m backend.cli --list             # saved runs, and which can be resumed
+python -m backend.cli --resume <id>      # continue one
 ```
 
 Resuming does **not** repeat the stages that already finished, which on a
@@ -211,12 +211,12 @@ with `--tag hard`; a full `decision_runner` run costs most of a free day's
 tokens.
 
 ```powershell
-python -m evals.runner                  # Agent 1: 32 labelled cases
-python -m evals.runner --tag hard --repeat 3
-python -m evals.research_runner         # Agent 2
-python -m evals.company_runner          # Agent 3  (runs 2 -> 3)
-python -m evals.risk_runner             # Agent 4  (runs 2 -> 3 -> 4)
-python -m evals.decision_runner         # Agent 5  (the full chain, most expensive)
+python -m backend.evals.runner                  # Agent 1: 32 labelled cases
+python -m backend.evals.runner --tag hard --repeat 3
+python -m backend.evals.research_runner         # Agent 2
+python -m backend.evals.company_runner          # Agent 3  (runs 2 -> 3)
+python -m backend.evals.risk_runner             # Agent 4  (runs 2 -> 3 -> 4)
+python -m backend.evals.decision_runner         # Agent 5  (the full chain, most expensive)
 ```
 
 **Tests and evals answer different questions.** `pytest` proves the code does
@@ -258,21 +258,36 @@ list of what still goes wrong.
 ## Layout
 
 ```
-cli.py             The command line front end.
-web/               The web front end: one page, and the API behind it.
-render.py          What a reader is TOLD. Shared, so the two cannot disagree.
-recordings.py      Loads a recorded run. Used by --demo and by the gallery.
-checkpoints.py     Durable run state, so a stopped run can be resumed.
-config.py          All external configuration. The only place secrets are read.
-workflow.py        The LangGraph graph: nodes, edges, routing.
-models/            Pydantic schemas — the contracts between stages.
-agents/            One module per agent. Prompt + orchestration.
-evals/             Labelled cases and the scoring runners, one per agent.
+backend/           The research pipeline. Everything that produces a brief.
+  cli.py             The command line front end.
+  render.py          What a reader is TOLD. Shared, so front ends cannot disagree.
+  recordings.py      Loads a recorded run. Used by --demo and by the gallery.
+  checkpoints.py     Durable run state, so a stopped run can be resumed.
+  config.py          All external configuration. The only place secrets are read.
+  workflow.py        The LangGraph graph: nodes, edges, routing.
+  models/            Pydantic schemas — the contracts between stages.
+  agents/            One module per agent. Prompt + orchestration.
+  clients/           The three providers: news, fundamentals, prices.
+  evals/             Labelled cases and the scoring runners, one per agent.
+  scripts/           Health check, log renderer, and the recording writer.
+
+frontend/          The website. One page and the API behind it.
+  app.py             The HTTP layer: run, resume, gallery, quota.
+  session.py         A signed cookie: which runs a visitor may answer.
+  runqueue.py        One run at a time, with a position to report.
+  quota.py           How many runs are probably left today, said as an estimate.
+  static/index.html  The page. No build step, no framework.
+
 demo/              Recorded runs, so --demo and the gallery work with no key.
-scripts/           Health check, log renderer, and the recording writer.
+examples/          Saved profiles for --profile.
 tests/             Unit tests.
-docs/              Design notes and the project log.
+docs/              Design notes, the project log, and the two handoffs.
 ```
+
+The split is by WHAT PRODUCES THE ANSWER rather than by what runs in a browser.
+`frontend/app.py` is server code and lives there anyway, because it belongs to
+the website rather than to the pipeline - the line that matters here is which
+half a change belongs to, not which machine it executes on.
 
 `render.py` is the one worth knowing about. The CLI used to walk the models and
 print in the same breath; a second front end would have been a second set of

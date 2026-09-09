@@ -7,13 +7,13 @@ last being what separates a checkable finding from an assertion.
 
 import pytest
 
-from agents.risk_rules import (
+from backend.agents.risk_rules import (
     ELEVATED_LEVERAGE,
     HIGH_LEVERAGE,
     THIN_GROSS_MARGIN,
     fundamental_risks,
 )
-from models.companies import (
+from backend.models.companies import (
     CompanyCandidate,
     ComparableMetrics,
     CurrencyAmounts,

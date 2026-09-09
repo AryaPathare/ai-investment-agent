@@ -8,7 +8,7 @@ edit could undo without anything else complaining.
 import pytest
 from pydantic import ValidationError
 
-from models.companies import (
+from backend.models.companies import (
     ComparableMetrics,
     CompanyCandidate,
     CompanyFindings,

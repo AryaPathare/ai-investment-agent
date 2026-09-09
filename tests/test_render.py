@@ -13,11 +13,11 @@ from datetime import date, datetime, timezone
 import pytest
 from pydantic import ValidationError
 
-import render
-from models.companies import CompanyFindings, MarketPrice
-from models.decision import Decision, ExcludedCompany, ExitCondition, Recommendation
-from models.research import Article, ResearchFindings
-from models.risk import CandidateCritique, Risk, RiskFindings
+from backend import render
+from backend.models.companies import CompanyFindings, MarketPrice
+from backend.models.decision import Decision, ExcludedCompany, ExitCondition, Recommendation
+from backend.models.research import Article, ResearchFindings
+from backend.models.risk import CandidateCritique, Risk, RiskFindings
 
 
 def _article(uuid="u1", source="reuters.com") -> Article:

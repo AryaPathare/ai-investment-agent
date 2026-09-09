@@ -1,0 +1,355 @@
+{
+  "timestamp": "20260823-152345",
+  "model": "openai/gpt-oss-20b",
+  "temperature": 0.0,
+  "repeat": 1,
+  "summary": {
+    "total": 18,
+    "passed": 18,
+    "accuracy": 100.0,
+    "by_tag": {
+      "clarification": {
+        "passed": 3,
+        "total": 3,
+        "accuracy": 100.0
+      },
+      "edge": {
+        "passed": 2,
+        "total": 2,
+        "accuracy": 100.0
+      },
+      "false-positive": {
+        "passed": 11,
+        "total": 11,
+        "accuracy": 100.0
+      },
+      "regression": {
+        "passed": 3,
+        "total": 3,
+        "accuracy": 100.0
+      },
+      "true-positive": {
+        "passed": 4,
+        "total": 4,
+        "accuracy": 100.0
+      }
+    }
+  },
+  "results": [
+    {
+      "name": "window_vs_holding_period",
+      "tags": [
+        "regression",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 1.3
+    },
+    {
+      "name": "interest_vs_restriction_conflict",
+      "tags": [
+        "regression",
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "reason": "Sectors of interest include technology while restrictions prohibit investing in technology companies.",
+      "sectors_of_interest": [
+        "sports",
+        "technology"
+      ],
+      "restrictions": [
+        "Do not invest in technology companies"
+      ],
+      "error": null,
+      "seconds": 0.38
+    },
+    {
+      "name": "beginner_with_long_horizon",
+      "tags": [
+        "regression",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 6.48
+    },
+    {
+      "name": "plain_uncontroversial_profile",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 6.58
+    },
+    {
+      "name": "restriction_unrelated_to_interests",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "technology"
+      ],
+      "restrictions": [
+        "No tobacco companies",
+        "No gambling companies"
+      ],
+      "error": null,
+      "seconds": 22.44
+    },
+    {
+      "name": "high_risk_with_speculative_interest",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "cryptocurrency",
+        "biotech"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 21.56
+    },
+    {
+      "name": "low_risk_with_conservative_interests",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "utilities",
+        "dividend stocks"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 22.41
+    },
+    {
+      "name": "small_amount_young_investor",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 6.64
+    },
+    {
+      "name": "older_investor_short_horizon",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 21.62
+    },
+    {
+      "name": "large_amount_low_risk",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 21.38
+    },
+    {
+      "name": "no_interests_given",
+      "tags": [
+        "edge",
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [],
+      "restrictions": [],
+      "error": null,
+      "seconds": 0.32
+    },
+    {
+      "name": "broad_interests_narrow_restriction",
+      "tags": [
+        "false-positive"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "technology",
+        "healthcare",
+        "energy"
+      ],
+      "restrictions": [
+        "No fossil fuel companies"
+      ],
+      "error": null,
+      "seconds": 0.55
+    },
+    {
+      "name": "low_risk_wants_speculative",
+      "tags": [
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "reason": "risk tolerance is low but sectors of interest are high-risk",
+      "sectors_of_interest": [
+        "extremely speculative penny stocks",
+        "high-risk crypto"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 21.51
+    },
+    {
+      "name": "restriction_blocks_every_interest",
+      "tags": [
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "reason": "Sector of interest conflicts with restriction.",
+      "sectors_of_interest": [
+        "renewable energy"
+      ],
+      "restrictions": [
+        "Do not invest in renewable energy or energy companies"
+      ],
+      "error": null,
+      "seconds": 6.75
+    },
+    {
+      "name": "restriction_contradicts_one_of_two_interests",
+      "tags": [
+        "true-positive"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "reason": "Sectors of interest include pharmaceuticals while restrictions prohibit investing in pharmaceutical companies",
+      "sectors_of_interest": [
+        "healthcare",
+        "pharmaceuticals"
+      ],
+      "restrictions": [
+        "Never invest in pharmaceutical companies"
+      ],
+      "error": null,
+      "seconds": 22.47
+    },
+    {
+      "name": "clarification_resolves_conflict",
+      "tags": [
+        "clarification"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "sports",
+        "technology"
+      ],
+      "restrictions": [],
+      "error": null,
+      "seconds": 7.59
+    },
+    {
+      "name": "unhelpful_clarification_keeps_asking",
+      "tags": [
+        "clarification",
+        "edge"
+      ],
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "passed": true,
+      "reason": "Please specify whether you want to invest in technology companies or not.",
+      "sectors_of_interest": [
+        "sports",
+        "technology"
+      ],
+      "restrictions": [
+        "Do not invest in technology companies"
+      ],
+      "error": null,
+      "seconds": 8.74
+    },
+    {
+      "name": "clarification_drops_the_interest_instead",
+      "tags": [
+        "clarification"
+      ],
+      "expected": "valid",
+      "actual": "valid",
+      "passed": true,
+      "reason": null,
+      "sectors_of_interest": [
+        "sports"
+      ],
+      "restrictions": [
+        "Do not invest in technology companies"
+      ],
+      "error": null,
+      "seconds": 10.71
+    }
+  ]
+}

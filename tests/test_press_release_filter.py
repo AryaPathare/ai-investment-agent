@@ -15,7 +15,7 @@ they are the ones a looser draft of this rule actually caught.
 
 import pytest
 
-from clients.news import drop_press_releases, is_press_release
+from backend.clients.news import drop_press_releases, is_press_release
 from tests.conftest import make_article
 
 
@@ -149,8 +149,8 @@ def test_an_empty_input_is_not_an_error():
 
 
 def test_the_critique_records_how_many_were_withheld(monkeypatch):
-    from agents import risk_agent
-    from models.risk import NewsRiskAssessment
+    from backend.agents import risk_agent
+    from backend.models.risk import NewsRiskAssessment
     from tests.test_source_filter import _candidate
 
     articles = [
@@ -170,8 +170,8 @@ def test_the_critique_records_how_many_were_withheld(monkeypatch):
 
 
 def test_the_cli_prints_the_count(capsys):
-    import cli
-    from models.risk import CandidateCritique, RiskFindings
+    from backend import cli
+    from backend.models.risk import CandidateCritique, RiskFindings
 
     cli._report(cli.Progress(), "risk_critic", {
         "risk_findings": RiskFindings(critiques=[
@@ -189,9 +189,9 @@ def test_research_does_not_use_this_filter():
     """Applied by the risk critic and NOT by Agent 2, on purpose. A company
     announcing a 1.2GW order genuinely IS evidence a theme is real - the same
     article that is worthless to the critic is ordinary input to research."""
-    from config import PROJECT_ROOT
+    from backend.config import PROJECT_ROOT
 
-    source = (PROJECT_ROOT / "agents" / "research_agent.py").read_text(encoding="utf-8")
+    source = (PROJECT_ROOT / "backend" / "agents" / "research_agent.py").read_text(encoding="utf-8")
     assert "drop_press_releases" not in source
 
 

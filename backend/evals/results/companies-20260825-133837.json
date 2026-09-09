@@ -1,0 +1,45 @@
+{
+  "timestamp": "20260825-133837",
+  "summary": {
+    "cases": 1,
+    "errored": 0,
+    "total_mentions": 0,
+    "total_candidates": 0,
+    "hard_failures": 0,
+    "drop_profile": {},
+    "exposure_profile": {},
+    "saturated_candidates": 0,
+    "cases_finding_nothing": 1,
+    "growth_outliers": [],
+    "sources": {}
+  },
+  "results": [
+    {
+      "case": "renewables_excluding_fossil_fuels",
+      "themes": 1,
+      "articles": 1,
+      "mentions": 0,
+      "companies_examined": 0,
+      "candidates": 0,
+      "untraceable_candidates": [],
+      "incidental_candidates": [],
+      "misranked": false,
+      "over_cap": false,
+      "unit_failures": [],
+      "funds_in_candidates": [],
+      "unaccounted_mentions": 0,
+      "restriction_violations": [],
+      "growth_outliers": [],
+      "drop_summary": {},
+      "exposures": {},
+      "sources": {},
+      "currencies": {},
+      "saturated": 0,
+      "scores": [],
+      "tickers": [],
+      "avg_completeness": 0.0,
+      "notes": "The articles named no companies. ",
+      "error": null
+    }
+  ]
+}
