@@ -121,6 +121,10 @@ Suite: 1062 passed to **1065**.
 
 ## THE AGENDA — what the website still owes
 
+**F3 and F5 are what session 23 left. F7-F11 are what he added after seeing F6
+deployed** - they are written out below the F6 entry, and none of them was
+started.
+
 **F3. One live run against the DEPLOYED site, start to finish.** The last
 genuinely unverified thing in the whole project. Everything else about the
 website has now been checked in production - health, gallery, form, tabs, deep
@@ -209,6 +213,105 @@ page that currently has none; `white-space: nowrap` on sector names removes a
 break point; a wider `main` changes nothing on a phone but a wider GRID does.
 Whatever lands here has to be re-checked at 360px, and F5 is still the only
 check that settles it.
+
+---
+
+## F7-F11 — HIS REVIEW OF THE F6 DESIGN, 2026-09-09
+
+**Written from his own message and four screenshots at the end of session 23.
+Nothing here was started.** He looked at the live site after F6 deployed and
+asked for six more things. They are recorded before any of them was touched, so
+what follows is his ask plus what reading the code says about it - not a plan
+anybody has committed to.
+
+**F7. The blank space, in three places.** F6 widened the shell to 72rem and kept
+prose at 46rem, which is what stopped the briefs getting harder to read. The
+cost is emptiness he does not want, and he pointed at three instances:
+
+    run tab      under the three form columns, right of the sector grid
+    gallery      right of the cards where the row does not fill
+    about tab    the ENTIRE right column, which is the worst of the three
+
+**His instruction, verbatim: "if we are not going to do anything about the extra
+space outside the reading column then add some design in the white space to make
+up for it. I want it to look creative and inspiring."** His own ideas: something
+relating to stocks or investing, or "some fun catch phrases to make it more user
+friendly", and he explicitly left the choice open.
+
+The two gutter spines F6 added are the same instinct at a smaller scale and are
+not what he means - they are outside `main`, in the viewport margins, and he is
+pointing INSIDE the content shell. **Whatever lands here must not widen the
+prose**, which is the constraint that produced the empty space in the first
+place; the About tab is the hard case, because that column is empty precisely
+because the tab is nothing but prose.
+
+**F8. The dropdowns must not answer themselves, and one label is wrong.** A
+`<select>` shows its first option, so the form arrives claiming the visitor is a
+`beginner`, at `low` risk, holding `USD` - three answers nobody gave. He wants
+them blank so the visitor has to open the menu and choose.
+
+Two things to know before writing it, both checked in the code:
+
+- **The options are DERIVED, not typed.** `backend/render.py` builds them with
+  `get_args()` off the `Literal[...]` annotations in `models/user_input.py`, so a
+  blank entry is an extra `<option>` the PAGE adds, never a model change. Do not
+  add an empty string to the Literal.
+- **Blank is not equally legal across the three.** `investment_currency` is
+  annotated `Literal[...] | None` and is genuinely optional; experience and risk
+  tolerance are not. `POST /api/runs` answers a `ValidationError` with **422**
+  and `{"error": "invalid profile", "detail": ...}`, so an unanswered required
+  menu has to be stopped at the form or land as a 422 the page renders usefully.
+  **Which of those it is has not been decided, and the page's handling of that
+  422 has not been read.**
+
+He also wants **"Currency of that amount" renamed to just "Currency"**. That
+string is at `backend/render.py:725`, not in the page - it is CONTENT by entry
+98's test, and `render.py` is shared with the CLI, so **the rename changes what
+the CLI prints too, and it crosses into the parked backend.** That is a small
+edit with a decision attached, not a typo fix.
+
+**F9. Delete the "FIVE AGENTS &middot; ONE BRIEF" eyebrow.** F6 added it above the
+banner title; he does not want it. `.mark` in the stylesheet and the `<span>` in
+the banner both go. Trivial, and no test asserts it.
+
+**F10. Re-colour to BLUE AND BLACK.** F6's palette is deep green, rust and
+amber, which he has now seen and does not want. Every colour is a custom
+property in one `:root` block, which is what makes this one edit rather than a
+hunt - but note that the amber and rust are load-bearing in more than the
+background: the active tab underline, the `h2::after` rules, the `.lede` bar,
+the `.card` left border and the disclaimer's top rule all read as accents. A
+straight hue swap will flatten those unless the new scheme keeps a third colour
+doing that job.
+
+**Three sites he gave as inspiration, for the colour scheme and the layout:**
+
+    https://racescout.ai/
+    https://atonwebsites.com/
+    https://561roofers.com/
+
+**These were NOT opened in session 23.** They are his stated references,
+recorded verbatim; nobody has characterised what is actually on them, so treat
+the list as a starting point to look at rather than a description to build from.
+
+**F11. The lede is in the wrong place - and it may not need moving so much as
+deleting.** He does not like where *"Narrower questions research better. 'Grid
+storage' produces a sharper answer than 'Utilities'..."* sits, and asked for it
+"closer to that actual question".
+
+**Read the sector field before moving it.** `SECTOR_GUIDANCE` at
+`backend/render.py:662` is already *"Narrower researches better - 'grid storage'
+beats 'utilities'."*, and it is already rendered as the help text directly under
+"Which parts of the market interest you?" **The thing he is asking for largely
+exists**, one line below where he wants it, and moving the lede down would put
+two near-identical sentences next to each other.
+
+So the honest options are: delete the lede and let the server-owned help text do
+the job alone; or delete the help text and move the longer lede into its place,
+which moves content OUT of `render.py` and away from the CLI. **Entry 83 is the
+reason to be careful either way** - the sector examples and the narrowing advice
+are the one piece of teaching this interface does, and it exists because a bare
+menu of eleven broad sectors measurably made runs worse. Whatever happens here,
+the advice has to survive it.
 
 ---
 
