@@ -1,7 +1,7 @@
 """The command line front end — the only way a person runs this pipeline.
 
     python -m backend.cli
-    python -m backend.cli --profile examples/beginner_renewables.json
+    python -m backend.cli --profile backend/examples/beginner_renewables.json
     python -m backend.cli --save-profile mine.json
     python -m backend.cli --list                     # what is saved, and what can resume
     python -m backend.cli --resume cli-8f3a2b91      # continue a run that stopped
@@ -848,7 +848,7 @@ def resume(store, thread_id: str) -> int:
 # Deliberately NOT under examples/, which is documented as saved profiles for
 # --profile and is walked by a test that loads every file there as one. A
 # recording is a different kind of thing and belongs in its own place.
-DEMO_PATH = Path(__file__).resolve().parent.parent / "demo" / "recorded_run.json"
+DEMO_PATH = Path(__file__).resolve().parent.parent / "shared" / "recorded_run.json"
 
 
 def run_demo(path: Path | str = DEMO_PATH) -> int:
@@ -892,7 +892,7 @@ def run_demo(path: Path | str = DEMO_PATH) -> int:
     print()
     print(_wrap(
         "To run the pipeline for yourself you will need a free Groq key - see "
-        "the README. Then: python -m backend.cli --profile examples/semiconductors_high_risk.json",
+        "the README. Then: python -m backend.cli --profile backend/examples/semiconductors_high_risk.json",
         indent="  ",
     ))
 

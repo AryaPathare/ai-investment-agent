@@ -26,7 +26,7 @@ from backend.models.risk import RiskFindings
 from backend.models.user_input import UserInput
 from backend.scripts.record_run import NotRecordable, build, record, verify
 
-GALLERY = PROJECT_ROOT / "demo" / "gallery"
+GALLERY = PROJECT_ROOT / "shared" / "gallery"
 
 
 def recordings() -> list[Path]:
@@ -64,7 +64,7 @@ def test_every_recording_renders_a_brief(path, capsys):
 
 
 @pytest.mark.parametrize(
-    "path", recordings() + [PROJECT_ROOT / "demo" / "recorded_run.json"],
+    "path", recordings() + [PROJECT_ROOT / "shared" / "recorded_run.json"],
     ids=lambda p: p.stem,
 )
 def test_every_recording_says_when_it_was_run(path):

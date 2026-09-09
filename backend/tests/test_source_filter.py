@@ -14,7 +14,7 @@ rather than silent, and that the filter does not quietly widen.
 import pytest
 
 from backend.clients.news import LOW_QUALITY_SOURCES, drop_low_quality
-from tests.conftest import make_article
+from conftest import make_article
 
 
 def test_a_listed_source_is_dropped():

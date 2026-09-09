@@ -25,7 +25,7 @@ from backend.models.research import (
     Theme,
     ThemeProposal,
 )
-from tests.conftest import make_article
+from conftest import make_article
 
 
 def theme(name="A theme", ids=("A1",), confidence="high"):

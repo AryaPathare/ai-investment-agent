@@ -147,7 +147,7 @@ wrong layer.
 ### 4. Run it
 
 ```
-python -m backend.cli --profile examples/semiconductors_high_risk.json
+python -m backend.cli --profile backend/examples/semiconductors_high_risk.json
 ```
 
 Or answer the nine questions yourself:
@@ -188,10 +188,10 @@ screen.
 
 **Sector choice matters more than it looks.** Semiconductors are covered densely
 enough to produce a full brief. Renewable energy is dominated by private and
-foreign firms, so `examples/beginner_renewables.json` can legitimately come back
+foreign firms, so `backend/examples/beginner_renewables.json` can legitimately come back
 with nothing — the system working, not breaking.
 
-**Try the interrupt.** `examples/conflicted_crypto.json` contains a
+**Try the interrupt.** `backend/examples/conflicted_crypto.json` contains a
 contradiction. The pipeline stops mid-run, asks you to resolve it, and continues
 from exactly where it paused.
 
@@ -270,6 +270,9 @@ backend/           The research pipeline. Everything that produces a brief.
   clients/           The three providers: news, fundamentals, prices.
   evals/             Labelled cases and the scoring runners, one per agent.
   scripts/           Health check, log renderer, and the recording writer.
+  examples/          Saved profiles for --profile.
+  handoff/           Where to pick the pipeline up.
+  tests/
 
 frontend/          The website. One page and the API behind it.
   app.py             The HTTP layer: run, resume, gallery, quota.
@@ -277,12 +280,26 @@ frontend/          The website. One page and the API behind it.
   runqueue.py        One run at a time, with a position to report.
   quota.py           How many runs are probably left today, said as an estimate.
   static/index.html  The page. No build step, no framework.
+  handoff/           Where to pick the website up.
+  tests/
 
-demo/              Recorded runs, so --demo and the gallery work with no key.
-examples/          Saved profiles for --profile.
-tests/             Unit tests.
-docs/              Design notes, the project log, and the two handoffs.
+shared/            Recorded runs, read by BOTH halves.
+  recorded_run.json  What --demo prints with no API key.
+  gallery/           The eleven runs the website shows.
+
+docs/              DESIGN.md and PROJECT_LOG.md — the whole project, both halves.
+conftest.py        Shared test fixtures, at the root so both suites see them.
 ```
+
+Three folders rather than two, because a recorded run genuinely belongs to
+neither half: `backend/cli.py --demo` prints one and the website's gallery shows
+eleven. `shared/` names that relationship instead of forcing an owner, and it
+keeps the dependency pointing one way — the frontend reads recordings through
+`backend/recordings.py`, and the backend never reaches into `frontend/`.
+
+The split is by WHAT PRODUCES THE ANSWER rather than by what runs in a browser.
+`frontend/app.py` is server code and lives there anyway, because it belongs to
+the website rather than to the pipeline.
 
 The split is by WHAT PRODUCES THE ANSWER rather than by what runs in a browser.
 `frontend/app.py` is server code and lives there anyway, because it belongs to

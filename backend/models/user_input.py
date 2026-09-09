@@ -163,7 +163,7 @@ class UserInput(BaseModel):
 
         The CLI prompt already says "blank if none" and people type "none"
         anyway - twice on record, in two different sessions: the shipped
-        recording in ``demo/recorded_run.json`` carries ``["no"]``, and the run
+        recording in ``shared/recorded_run.json`` carries ``["no"]``, and the run
         that verified the timeframe merge carried ``["none"]``. A prompt that
         has been ignored twice is not fixed by rewording it a third time.
 

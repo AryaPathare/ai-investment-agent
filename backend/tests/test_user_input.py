@@ -161,7 +161,7 @@ def test_restrictions_are_trimmed():
 
 
 def test_the_shipped_recording_no_longer_carries_a_no_op_restriction():
-    """demo/recorded_run.json holds ["no"] - it is what that user really typed.
+    """shared/recorded_run.json holds ["no"] - it is what that user really typed.
 
     The recording is left as recorded; the model normalises it on load. So the
     demo everyone is shown prints "no restrictions" rather than "will not
@@ -171,7 +171,7 @@ def test_the_shipped_recording_no_longer_carries_a_no_op_restriction():
     from pathlib import Path
 
     payload = json.loads(
-        Path("demo/recorded_run.json").read_text(encoding="utf-8")
+        Path("shared/recorded_run.json").read_text(encoding="utf-8")
     )
     assert payload["profile"]["restrictions"] == ["no"]
     assert UserInput.model_validate(payload["profile"]).restrictions == []

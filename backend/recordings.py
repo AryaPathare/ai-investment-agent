@@ -36,8 +36,8 @@ from backend.models.research import ResearchFindings
 from backend.models.risk import RiskFindings
 from backend.models.user_input import UserInput
 
-GALLERY_DIR = PROJECT_ROOT / "demo" / "gallery"
-DEMO_PATH = PROJECT_ROOT / "demo" / "recorded_run.json"
+GALLERY_DIR = PROJECT_ROOT / "shared" / "gallery"
+DEMO_PATH = PROJECT_ROOT / "shared" / "recorded_run.json"
 
 
 class RecordingError(Exception):

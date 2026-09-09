@@ -1,7 +1,7 @@
 # Start here — FRONTEND
 
 The website: the page, the HTTP layer, the gallery and the deploy.
-For the pipeline see [backend.md](backend.md).
+For the pipeline see [the backend handoff](../../backend/handoff/NEXT_SESSION.md).
 
 **Written against `4b4629d`, 2026-09-08, at the end of session 21.** Before
 trusting a word of this:
@@ -184,7 +184,7 @@ A web front end, built in the order the risk sat rather than the order it reads.
   render.py          what a reader is TOLD, shared by the CLI and the web
   recordings.py      real runs the repository can carry
   scripts/record_run.py   writes one
-  demo/gallery/      eleven of them
+  shared/gallery/      eleven of them
 ```
 
 **`render.py` is the piece to understand first.** The CLI used to walk the models

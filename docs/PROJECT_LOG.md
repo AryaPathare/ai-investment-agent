@@ -4780,3 +4780,84 @@ quietly rewritten to fit the new shape. Thirteen failed on the first run, every
 one of them a hardcoded module path or literal file path inside a test, and
 every one a real reference that needed updating rather than a test that had been
 asserting nothing.
+
+### 124. A third folder, because the data belonged to neither half
+
+Entry 123 split the repository in two. Finishing the job turned up something the
+two-way split could not express, and the correction came from checking a premise
+rather than from executing an instruction.
+
+**`demo/` was to be moved into `frontend/`, on the reasonable ground that its
+eleven gallery recordings are a website feature.** They are. But `demo/` is read
+by `backend/cli.py`, whose `--demo` prints a recorded brief with no API key -
+the feature entry 76 built specifically so that the first thing a stranger does
+with this repository is not sign up for three services on trust - and by
+`backend/recordings.py`, which is the single loader for both that and the
+gallery. Moving it would have made a backend feature reach into `frontend/` for
+its data, which is the one direction the split exists to prevent.
+
+The answer was neither folder. **`shared/` names the relationship instead of
+forcing an owner**, and the dependency still points one way: the website reads
+recordings through `backend/recordings.py`, exactly as `frontend/app.py` already
+did.
+
+    demo/      ->  shared/          recorded_run.json + gallery/
+    examples/  ->  backend/examples/
+
+**And `examples/` was not what it looked like either.** It was assumed to hold
+runs saved before the website existed. It holds PROFILES - age, risk tolerance,
+sectors, the answers a person gives - which are inputs to a run, where a
+recording is the output of one. One is what you put in and the other is what
+came out, and only the second is shown to anybody. It went to `backend/`,
+because `--profile` is the only thing that reads it.
+
+### Where the documents went, and why not into the halves
+
+`docs/DESIGN.md` and `docs/PROJECT_LOG.md` stayed where they were, and the
+handoffs did not.
+
+**The handoffs are per-half by nature.** One says what to do next about agents,
+evals and quota; the other about a page, a queue and a deploy. They now sit at
+`backend/handoff/` and `frontend/handoff/`, with a short index left at the root
+so that the file a returning session looks for still exists and still says which
+of the two to open.
+
+**The log is not per-half and could not become so.** It is one narrative of 124
+entries in which an operating margin of 168 corrupts a ranking, a query prompt
+names ministries instead of companies, a name is cut at thirty characters, and a
+deployment config pins nothing - pipeline and website interleaved because that
+is the order they happened in. Filing it under `backend/` would misplace every
+entry about the web layer, and splitting it would destroy the one property that
+makes it worth reading: that it is a record of a single project in sequence.
+`DESIGN.md` follows it for the same reason - it describes the whole system,
+including the split itself.
+
+There is a second argument and it is the practical one. The README calls the log
+**the interesting half of this repository**. A stranger arriving from a link
+should find it at `docs/`, not two directories inside an implementation detail.
+
+### The tests, split the way the imports already were
+
+Thirty-one files to `backend/tests/`, five to `frontend/tests/`, decided by what
+each one imports rather than by what its name suggests: `test_web_app`,
+`test_web_session`, `test_quota`, `test_run_queue` and `test_deployment_config`
+are the five that reach for `frontend`.
+
+**`conftest.py` moved to the repository ROOT**, which is the only place both
+suites can see it. Its autouse fixtures are what keep a test run from writing
+into `.state/` - the guard entry 102 added after the suite spent a session
+quietly filing twenty-one phantom runs into the real quota ledger - and that
+protection has to cover both halves or it covers nothing.
+
+Seven modules imported `from tests.conftest import make_article` explicitly, and
+one imported a sibling test module. Those became `from conftest import ...` and
+`from backend.tests.test_source_filter import ...`. **The isolation guard itself
+read `conftest.py` by path** and had to be repointed; the same file walks the
+source tree excluding any path containing `tests`, which still works, because
+both new directories are still called that.
+
+1040 passed before and after, again. Verified beyond the suite, because the
+suite is not what these moves break: `--demo` still prints a brief with no API
+key from `shared/`, a profile still loads from `backend/examples/`, and the app
+still boots under `uvicorn frontend.app:app --workers 1` and serves eleven
+recordings.

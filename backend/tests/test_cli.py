@@ -27,7 +27,7 @@ from backend.models.decision import Decision, ExcludedCompany, ExitCondition, Re
 from backend.models.research import ResearchFindings
 from backend.models.risk import RiskFindings
 from backend.models.user_input import UserInput
-from tests.conftest import make_article
+from conftest import make_article
 
 
 @pytest.fixture
@@ -191,7 +191,7 @@ def test_every_shipped_example_profile_loads():
     """These are the demo path. A stale one fails in front of an audience."""
     from backend.config import PROJECT_ROOT
 
-    examples = sorted((PROJECT_ROOT / "examples").glob("*.json"))
+    examples = sorted((PROJECT_ROOT / "backend" / "examples").glob("*.json"))
     assert examples, "the examples directory should not be empty"
     for path in examples:
         assert isinstance(cli.load_profile(path), UserInput), path
@@ -534,7 +534,7 @@ def test_main_runs_a_saved_profile_without_asking_anything(
     stub_pipeline(Decision(recommendations=[_recommendation()]))
     answers()
 
-    code = cli.main(["--profile", "examples/beginner_renewables.json"])
+    code = cli.main(["--profile", "backend/examples/beginner_renewables.json"])
 
     assert code == 0
     out = capsys.readouterr().out
@@ -594,7 +594,7 @@ def _paused_run(db, thread_id="saved-1"):
     from backend import checkpoints
     with checkpoints.open_store(db) as store:
         store.graph.invoke(
-            {"user_input": cli.load_profile("examples/conflicted_crypto.json")},
+            {"user_input": cli.load_profile("backend/examples/conflicted_crypto.json")},
             store.config(thread_id),
         )
 
@@ -675,7 +675,7 @@ def test_resuming_a_finished_run_reprints_it_rather_than_refusing(
     stub_pipeline(Decision(recommendations=[_recommendation()]))
     with checkpoints.open_store(db) as store:
         store.graph.invoke(
-            {"user_input": cli.load_profile("examples/beginner_renewables.json")},
+            {"user_input": cli.load_profile("backend/examples/beginner_renewables.json")},
             store.config("done-1"),
         )
     answers()
@@ -703,7 +703,7 @@ def test_a_run_prints_the_id_needed_to_resume_it(
     cli.main([
         "--db", str(db),
         "--thread-id", "nilesh-1",
-        "--profile", "examples/beginner_renewables.json",
+        "--profile", "backend/examples/beginner_renewables.json",
     ])
     out = capsys.readouterr().out
     assert "Run id: nilesh-1" in out
@@ -738,11 +738,11 @@ def test_reusing_a_thread_id_for_a_new_run_is_refused(
     answers()
 
     first = cli.main(["--db", str(db), "--thread-id", "reused",
-                      "--profile", "examples/beginner_renewables.json"])
+                      "--profile", "backend/examples/beginner_renewables.json"])
     assert first == 0
 
     second = cli.main(["--db", str(db), "--thread-id", "reused",
-                       "--profile", "examples/beginner_renewables.json"])
+                       "--profile", "backend/examples/beginner_renewables.json"])
     out = capsys.readouterr().out
 
     assert second == 1
@@ -763,7 +763,7 @@ def test_ctrl_c_during_the_run_is_not_a_traceback(
     monkeypatch.setattr(workflow, "research_themes", interrupted)
     answers()
 
-    code = cli.main(["--db", str(db), "--profile", "examples/beginner_renewables.json"])
+    code = cli.main(["--db", str(db), "--profile", "backend/examples/beginner_renewables.json"])
     out = capsys.readouterr().out
 
     assert code == 1
@@ -846,7 +846,7 @@ def test_the_demo_refuses_to_be_combined_with_a_real_run():
     """--demo reads a file and --profile runs the pipeline; silently ignoring
     one of them would be the worst of the three options."""
     with pytest.raises(SystemExit):
-        cli.main(["--demo", "--profile", "examples/beginner_renewables.json"])
+        cli.main(["--demo", "--profile", "backend/examples/beginner_renewables.json"])
 
 
 def test_the_demo_never_builds_the_graph(monkeypatch):
@@ -1028,7 +1028,7 @@ def test_resuming_a_failed_run_says_it_failed(
     )
     with checkpoints.open_store(db) as store:
         store.graph.invoke(
-            {"user_input": cli.load_profile("examples/beginner_renewables.json")},
+            {"user_input": cli.load_profile("backend/examples/beginner_renewables.json")},
             store.config("broke-1"),
         )
     answers()
@@ -1052,7 +1052,7 @@ def test_a_failed_run_is_listed_as_failed_not_finished(
     )
     with checkpoints.open_store(db) as store:
         store.graph.invoke(
-            {"user_input": cli.load_profile("examples/beginner_renewables.json")},
+            {"user_input": cli.load_profile("backend/examples/beginner_renewables.json")},
             store.config("broke-2"),
         )
 

@@ -36,7 +36,7 @@ def test_conftest_sets_every_credential_config_can_read():
     Adding a provider to config.py without adding it here reintroduces exactly
     the failure above: green locally, broken anywhere else.
     """
-    conftest = (PROJECT_ROOT / "tests" / "conftest.py").read_text(encoding="utf-8")
+    conftest = (PROJECT_ROOT / "conftest.py").read_text(encoding="utf-8")
     set_here = set(re.findall(r'monkeypatch\.setenv\("([A-Z_]+)"', conftest))
 
     missing = [

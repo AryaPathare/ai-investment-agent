@@ -5,8 +5,8 @@ research pipeline and a website that share almost no decisions.
 
 | | |
 |---|---|
-| **[docs/handoff/backend.md](docs/handoff/backend.md)** | The pipeline. Agents, models, evals, quota, the graph, and every task that costs an API call. |
-| **[docs/handoff/frontend.md](docs/handoff/frontend.md)** | The website. The page, the HTTP layer, the gallery, the deploy, and the W1-W5 work list. |
+| **[backend/handoff/NEXT_SESSION.md](backend/handoff/NEXT_SESSION.md)** | The pipeline. Agents, models, evals, quota, the graph, and every task that costs an API call. |
+| **[frontend/handoff/NEXT_SESSION.md](frontend/handoff/NEXT_SESSION.md)** | The website. The page, the HTTP layer, the gallery, the deploy, and the W1-W5 work list. |
 
 **Before trusting a word of either:**
 
@@ -59,6 +59,6 @@ deployment, so the run path there rests on 1040 local tests and on session 18's
 runs against the same code. That is good evidence and it is not the same thing.
 It costs a normal run, so it competes with A1 for headroom.
 
-Details in [backend.md](docs/handoff/backend.md). The website work list W1-W5 in
-[frontend.md](docs/handoff/frontend.md) needs **no quota at all**, so it is what
+Details in [backend/handoff/NEXT_SESSION.md](backend/handoff/NEXT_SESSION.md). The website work list W1-W5 in
+[frontend/handoff/NEXT_SESSION.md](frontend/handoff/NEXT_SESSION.md) needs **no quota at all**, so it is what
 to do on a day with no headroom - and W2 is a defect a real visitor hits today.

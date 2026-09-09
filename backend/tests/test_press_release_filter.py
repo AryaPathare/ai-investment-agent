@@ -16,7 +16,7 @@ they are the ones a looser draft of this rule actually caught.
 import pytest
 
 from backend.clients.news import drop_press_releases, is_press_release
-from tests.conftest import make_article
+from conftest import make_article
 
 
 def _article(title, description="", snippet=""):
@@ -151,7 +151,7 @@ def test_an_empty_input_is_not_an_error():
 def test_the_critique_records_how_many_were_withheld(monkeypatch):
     from backend.agents import risk_agent
     from backend.models.risk import NewsRiskAssessment
-    from tests.test_source_filter import _candidate
+    from backend.tests.test_source_filter import _candidate
 
     articles = [
         make_article("u1", "Regulator opens probe into Waaree", source="reuters.com"),

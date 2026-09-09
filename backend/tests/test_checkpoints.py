@@ -25,7 +25,7 @@ from backend.models.profile import InvestorProfile
 from backend.models.research import ResearchFindings
 from backend.models.risk import RiskFindings
 from backend.models.user_input import UserInput
-from tests.conftest import DEFAULT_DB_PATH
+from conftest import DEFAULT_DB_PATH
 
 
 @pytest.fixture

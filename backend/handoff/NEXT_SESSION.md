@@ -1,7 +1,7 @@
 # Start here — BACKEND
 
 The research pipeline: agents, models, evals, quota, the graph.
-For the website see [frontend.md](frontend.md).
+For the website see [the frontend handoff](../../frontend/handoff/NEXT_SESSION.md).
 
 **Written against `4b4629d`, 2026-09-08, at the end of session 21.** Before
 trusting a word of this:
@@ -185,7 +185,7 @@ fixtures, so write the JSON and validate it through `UserInput` before spending
 anything on it. Record each run AS IT LANDS:
 
 ```powershell
-python -m backend.scripts.record_run <id> --to demo/gallery/basic-materials.json
+python -m backend.scripts.record_run <id> --to shared/gallery/basic-materials.json
 ```
 
 **Audit a run before recording it.** Every check is free, and all of them come
@@ -685,7 +685,7 @@ graph distinguish "finished with an error" from "finished"? That changes what
 
 ### 2.11 The shipped demo - **RE-RECORDED 2026-08-28, entry 90**
 
-`demo/recorded_run.json` holds `cli-0562c71f`: NVIDIA, Samsung and SMIC, all
+`shared/recorded_run.json` holds `cli-0562c71f`: NVIDIA, Samsung and SMIC, all
 graded `direct` against an AI chip-capacity theme, each with an article-cited
 exit condition carrying a real headline and a working link, all three priced
 across three currencies, plus a fourth company recorded as considered and not
@@ -915,14 +915,14 @@ gh run view --log-failed                # just the failing output, not the whole
 
 python -m backend.cli                           # run the pipeline for a person
 python -m backend.cli --list                    # saved runs; --resume <id> continues one
-python -m backend.cli --profile examples/beginner_renewables.json
-python -m backend.cli --profile examples/conflicted_crypto.json   # shows the interrupt
+python -m backend.cli --profile backend/examples/beginner_renewables.json
+python -m backend.cli --profile backend/examples/conflicted_crypto.json   # shows the interrupt
 python -m backend.cli --save-profile mine.json
 python -m backend.cli --demo                    # a recorded run; no key, no network
 
 python -m uvicorn frontend.app:app --port 8000    # the site; ONE worker only
 python -m backend.scripts.record_run --list          # runs that could join the gallery
-python -m backend.scripts.record_run <id> --to demo/gallery/<sector>.json
+python -m backend.scripts.record_run <id> --to shared/gallery/<sector>.json
 
 python -m backend.scripts.check_setup           # health check - run this first when stuck
 python -m pytest                        # 1040 passed, 1 skipped; no network

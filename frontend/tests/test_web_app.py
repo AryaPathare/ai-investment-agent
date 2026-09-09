@@ -781,7 +781,7 @@ def gallery(tmp_path, monkeypatch, clean_user):
     write("empty-run", Decision(no_recommendation_reason="Nothing cleared the bar."))
 
     # A readable file NEXT TO the gallery, mirroring the real layout where
-    # demo/recorded_run.json sits beside demo/gallery/. Without a sibling to
+    # shared/recorded_run.json sits beside shared/gallery/. Without a sibling to
     # escape to, a traversal test passes whatever the endpoint does - which is
     # how the first version of it went green against a naive path join.
     (tmp_path / "recorded_run.json").write_text('{"profile": "escaped"}', encoding="utf-8")
@@ -833,7 +833,7 @@ def test_a_name_cannot_walk_out_of_the_gallery(gallery, name):
     broken on purpose before it counts as evidence.
 
     "../recorded_run" is the one that matters: joined to the gallery directory
-    it resolves to demo/recorded_run.json, which exists.
+    it resolves to shared/recorded_run.json, which exists.
     """
     response = asyncio.run(read_recording(name))
 

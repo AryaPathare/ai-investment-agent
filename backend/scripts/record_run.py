@@ -1,6 +1,6 @@
 """Turn a finished run into a recording the gallery can replay.
 
-    python -m backend.scripts.record_run web-72bcb175 --to demo/gallery/technology.json
+    python -m backend.scripts.record_run web-72bcb175 --to shared/gallery/technology.json
     python -m backend.scripts.record_run --list
 
 WHY A RECORDING RATHER THAN THE CHECKPOINT

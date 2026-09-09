@@ -18,7 +18,7 @@ from backend.clients.news import (
     search_many,
     search_news,
 )
-from tests.conftest import make_article
+from conftest import make_article
 
 
 class FakeResponse:

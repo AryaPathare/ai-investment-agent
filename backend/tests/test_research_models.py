@@ -17,7 +17,7 @@ from backend.models.research import (
     Theme,
     ThemeProposal,
 )
-from tests.conftest import make_article
+from conftest import make_article
 
 
 def evidence(article_id="A1", stance="supports"):
