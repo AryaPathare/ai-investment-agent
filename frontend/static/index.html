@@ -28,11 +28,29 @@
     font: 16px/1.55 ui-serif, Georgia, "Times New Roman", serif;
   }
   main { max-width: 46rem; margin: 0 auto; }
-  h1 { font-size: 1.6rem; margin: 0 0 .3rem; letter-spacing: -.01em; }
-  h2 { font-size: 1.05rem; margin: 2rem 0 .6rem; letter-spacing: .02em; text-transform: uppercase; }
-  h3 { font-size: 1.1rem; margin: 1.6rem 0 .2rem; }
+  h1 { font-size: 2.9rem; line-height: 1.05; margin: 0 0 .5rem; letter-spacing: -.025em; font-weight: 700; }
+  h2 { font-size: 1.5rem; margin: 2.2rem 0 .6rem; letter-spacing: -.015em; font-weight: 700; }
+  h3 { font-size: 1.15rem; margin: 1.6rem 0 .2rem; font-weight: 700; }
   p { margin: .5rem 0; }
-  .sub { color: var(--muted); margin-bottom: 1.5rem; }
+  .sub { color: var(--muted); margin-bottom: 1.25rem; font-size: 1.12rem; }
+
+  /* Tabs. A navigation model, not decoration: without one, every "go
+     somewhere" on this page was a one-way hide, and opening a recorded run
+     left no way back to the form. */
+  .tabs { display: flex; gap: .3rem; border-bottom: 2px solid var(--line); margin: 0 0 1.5rem; }
+  .tabs a {
+    padding: .55rem .95rem; text-decoration: none; color: var(--muted);
+    font-weight: 700; font-size: .97rem; border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+  }
+  .tabs a:hover { color: var(--ink); }
+  .tabs a[aria-current="page"] { color: var(--accent); border-bottom-color: var(--accent); }
+  .lede { font-size: 1.05rem; }
+  .lede strong { font-weight: 700; }
+  .back {
+    background: none; color: var(--accent); border: 0; padding: 0;
+    font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline;
+  }
   .panel { background: var(--panel); border: 1px solid var(--line); padding: 1.1rem 1.25rem; margin: 1rem 0; }
   label { display: block; font-weight: 600; margin: 1rem 0 .25rem; font-size: .95rem; }
   .help { color: var(--muted); font-size: .85rem; margin: .1rem 0 .35rem; }
@@ -80,42 +98,105 @@
 
   <p class="disclaimer" id="disclaimer"></p>
 
-  <section id="intro" class="panel">
-    <p class="quota" id="quota">Checking what is left today&hellip;</p>
-    <form id="profile"></form>
-    <p style="margin-top:1.4rem">
-      <button id="start" type="submit" form="profile">Run the research</button>
+  <nav class="tabs">
+    <a href="#run" data-tab="run">Run it</a>
+    <a href="#gallery" data-tab="gallery">Past runs</a>
+    <a href="#about" data-tab="about">About</a>
+  </nav>
+
+  <div class="tab" id="tab-run">
+    <!-- The one thing worth saying before somebody answers: the specific
+         answer is the better one, and nobody knows that unless shown. A bare
+         menu of eleven broad sectors invites the broad end, which researches
+         worse - measured, not assumed. -->
+    <p class="lede">
+      <strong>Narrower questions research better.</strong> &ldquo;Grid
+      storage&rdquo; produces a sharper answer than &ldquo;Utilities&rdquo;, and
+      each sector below carries an example of what narrower looks like.
     </p>
-    <p class="help">A run takes two to four minutes. You can close the tab &mdash;
-      the run is saved and can be picked up again.</p>
-  </section>
 
-  <section id="progress" hidden>
-    <h2>Running</h2>
-    <p class="quota" id="runid"></p>
-    <p id="queued" hidden></p>
-    <ol class="stages" id="stages"></ol>
-  </section>
+    <section id="intro" class="panel">
+      <p class="quota" id="quota">Checking what is left today&hellip;</p>
+      <form id="profile"></form>
+      <p style="margin-top:1.4rem">
+        <button id="start" type="submit" form="profile">Run the research</button>
+      </p>
+      <p class="help">A run takes two to four minutes. Switching tabs is fine
+        &mdash; it keeps running. Keep the page open to see the result.</p>
+    </section>
 
-  <section id="clarify" class="panel" hidden>
-    <h2>One thing first</h2>
-    <p id="clarify-intro"></p>
-    <p><strong id="clarify-reason"></strong></p>
-    <p id="clarify-prompt"></p>
-    <form id="answer-form">
-      <input type="text" id="answer" autocomplete="off">
-      <p class="help" id="answer-help"></p>
-      <p><button type="submit">Send</button></p>
-    </form>
-  </section>
+    <section id="progress" hidden>
+      <h2>Running</h2>
+      <p class="quota" id="runid"></p>
+      <p id="queued" hidden></p>
+      <ol class="stages" id="stages"></ol>
+    </section>
 
-  <section id="result" hidden></section>
+    <section id="clarify" class="panel" hidden>
+      <h2>One thing first</h2>
+      <p id="clarify-intro"></p>
+      <p><strong id="clarify-reason"></strong></p>
+      <p id="clarify-prompt"></p>
+      <form id="answer-form">
+        <input type="text" id="answer" autocomplete="off">
+        <p class="help" id="answer-help"></p>
+        <p><button type="submit">Send</button></p>
+      </form>
+    </section>
 
-  <section id="gallery">
+    <section id="result" hidden></section>
+  </div>
+
+  <div class="tab" id="tab-gallery" hidden>
     <h2>Runs it has already made</h2>
     <p class="help" id="gallery-note"></p>
     <div id="gallery-list"></div>
-  </section>
+    <!-- Its OWN result area. Sharing one with the live run is what made
+         opening a recording hide the form with no way back. -->
+    <section id="gallery-result" hidden></section>
+  </div>
+
+  <div class="tab" id="tab-about" hidden>
+    <h2>What this is</h2>
+    <p>
+      A five-agent research pipeline. It validates what you tell it, reads
+      current news for the sectors you name, finds listed companies genuinely
+      exposed to what it found, retrieves the bear case and attacks each
+      candidate, then writes up to three of them &mdash; or recommends nothing,
+      and says why.
+    </p>
+    <p>
+      Every claim it makes cites either an article it actually retrieved or a
+      figure it actually measured. It cannot cite anything else: the schema has
+      nowhere to put one.
+    </p>
+
+    <h2>What it will not do</h2>
+    <p>
+      It will not tell you how much to buy. Dividing your money three ways is
+      two lines of code, and it is the point where research becomes advice, so
+      there is no field for it. It will not give you a price target or a sell
+      date either &mdash; it has no valuation model, and inventing that number
+      would be the only figure in the output citing nothing. What it gives you
+      instead is a list of things that would mean the idea has stopped working.
+    </p>
+
+    <h2>Limits worth knowing</h2>
+    <p>
+      It runs on free API tiers, which is roughly seven runs a day shared by
+      everyone who visits. When they are gone, the recorded runs above are what
+      the site can show. A run can also legitimately recommend nothing.
+    </p>
+
+    <h2>The code</h2>
+    <p>
+      <a href="https://github.com/patharearya/ai-investment-agent">github.com/patharearya/ai-investment-agent</a>
+      &mdash; MIT licensed, and the project log is the interesting half: an
+      entry-by-entry record of what broke and why the first diagnosis was
+      usually wrong.
+    </p>
+    <p class="help">Built by Arya Pathare.</p>
+  </div>
 </main>
 
 <script>
@@ -131,6 +212,34 @@ const el = (tag, text, cls) => {
 
 let FIELDS = [];
 let THREAD = null;
+
+// --- Tabs --------------------------------------------------------------------
+//
+// Show/hide within one page, addressed by the location hash. Two reasons for
+// the hash rather than a plain click handler: the browser Back button then
+// works, and a specific view can be linked to.
+//
+// A run in progress is UNAFFECTED by switching tabs. The stream is read by a
+// fetch ReadableStream loop living in JavaScript, not by the DOM, so hiding the
+// section it writes into does not interrupt it - the writes simply land on
+// hidden nodes and are there on return. Nothing here may tear that loop down.
+
+const TABS = ["run", "gallery", "about"];
+
+function showTab(name) {
+  if (!TABS.includes(name)) name = "run";
+  for (const tab of TABS) $("tab-" + tab).hidden = tab !== name;
+  for (const link of document.querySelectorAll(".tabs a")) {
+    if (link.dataset.tab === name) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  }
+}
+
+function currentTab() {
+  return (location.hash || "#run").slice(1).split("/")[0];
+}
+
+window.addEventListener("hashchange", () => showTab(currentTab()));
 
 // --- The form, built from the server's field definitions ---------------------
 
@@ -321,8 +430,8 @@ function groundsLine(ground) {
   return el("div", "Check: " + ground.text, "check");
 }
 
-function showBrief(brief) {
-  const out = $("result");
+function showBrief(brief, targetId = "result") {
+  const out = $(targetId);
   out.replaceChildren();
   out.hidden = false;
 
@@ -513,14 +622,27 @@ async function loadGallery() {
   }
 }
 
+// Opening a recording used to hide the live-run form and never put it back, so
+// the only way out was reloading the page. It now renders into the gallery's
+// OWN result area, inside the gallery tab, and leaves everything on the run tab
+// exactly as it was - including a run that is still going.
 async function showRecording(name) {
   const body = await (await fetch("/api/gallery/" + encodeURIComponent(name))).json();
-  $("intro").hidden = true;
-  $("progress").hidden = true;
-  showBrief(body.brief);
-  $("result").prepend(el("p", "A recorded run. No API key, no network call and no quota were used to show it.", "help"));
-  $("result").scrollIntoView({ behavior: "smooth" });
+  showBrief(body.brief, "gallery-result");
+
+  const out = $("gallery-result");
+  const back = el("button", "← back to all runs", "back");
+  back.addEventListener("click", () => {
+    out.hidden = true;
+    $("gallery-list").scrollIntoView({ behavior: "smooth" });
+  });
+  out.prepend(
+    el("p", "A recorded run. No API key, no network call and no quota were used to show it.", "help"),
+  );
+  out.prepend(back);
+  out.scrollIntoView({ behavior: "smooth" });
 }
 
+showTab(currentTab());
 loadForm().then(loadQuota).then(loadGallery);
 </script>
