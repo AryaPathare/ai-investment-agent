@@ -121,7 +121,7 @@ Suite: 1062 passed to **1065**.
 
 ## THE AGENDA — what the website still owes
 
-**F3 and F5 are what session 23 left. F7-F11 are what he added after seeing F6
+**F3 and F5 are what session 23 left. F7-F12 are what he added after seeing F6
 deployed** - they are written out below the F6 entry, and none of them was
 started.
 
@@ -216,7 +216,7 @@ check that settles it.
 
 ---
 
-## F7-F11 — HIS REVIEW OF THE F6 DESIGN, 2026-09-09
+## F7-F12 — HIS REVIEW OF THE F6 DESIGN, 2026-09-09
 
 **Written from his own message and four screenshots at the end of session 23.
 Nothing here was started.** He looked at the live site after F6 deployed and
@@ -312,6 +312,56 @@ reason to be careful either way** - the sector examples and the narrowing advice
 are the one piece of teaching this interface does, and it exists because a bare
 menu of eleven broad sectors measurably made runs worse. Whatever happens here,
 the advice has to survive it.
+
+**F12. "Consumer Defensive" fits on one line now, and its EXAMPLE does not.**
+He saw `Consumer Defensive  e.g. food producers, household goods` wrapping to
+two lines and wants it on one.
+
+**Read this before treating it as a regression: it is the F6 fix working as
+designed.** That cell has always been the tightest in the grid. F6 decided WHICH
+of the two halves gives - the handoff's own diagnosis was that the name had no
+flex rule of its own, so the name was the child that broke - and pinned the name
+with `flex: none; white-space: nowrap` so the example absorbs the pressure
+instead. He is now asking for neither to give. **Reverting the F6 rule is not
+the answer; that just moves the wrap back onto the name he asked to fix**, and
+`test_the_sector_name_cannot_be_the_thing_that_gives` guards against exactly
+that.
+
+**Why it is only this one cell, measured rather than guessed.** Name plus
+example, in characters, across all eleven sectors:
+
+    49  Consumer Defensive      food producers, household goods
+    42  Financial Services      regional banks, payments
+    42  Industrials             aerospace, electrical equipment
+    41  Consumer Cyclical       carmakers, online retail
+
+**Consumer Defensive is seven characters clear of the field.** Everything else
+already fits a 21rem track. This is one outlier, not a grid that is generally
+too tight - which is what makes the cheapest fix a real option.
+
+Four ways out, and they are not equally cheap:
+
+- **Shorten that one example.** Seven characters brings it level with the pack -
+  `food producers, household goods` to `food producers, toiletries`, say. It
+  lives at `backend/render.py:641` in the `SECTORS` table, so it is CONTENT
+  shared with the CLI and inside the parked backend, same crossing as F8's
+  currency rename. **Read the `SECTORS` docstring first** - entry 83 is there,
+  and it says the examples are the teaching this interface does, not decoration.
+  Shorter must not mean vaguer.
+- **Widen the sector track past 21rem.** Fixes it and costs a column - 3 columns
+  becomes 2 - which puts width back into the blank space F7 exists to remove.
+  These two items pull against each other; do not settle this one without
+  looking at that one.
+- **Give the example its own line for EVERY sector.** Ten cells on one line and
+  one on two reads as broken; eleven cells on two lines reads as a pattern. Turns
+  the raggedness into a layout decision instead of chasing a string length.
+- **Shrink `.eg` below .8rem, or truncate with a title attribute.** Cheapest in
+  CSS, worst for the thing the examples are for - a truncated example teaches
+  nothing, and an unreadable one is not much better.
+
+**It also may not survive F7 and F10 unchanged.** Both touch the panel this grid
+sits in; a layout that changes the available width changes which cells fit.
+Worth sequencing this after them rather than fixing it twice.
 
 ---
 
