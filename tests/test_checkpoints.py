@@ -100,7 +100,7 @@ def test_importing_the_module_creates_no_database():
         pytest.skip("a real run has already created the database")
 
     subprocess.run(
-        [sys.executable, "-c", "import cli, checkpoints"],
+        [sys.executable, "-c", "import backend.cli, backend.checkpoints"],
         cwd=PROJECT_ROOT,
         check=True,
     )
