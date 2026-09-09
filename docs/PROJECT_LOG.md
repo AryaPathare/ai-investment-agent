@@ -4861,3 +4861,60 @@ suite is not what these moves break: `--demo` still prints a brief with no API
 key from `shared/`, a profile still loads from `backend/examples/`, and the app
 still boots under `uvicorn frontend.app:app --workers 1` and serves eleven
 recordings.
+
+### 125. The ignore rule that kept looking right after the thing it guarded moved
+
+Asked whether the reorganisation was finished, the honest way to answer was to
+look rather than to judge - and looking found a defect introduced two commits
+earlier.
+
+`.gitignore` line 25 read `evals/results/`. **A pattern containing a slash is
+anchored to the directory holding the ignore file**, so it matched
+`<root>/evals/results/` and nothing else. Entry 123 moved `evals/` into
+`backend/`. The pattern stopped matching, `git add -A` swept up what it now saw,
+and **37 eval artifacts, 236 KB, were committed into a public repository that
+had deliberately never tracked them:**
+
+    at 4b4629d   0 tracked
+    at HEAD     37 tracked
+
+Entry 40's publication audit had recorded `.cache/` and `evals/results/` as
+never tracked, and that sentence had been true for eighty-five entries.
+
+**Nothing failed.** The rule was still correct, still readable, and pointed at a
+path that no longer existed. That is entry 119's shape three days running - a
+`pythonVersion` key that pinned nothing, a start command naming a module that
+had moved, and now an ignore rule anchored to a directory that had. Each was a
+statement about the repository that the repository had quietly stopped
+honouring, and in every case the thing that found it was reading the rule
+against reality rather than re-reading the rule.
+
+**Fixed with `**/`**, which matches at any depth, so a future move cannot repeat
+it. `.cache/` and `.state/` were checked and are genuinely fine: both are
+created at `PROJECT_ROOT`, which is the repository root, so root-anchoring is
+correct for them rather than lucky.
+
+**And a second file came out with them.** `backend/examples/mine.json` - moved
+there by entry 124 without enough thought - is a saved profile, which means it
+is an age, an amount of money and a risk tolerance. It had been public since
+`212d632`. It is now ignored, and `examples/README.md` says why, because
+`--save-profile mine.json` is the documented way to keep your own answers and
+the documentation should say where they end up. **Removing it from HEAD does not
+remove it from history**; that would need the treatment entry 40 gave a work
+email, and it would change every SHA including the `v1.0.0` the case study
+quotes. Left as a decision rather than taken silently.
+
+`backend/tests/test_repository_hygiene.py` asks **git** what is tracked, because
+the ignore file is a claim about intent and `git ls-files` is the outcome - and
+a file force-added with `git add -f` is invisible to any check that only reads
+`.gitignore`. It carries the guard entry 108 keeps insisting on: a test that git
+is tracking anything at all, since a query returning nothing would let every
+other assertion hold vacuously. Both halves broken on purpose, by force-adding
+an artifact and the profile back into the index and watching it go red.
+
+**This is the argument for stopping.** Two rounds of reorganisation produced one
+genuinely better structure and one silent regression, and the regression was
+found by a question rather than by anything in the repository. The structure now
+answers what it needs to - where a change goes, which half owns a file, which
+way dependencies point - and every further move would invalidate more prose in a
+125-entry log for less return. 1040 passed to **1045**.

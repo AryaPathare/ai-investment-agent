@@ -11,5 +11,7 @@ one thing upstream.
 | `semiconductors_high_risk.json` | A well-covered sector, so retrieval finds plenty and the run usually reaches a recommendation. |
 | `conflicted_crypto.json` | Wants crypto AND rules out crypto, so **Agent 1 stops and asks**. Use this to see the clarification interrupt and the resume. |
 
-Write your own with `python -m backend.cli --save-profile mine.json`; the schema is
+Write your own with `python -m backend.cli --save-profile mine.json`. That file
+is gitignored on purpose - a profile is an age, an amount of money and a risk
+tolerance, and this repository is public. The schema is
 `UserInput` in [models/user_input.py](../models/user_input.py).

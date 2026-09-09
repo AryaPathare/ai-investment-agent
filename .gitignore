@@ -22,7 +22,21 @@ desktop.ini
 .claude/settings.local.json
 
 # Eval run artifacts (re-runnable; not source)
-evals/results/
+#
+# `**/` and NOT `evals/results/`. A pattern containing a slash is anchored to
+# this file's directory, so `evals/results/` matched only at the repository
+# root - and the moment session 22 moved evals/ into backend/ it silently
+# stopped matching, and 37 artifact files were committed into a public
+# repository that had deliberately never tracked them. The rule was correct and
+# something moved underneath it, which is the same shape as render.yaml pinning
+# a Python version through a key that does not exist. test_repository_hygiene
+# now fails if any of these are tracked again.
+**/evals/results/
+
+# A personal saved profile. `--save-profile mine.json` is the documented way to
+# keep your own answers, and those answers are an age, an amount of money and a
+# risk tolerance - which belong on your disk and not in a public repository.
+**/mine.json
 
 # Cached API responses (re-fetchable; not source)
 .cache/
