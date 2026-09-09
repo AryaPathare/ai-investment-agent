@@ -727,7 +727,8 @@ def print_outcome(state: dict) -> int:
         print()
         print(_wrap(described["error"], indent="  "))
         print()
-        print(_wrap(described["error_hint"], indent="  "))
+        # The CLI variant, because this reader has a shell to run it in.
+        print(_wrap(render.RATE_LIMIT_HINT_CLI, indent="  "))
         return 1
 
     if described["status"] == "no_decision":

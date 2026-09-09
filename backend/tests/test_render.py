@@ -77,7 +77,25 @@ def test_a_failed_run_says_so_and_carries_its_reason(clean_user):
     # The hint travels with the error rather than being written into a front
     # end, because "this may be the daily ceiling" is something the reader is
     # told, not a layout choice.
-    assert "check_setup" in described["error_hint"]
+    assert "daily ceiling" in described["error_hint"]
+
+    # But it carries NO command. This is the hint a browser gets, and the shared
+    # daily ceiling is what usually ends a run on the deployed site, so it is
+    # the sentence most visitors will ever read. Telling them to open a shell
+    # they do not have is the one thing it must not do.
+    assert "check_setup" not in described["error_hint"]
+    assert "python -m" not in described["error_hint"]
+
+
+def test_the_cli_hint_keeps_the_step_a_terminal_reader_can_take():
+    """The command is not deleted, only moved off the shared path.
+
+    Somebody at a prompt CAN tell a configuration problem from an outage, and
+    that is worth saying to them. Both texts live in render.py; which one to
+    show is the front end's call, in the same way layout is.
+    """
+    assert render.RATE_LIMIT_HINT in render.RATE_LIMIT_HINT_CLI
+    assert "check_setup" in render.RATE_LIMIT_HINT_CLI
 
 
 def test_a_run_with_neither_decision_nor_error_is_reported_not_blank(clean_user):

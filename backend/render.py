@@ -119,9 +119,26 @@ what would help, which is the same sentence wherever a person reads it.
 
 RATE_LIMIT_HINT = (
     "If this mentions a rate limit or a quota, the daily ceiling has been "
-    "reached; try again later. Run python -m backend.scripts.check_setup to tell a "
+    "reached; try again later."
+)
+"""What a reader is told when a run fails. No command in it, deliberately.
+
+This is the sentence most visitors to the deployed site will ever read, because
+the shared daily ceiling is what usually ends a run and nothing refuses a run on
+the strength of an estimate. It used to end by telling the reader to run
+``python -m backend.scripts.check_setup`` - useful in a terminal, and an
+instruction to open a shell they do not have for everybody else.
+
+WHICH hint to show is a front-end decision, in the same way layout is: it turns
+on whether the reader has a command line, not on anything about the run. The
+TEXT of each is content and so both live here.
+"""
+
+RATE_LIMIT_HINT_CLI = (
+    f"{RATE_LIMIT_HINT} Run python -m backend.scripts.check_setup to tell a "
     "configuration problem from an outage."
 )
+"""The same thing, plus the one step a terminal reader can actually take."""
 
 
 def plain(text: str) -> str:
