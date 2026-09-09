@@ -67,5 +67,6 @@ start on it unprompted.
 | **F3** | One live run against the deployed site | needs quota, ~14:00 UTC |
 | **F4** | Two pieces of in-run copy that contradict each other | free, needs a decision |
 | **F5** | Open the live site on a phone | ten seconds, and the only thing that settles F2 |
+| **F6** | A design pass — banner, colour, wider layout | free, and the biggest visible change |
 
 W1-W5, F1 and F2 are done and deployed. Entries 127 and 128 have the reasoning.

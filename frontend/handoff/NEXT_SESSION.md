@@ -117,6 +117,55 @@ hazards are guarded and the layout is fluid; whether it actually reads well on a
 360px screen is unknown and takes ten seconds to find out.
 
     https://ai-investment-agent-gdjr.onrender.com
+**F6. A DESIGN PASS. His words after reviewing the live site: the tabs work and
+the information is good, but "the website's design itself looks quite boring"
+and it lacks enthusiasm.** Five specific asks, and two traps in delivering them.
+
+*What he asked for:*
+
+1. **More colour, and a border.** The palette is deliberately restrained -
+   `--paper #faf8f5`, `--ink #1a1a1a`, one dark-green `--accent #1f4d3d`, serif
+   throughout. It reads as a newspaper, which is defensible for a document and
+   is not what he wants. Every colour is already a CSS custom property in one
+   `:root` block, so a repalette is one edit rather than a hunt.
+2. **A banner across the top**, with the title top-left in a big, good-looking
+   font.
+3. **The tabs moved into that banner, top-right**, smaller than the title but
+   still styled - not the plain underlined row they are now.
+4. **"Consumer Defensive" must sit on one line** like every other sector. See
+   the diagnosis below; it is not a width problem in the way it looks.
+5. **Use more of the screen.** `main { max-width: 46rem }` is 736px, so on a
+   1920px display the content occupies about a third of it and the rest is
+   background.
+
+*The Consumer Defensive wrap, diagnosed rather than guessed:*
+
+`.sectors label` is a flex row of three children - the checkbox, a bare `<span>`
+with the sector name, and `<span class="eg">` with the example. **The name span
+has no `flex` or `white-space` rule**, so when the row runs short of space the
+name is what gives. "Consumer Defensive" is both the longest name AND has the
+longest example ("food producers, household goods"), so that one cell is the
+tightest in the grid and it is the only one that breaks. The fix is on the name
+span - `flex: none; white-space: nowrap` - letting `.eg` absorb the pressure
+instead. Widening the page would hide it without fixing it, and it would come
+back on the next narrow viewport.
+
+*Trap one: widening the page makes the BRIEFS worse if done bluntly.* 46rem is
+roughly 90 characters, which is near the top of the comfortable range for
+reading prose - and a brief is prose: a thesis, exit conditions, an explanation
+of why nothing was recommended. Setting `main` to 1400px would make every one of
+those lines materially harder to read while solving the complaint. **What he is
+describing is a wide SHELL, not wide prose**: banner, tabs, the gallery cards
+and the sector grid can all use the full width, while the reading column stays
+constrained. Expect to widen `main` and add a narrower wrapper around the text,
+rather than one number.
+
+*Trap two: F2 just fixed four narrow-screen hazards, and this touches all of
+them.* A banner with a title left and tabs right is a horizontal layout on a
+page that currently has none; `white-space: nowrap` on sector names removes a
+break point; a wider `main` changes nothing on a phone but a wider GRID does.
+Whatever lands here has to be re-checked at 360px, and F5 is still the only
+check that settles it.
 
 ---
 
