@@ -5402,3 +5402,32 @@ should.
 1065 passed to **1070**. Six items, and the two that mattered most were an
 argument about where a sentence already lived and a form that had been quietly
 filling itself in since the day it was written.
+
+## Session 25 — 2026-09-09
+
+### 133. F5, checked on the phone it was written for
+
+**He opened the live site on his phone and it reads well.** That closes F5, and
+with it the whole website agenda - W1-W5 and F1-F12, every item on the list
+agreed after the site went live.
+
+This is the one item nobody here could close. F5 was never a coding task: F2
+had already guarded the four narrow-screen hazards and the layout had already
+been made fluid, but **no browser runs in the test suite, so every F2 assertion
+says a CSS property is PRESENT, never that the result looks right.** A
+screenshot at 360px would have been a fifth assertion of the same kind - the
+renderer agreeing with itself. A person holding a phone is a different
+instrument, and it was the only one that could answer this.
+
+Worth being exact about what is now known and what is not. **Verified: the
+deployed page, on a real phone, by the person whose judgement the design is
+for.** Still unverified: nothing about a single visitor. The suite is unchanged
+at 1070, because a human check produces no test - which is the honest outcome
+here and not a gap to paper over with one.
+
+**What is left in production is two visitors at once.** The queue was present
+throughout the live run of entry 131 and never stressed - depth 0 from start to
+finish - so concurrency is untested against the real deployment, and the site
+has never had two visitors. It is not on the agenda because nobody put it
+there; it is simply the last thing about this deployment that has never
+happened.

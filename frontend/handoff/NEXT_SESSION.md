@@ -3,11 +3,11 @@
 The website: the page, the HTTP layer, the gallery and the deploy.
 For the pipeline see [the backend handoff](../../backend/handoff/NEXT_SESSION.md).
 
-**Written against `4c1e052`, 2026-09-09, at the end of session 22.** Before
+**Written against `a59e49b`, 2026-09-09, at the end of session 25.** Before
 trusting a word of this:
 
 ```powershell
-git log --oneline 4c1e052..HEAD
+git log --oneline a59e49b..HEAD
 ```
 
 Thirty seconds, and it is here because of entry 92: session 15 opened a handoff,
@@ -18,8 +18,8 @@ somebody about to stop working who cannot describe what happens next.
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1062 passed, 1 skipped** — 1063 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **129**, 22 sessions
+- Suite: **1070 passed, 1 skipped** — 1071 collected, and the distinction matters
+- `docs/PROJECT_LOG.md` is current through entry **133**, 25 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -121,9 +121,11 @@ Suite: 1062 passed to **1065**.
 
 ## THE AGENDA — what the website still owes
 
-**Session 24 closed F3 and F7 to F12. F5 is the only thing left on this list**
-- open the live site on a phone, which is not a coding task and which no
-screenshot substitutes for.
+**THE LIST IS EMPTY.** Session 24 closed F3 and F7-F12; he closed F5 himself on
+2026-09-09 by opening the live site on his phone, which is the only instrument
+that could answer it. **W1-W5 and F1-F12 are all done.** Nothing the website
+owes is written down anywhere, so the next person to work on it is starting from
+his next ask, not from this file.
 
     F3   DONE - one live run in production, five stages in 2m21s (entry 131)
     F7   DONE - stat tiles beside the intro, numbered 01-05 band (entry 132)
@@ -132,6 +134,7 @@ screenshot substitutes for.
     F10  DONE - blue and black, from the three sites he gave
     F11  DONE - the lede was DELETED, not moved; see below
     F12  DONE - the Consumer Defensive example shortened, all 11 rows one line
+    F5   DONE - checked on his phone, it reads well (entry 133)
 
 **Three things from session 24 worth carrying forward:**
 
@@ -190,11 +193,13 @@ in a browser; show the run id as something a person could bring back; or give
 the page an actual resume-by-id path, which the API already supports since the
 id is emitted before the first model call is paid for. Free either way.
 
-**F5. Open the live site on a phone.** Not a coding task and the reason F2 is
-only half-checked. No browser runs in the test suite, so every F2 assertion says
-a CSS property is PRESENT, never that the result looks right. The four known
-hazards are guarded and the layout is fluid; whether it actually reads well on a
-360px screen is unknown and takes ten seconds to find out.
+**F5. DONE 2026-09-09 - he checked it on his phone and it reads well.**
+~~Open the live site on a phone.~~ It was never a coding task, and it was the
+reason F2 was only half-checked: no browser runs in the test suite, so every F2
+assertion says a CSS property is PRESENT, never that the result looks right. A
+screenshot would have been a fifth assertion of that same kind. **The suite is
+unchanged at 1070 - a human check produces no test**, which is the honest
+outcome and not a gap to fill with one.
 
     https://ai-investment-agent-gdjr.onrender.com
 **F6. DONE in session 23.** ~~A DESIGN PASS. His words after reviewing the live site: the tabs work and
