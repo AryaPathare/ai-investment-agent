@@ -189,8 +189,33 @@ def test_the_page_declares_a_viewport():
 
 
 def test_the_headline_scales_down_on_a_narrow_screen():
-    """2.9rem is 46px, which is most of the width of a small phone."""
-    assert "clamp(2rem, 8vw, 2.9rem)" in HTML
+    """A fixed headline size is most of the width of a small phone.
+
+    This asserted the exact string `clamp(2rem, 8vw, 2.9rem)` until a design
+    pass retuned the headline and broke it - while the page was still perfectly
+    correct on a phone. That is a guard failing for the wrong reason, which
+    teaches people to edit the test rather than read it.
+
+    So it now asserts the PROPERTY the defect was about: the headline is set
+    with a clamp whose middle term is viewport-relative, and whose floor is
+    small enough to fit a 320px screen. Any of the three numbers may move; the
+    day someone replaces the clamp with a fixed size, this fails.
+
+    The ceiling is deliberately not checked. `clamp` cannot exceed it, and what
+    the largest size should be is a design question, not a phone question.
+    """
+    rule = re.search(r"font-size:\s*clamp\(([^)]+)\)", HTML)
+
+    assert rule, "the headline no longer uses clamp, so it no longer scales"
+
+    floor, middle, _ceiling = [part.strip() for part in rule.group(1).split(",")]
+
+    assert middle.endswith("vw"), f"the middle term {middle!r} is not viewport-relative"
+    assert floor.endswith("rem"), f"expected a rem floor, got {floor!r}"
+    assert float(floor.removesuffix("rem")) <= 2.2, (
+        f"a {floor} floor is {float(floor.removesuffix('rem')) * 16:.0f}px, "
+        f"too wide for a 320px screen"
+    )
 
 
 def test_long_provider_strings_can_break():

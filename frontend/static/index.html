@@ -2,6 +2,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Investment research agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
 
 <!--
   One page, no build step, no framework.
@@ -18,235 +21,539 @@
 -->
 
 <style>
-  /* PALETTE. Every colour is a custom property in this one block, so a
-     repalette is one edit rather than a hunt through the rules. The greens
-     carry the project's identity; rust and amber exist to stop the page
-     reading as a newspaper, which is what it did before. */
+  /* PALETTE - v2, dark and futuristic.
+
+     Read from five reference sites, listed in entry 136. The common thread in
+     all of them is not
+     a colour, it is CONTRAST OF VOICE: a near-black ground, one electric
+     accent used sparingly, a display face set large with tight tracking, and
+     small mono labels in wide caps. Obsidian does it on #08080a with mint;
+     RaceScout on near-black with lime. This keeps the blue the project already
+     had and adds a cyan and a violet, so a gradient has somewhere to travel -
+     one hue with nowhere to go is what made the old page monotone. */
   :root {
-    --ink: #0f172a; --muted: #5b6676; --line: #dce3ec;
-    --paper: #f4f7fb; --panel: #fff;
-    --accent: #2563eb; --accent-hot: #1d4ed8; --accent-warm: #60a5fa;
-    --deep: #0b1220; --deep-2: #16233b; --cream: #f8fafc;
-    /* Warning stays amber deliberately. A blue warning is not a warning, and
-       this is the colour on "nothing is being recommended" and on a failed
-       run - the two places the page most needs to stop reading as normal. */
-    --warn: #b45309;
-    --frame: 12px;
-    --ui: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color-scheme: dark;
+    /* Lifted off black. #06070d read as a hole; this is the same hue at about
+       twice the lightness, which keeps the electric accents looking lit
+       without the page feeling switched off. The panels lift with it, or the
+       glass stops reading as glass. */
+    --bg: #101423; --bg-2: #151a2c; --bg-3: #1b2237;
+    --ink: #e8ecf8; --muted: #98a1b8; --dim: #6b7490;
+    --line: rgba(255, 255, 255, .12);
+    --line-soft: rgba(255, 255, 255, .07);
+    --panel: rgba(255, 255, 255, .045);
+    /* Form controls are opaque on purpose - see the select rule below. */
+    --field: #191e30;
+    --panel-2: rgba(255, 255, 255, .07);
+
+    --accent: #4d8dff; --accent-hot: #27d9f0; --accent-3: #a97bff;
+    --accent-warm: #7aa9ff;
+    --grad: linear-gradient(100deg, #4d8dff 0%, #27d9f0 52%, #a97bff 100%);
+
+    --deep: #0a0d18; --deep-2: #151a2c; --cream: #f2f6ff;
+    /* Warning stays amber. A blue warning is not a warning, and on this ground
+       it would vanish into the accent entirely - worse than on the old page,
+       where at least it was a different hue from the frame. */
+    --warn: #f5a524;
+    --frame: 8px;
+    --ui: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --display: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
     --doc: ui-serif, Georgia, "Times New Roman", serif;
+    --ease: cubic-bezier(.22, .68, .2, 1);
   }
   * { box-sizing: border-box; }
+
   body {
-    margin: 0; padding: 0 0 4rem; color: var(--ink);
-    font: 16px/1.55 var(--ui);
+    margin: 0; padding: 0 0 5rem; color: var(--ink);
+    font: 16px/1.6 var(--ui);
     overflow-wrap: break-word;
-    /* The frame he asked for, and a dot grid too faint to read as texture
-       until the eye rests on the margin. */
+    background: var(--bg);
     border: var(--frame) solid var(--deep);
-    background:
-      radial-gradient(circle at 1px 1px, rgba(37,99,235,.10) 1px, transparent 0) 0 0 / 22px 22px,
-      radial-gradient(1200px 420px at 50% -140px, rgba(37,99,235,.09), transparent 70%),
-      var(--paper);
+    position: relative;
   }
 
-  /* BANNER. Title top-left, tabs top-right, full bleed inside the frame. */
+  /* THE GROUND. Three layers that never move with the content: a faint
+     technical grid, two slow aurora blooms, and a vignette. All fixed, all
+     behind everything, and all switched off under prefers-reduced-motion. */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -3; pointer-events: none;
+    background:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px) 0 0 / 100% 46px,
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px) 0 0 / 46px 100%,
+      radial-gradient(120% 80% at 50% 0%, transparent 45%, rgba(0,0,0,.42) 100%),
+      var(--bg);
+  }
+  body::after {
+    content: ""; position: fixed; inset: -25%; z-index: -2; pointer-events: none;
+    background:
+      radial-gradient(38rem 30rem at 18% 8%, rgba(77,141,255,.20), transparent 65%),
+      radial-gradient(34rem 26rem at 86% 26%, rgba(39,217,240,.14), transparent 65%),
+      radial-gradient(30rem 24rem at 60% 88%, rgba(169,123,255,.13), transparent 65%);
+    filter: blur(12px);
+    animation: drift 34s var(--ease) infinite alternate;
+  }
+  @keyframes drift {
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    50%  { transform: translate3d(2.5%, -2%, 0) scale(1.06); }
+    100% { transform: translate3d(-2%, 2.5%, 0) scale(1.02); }
+  }
+
+  /* THE CURSOR LIGHT. A soft bloom that trails the pointer, behind
+     everything, and only where a pointer is a real thing - a touch screen has
+     no hover, so on a phone this would either never appear or stick wherever
+     the last tap landed. Its position comes from two custom properties the
+     motion script writes; the easing is done in the script, not here, because
+     a CSS transition on a value that updates every frame fights itself. */
+  .cursorglow {
+    position: fixed; z-index: -1; pointer-events: none;
+    left: 0; top: 0; width: 11.3rem; height: 11.3rem;
+    margin: -5.65rem 0 0 -5.65rem;
+    transform: translate3d(var(--x, 50vw), var(--y, 40vh), 0);
+    background: radial-gradient(closest-side, rgba(77,141,255,.16),
+                rgba(39,217,240,.07) 45%, transparent 72%);
+    opacity: 0; transition: opacity .6s var(--ease);
+  }
+  .cursorglow.on { opacity: 1; }
+  @media (hover: none), (pointer: coarse) { .cursorglow { display: none; } }
+
+  /* THE PANEL SHEEN. The same idea at element scale: each card lights up under
+     the pointer rather than lighting up uniformly on hover. This is the one
+     that actually reads as expensive, and it costs two custom properties. */
+  .stat, .steps li, .card, .logcard { --mx: 50%; --my: 50%; }
+  .stat::after, .steps li::after, .card::after, .logcard::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    border-radius: inherit; opacity: 0;
+    transition: opacity .45s var(--ease);
+    background: radial-gradient(16rem circle at var(--mx) var(--my),
+                rgba(120,180,255,.14), transparent 60%);
+  }
+  .stat:hover::after, .steps li:hover::after,
+  .card:hover::after, .logcard:hover::after { opacity: 1; }
+  @media (hover: none), (pointer: coarse) {
+    .stat::after, .steps li::after, .card::after, .logcard::after { display: none; }
+  }
+
+  /* Scroll progress. Injected by the motion script, so the markup stays the
+     markup - the same reason the reveals are not hand-written classes. */
+  .progress {
+    position: fixed; top: 0; left: 0; height: 2px; width: 100%;
+    transform-origin: 0 50%; transform: scaleX(0);
+    background: var(--grad); z-index: 60; pointer-events: none;
+    box-shadow: 0 0 18px rgba(39,217,240,.7);
+  }
+
+  /* BANNER. Sticky and glass, with the tabs as pills - the floating capsule
+     nav is the one device all five reference sites have in common. */
   .banner {
-    background: linear-gradient(103deg, var(--deep) 0%, var(--deep-2) 62%, #1e3a5f 100%);
-    color: var(--cream);
-    border-bottom: 3px solid var(--accent-warm);
+    position: sticky; top: 0; z-index: 50;
+    background: linear-gradient(180deg, rgba(16,20,35,.94), rgba(16,20,35,.74));
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .banner::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+    background: var(--grad); opacity: .55;
   }
   .banner-in {
-    max-width: 72rem; margin: 0 auto; padding: 1.15rem 1.5rem 0;
-    display: flex; flex-wrap: wrap; align-items: flex-end;
-    justify-content: space-between; gap: .4rem 2rem;
+    max-width: 76rem; margin: 0 auto; padding: .85rem 1.5rem;
+    display: flex; flex-wrap: wrap; align-items: center;
+    justify-content: space-between; gap: .6rem 2rem;
   }
-  .banner h1 { color: var(--cream); margin: 0; padding-bottom: .3rem; }
+  .banner h1 { color: var(--cream); margin: 0; padding: 0; }
 
-  main { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1.5rem 0; }
+  main { max-width: 76rem; margin: 0 auto; padding: 3rem 1.5rem 0; }
 
-  /* The intro is a two-column row so the top of EVERY tab uses the width - the
-     emptiness he pointed at was beside this prose, on all three tabs, because
-     the reading column is 46rem inside a 72rem shell. */
-  .intro { display: grid; align-items: start; gap: 1.4rem 2.5rem;
-    grid-template-columns: minmax(0, 46rem) minmax(0, 1fr); }
-  .stats { display: grid; gap: .55rem; grid-template-columns: 1fr 1fr; }
-  .stat { background: var(--panel); border: 1px solid var(--line);
-    border-left: 3px solid var(--accent); padding: .6rem .75rem; }
-  .stat b { display: block; font-size: 1.45rem; line-height: 1.1;
-    font-weight: 800; color: var(--accent); letter-spacing: -.02em; }
-  .stat span { color: var(--muted); font-size: .8rem; }
-
-  /* THE ABOUT TAB'S RIGHT COLUMN. The same two-column grid as .intro, with
-     the same 46rem measure on the left, so the prose does not shift when you
-     move between tabs - only what sits beside it changes. */
-  .about { display: grid; align-items: start; gap: 1.4rem 2.5rem;
+  .intro { display: grid; align-items: start; gap: 1.8rem 3rem;
     grid-template-columns: minmax(0, 46rem) minmax(0, 1fr); }
 
-  /* The log, as an object rather than a link in a sentence. The offset edges
-     are the only decoration: two rules peeking out from under the card, which
-     is what a stack of paper looks like from above. */
-  .logcard {
-    display: block; margin: 2.2rem 0 0; padding: 1.15rem 1.25rem;
-    text-decoration: none; color: var(--cream);
-    background: linear-gradient(103deg, var(--deep) 0%, var(--deep-2) 70%, #1e3a5f 100%);
-    border: 1px solid var(--deep); border-top: 3px solid var(--accent-warm);
-    box-shadow: 5px 5px 0 -1px var(--paper), 6px 6px 0 0 var(--line),
-                10px 10px 0 -1px var(--paper), 11px 11px 0 0 var(--line);
+  /* STAT TILES. Glass, with the figure in the display face and a gradient on
+     it. RaceScout runs these as a rule-divided strip and Ciel as bare figures;
+     the tile is kept because this page has four and they have to survive a
+     narrow screen, where a strip cannot. */
+  .stats { display: grid; gap: .7rem; grid-template-columns: 1fr 1fr; }
+  .stat {
+    position: relative; overflow: hidden;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; padding: .85rem .95rem;
+    transition: transform .45s var(--ease), border-color .45s var(--ease),
+                background .45s var(--ease);
   }
-  .logcard:hover, .logcard:focus-visible { border-top-color: var(--cream); }
-  .logcard:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-  .logcard .kicker { display: block; font-size: .74rem; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--accent-warm); }
-  .logcard .n { display: block; font-size: 2.1rem; line-height: 1.05;
-    font-weight: 800; letter-spacing: -.02em; margin: .35rem 0 0; }
-  .logcard .unit { display: block; font-size: .8rem; color: #b9c7dc; }
-  .logcard .d { display: block; margin: .8rem 0 0; font-size: .86rem;
-    line-height: 1.5; color: #d6e0ee; }
-  .logcard .cta { display: block; margin: .9rem 0 0; font-weight: 700;
-    font-size: .88rem; color: var(--cream); }
-  .logcard .d em { color: var(--cream); font-style: normal; font-weight: 600; }
+  .stat::before {
+    content: ""; position: absolute; inset: 0 auto 0 0; width: 2px;
+    background: var(--grad); opacity: .9;
+  }
+  .stat:hover { transform: translateY(-3px); border-color: rgba(77,141,255,.45);
+    background: var(--panel-2); }
+  .stat b {
+    display: block; font-family: var(--mono); font-size: 1.7rem;
+    line-height: 1.15; font-weight: 700; letter-spacing: -.04em;
+    background: var(--grad); -webkit-background-clip: text;
+    background-clip: text; color: transparent;
+  }
+  .stat span { color: var(--muted); font-size: .78rem; letter-spacing: .01em; }
 
-  /* The first page. A page of a document is mostly margin, so it needs an
-     edge of its own or it dissolves into the paper background. */
-  .preview { display: block; margin: 1.1rem 0 0; line-height: 0;
-    border: 1px solid var(--line); background: var(--panel);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, .10); }
-  .preview img { display: block; width: 100%; height: auto; }
-  .preview:hover, .preview:focus-visible { border-color: var(--accent); }
-  .preview:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-
-  /* A full-width band, for the numbered pipeline. */
-  .band { background: var(--panel); border: 1px solid var(--line);
-    border-top: 3px solid var(--accent); padding: 1.3rem 1.5rem; margin: 2.2rem 0 0; }
+  /* THE BAND. The numbered 01-05 sequence, which is the piece of this page
+     that most wanted the treatment Obsidian gives its scroll sections: a rail
+     that fills, a big mono numeral, and a card that lifts. */
+  .band {
+    position: relative; overflow: hidden;
+    background: linear-gradient(160deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    border: 1px solid var(--line); border-radius: 20px;
+    padding: 1.8rem 1.7rem; margin: 3rem 0 0;
+  }
+  .band::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: var(--grad);
+  }
   .band h2 { margin: 0; }
   .band h2::after { display: none; }
-  .band .band-sub { color: var(--muted); margin: .35rem 0 0; }
-  .steps { list-style: none; padding: 0; margin: 1.2rem 0 0; display: grid;
-    gap: 1rem 1.5rem;
+  .band .band-sub { color: var(--muted); margin: .4rem 0 0; max-width: 42rem; }
+  .steps { list-style: none; padding: 0; margin: 1.8rem 0 0; display: grid;
+    gap: 1.1rem 1.4rem;
     grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr)); }
-  /* Five stages, so five columns once there is room. auto-fit alone gave four
-     and left 05 stranded on a row of its own, which reads as a wrap rather
-     than a sequence. */
   @media (min-width: 66rem) { .steps { grid-template-columns: repeat(5, 1fr); } }
-  .steps li { border-top: 2px solid var(--line); padding-top: .55rem; }
-  .steps .n { display: block; font-size: 1.35rem; font-weight: 800;
-    color: var(--accent); letter-spacing: .02em; }
-  .steps strong { display: block; margin: .1rem 0 .25rem; }
-  .steps .d { color: var(--muted); font-size: .86rem; }
+  .steps li {
+    position: relative; padding: .9rem .9rem 1rem; border-radius: 14px;
+    background: rgba(255,255,255,.04); border: 1px solid var(--line-soft);
+    transition: transform .45s var(--ease), border-color .45s var(--ease),
+                background .45s var(--ease);
+  }
+  .steps li::before {
+    content: ""; position: absolute; top: -1px; left: .9rem; right: .9rem;
+    height: 2px; background: var(--grad); border-radius: 2px;
+    transform: scaleX(0); transform-origin: 0 50%;
+    transition: transform .8s var(--ease);
+  }
+  .band.in .steps li::before { transform: scaleX(1); }
+  .band.in .steps li:nth-child(2)::before { transition-delay: .10s; }
+  .band.in .steps li:nth-child(3)::before { transition-delay: .20s; }
+  .band.in .steps li:nth-child(4)::before { transition-delay: .30s; }
+  .band.in .steps li:nth-child(5)::before { transition-delay: .40s; }
+  .steps li:hover { transform: translateY(-4px); background: rgba(255,255,255,.05);
+    border-color: rgba(77,141,255,.35); }
+  .steps .n {
+    display: block; font-family: var(--mono); font-size: 1.5rem; font-weight: 700;
+    letter-spacing: -.02em; background: var(--grad);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .steps strong { display: block; margin: .25rem 0 .3rem; font-weight: 600;
+    letter-spacing: -.01em; }
+  .steps .d { color: var(--muted); font-size: .85rem; line-height: 1.55; }
 
   @media (max-width: 62rem) {
     .intro { grid-template-columns: 1fr; }
     .about { grid-template-columns: 1fr; }
     .stats { grid-template-columns: 1fr 1fr; }
-    /* Stacked, the card is no longer beside anything, and the offset edges
-       would hang off a 360px screen. */
     .logcard { margin-top: 1.6rem; box-shadow: none; }
   }
 
-  /* WIDE SHELL, NARROW PROSE. 46rem is about 90 characters, the top of the
-     comfortable range for reading - and a brief IS prose: a thesis, exit
-     conditions, an explanation of why nothing was recommended. So the shell
-     widens and the reading column does not. The form panel and the gallery
-     take the full width; everything listed here stays readable. */
+  /* WIDE SHELL, NARROW PROSE - unchanged from the light design, and for the
+     unchanged reason: a brief is prose and 46rem is about 90 characters. */
   .sub, .disclaimer, #progress, #clarify, #result,
   #gallery-result, #gallery-note, #tab-about p {
     max-width: 46rem; margin-left: 0; margin-right: auto;
   }
 
-  h1 { font-size: clamp(2rem, 8vw, 2.9rem); line-height: 1.05; margin: 0 0 .5rem; letter-spacing: -.025em; font-weight: 700; }
-  h2 { font-size: 1.5rem; margin: 2.2rem 0 .6rem; letter-spacing: -.015em; font-weight: 700; }
-  h2::after { content: ""; display: block; width: 2.4rem; height: 3px;
-    background: var(--accent-hot); margin-top: .45rem; }
-  h3 { font-size: 1.15rem; margin: 1.6rem 0 .2rem; font-weight: 700; }
-  p { margin: .5rem 0; }
-  .sub { color: var(--muted); margin-bottom: 1.25rem; font-size: 1.12rem; }
+  /* TYPE. Four voices, and the distance between them is the point - the
+     complaint was that every line looked like every other line.
 
-  /* Tabs. A navigation model, not decoration: without one, every "go
-     somewhere" on this page was a one-way hide, and opening a recorded run
-     left no way back to the form. They now live in the banner, so they are
-     styled against the deep green rather than against paper. */
-  .tabs { display: flex; flex-wrap: wrap; gap: .2rem; margin: 0; }
+       Cormorant Garamond   headings only, and lifted from Ciel exactly:
+                            weight 300, letter-spacing -.01em, upright for the
+                            opening words and ITALIC for the last one, which
+                            also changes colour. That is the whole device on
+                            "Where Nature Meets /Luxury/".
+       Inter                anything read as a sentence.
+       JetBrains Mono       anything read as a token: labels, counts, ids.
+       Georgia              the brief, as before.
+
+     Cormorant is a DELICATE face - a 300 weight with a small x-height and
+     hairline strokes - so every size below is larger than the sans it replaced
+     and the small ones are given more weight. Set at sans sizes it reads as
+     faint rather than as fine, which on a dark ground is the difference
+     between elegant and broken. */
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(2.2rem, 9.5vw, 4.3rem); line-height: 1.02;
+    margin: 0 0 .1rem; letter-spacing: -.01em; font-weight: 300;
+    color: var(--cream);
+  }
+  /* The one word in the italic, carrying the colour. Solid rather than a
+     gradient: at weight 300 the strokes are about a pixel wide, and a gradient
+     across a pixel is just a muddier colour. */
+  h1 .fancy {
+    font-style: italic; font-weight: 300; letter-spacing: 0;
+    color: var(--accent-hot); padding-right: .04em;
+  }
+  h2 { font-family: var(--display); font-size: 2.35rem; margin: 2.8rem 0 .7rem;
+    letter-spacing: -.005em; font-weight: 400; font-style: italic;
+    color: var(--cream); line-height: 1.15; }
+  h2::after { content: ""; display: block; width: 2.6rem; height: 2px;
+    background: var(--grad); margin-top: .5rem; border-radius: 2px; }
+  h3 { font-family: var(--display); font-size: 1.55rem; margin: 1.8rem 0 .25rem;
+    font-weight: 600; letter-spacing: 0; color: var(--cream); }
+  p { margin: .55rem 0; }
+  .sub { color: #b9c2d8; margin-bottom: 1.4rem; font-size: 1.16rem;
+    line-height: 1.62; }
+
+  /* TABS, as a pill group. */
+  .tabs {
+    display: flex; flex-wrap: wrap; gap: .25rem; margin: 0; padding: .25rem;
+    background: rgba(255,255,255,.045); border: 1px solid var(--line);
+    border-radius: 999px;
+  }
   .tabs a {
-    padding: .5rem .9rem; text-decoration: none; color: rgba(244,239,228,.72);
-    font-weight: 700; font-size: .9rem; letter-spacing: .04em;
-    text-transform: uppercase; border-bottom: 3px solid transparent;
+    position: relative; padding: .45rem 1rem; text-decoration: none;
+    color: var(--muted); font-weight: 600; font-size: .82rem;
+    letter-spacing: .06em; text-transform: uppercase; border-radius: 999px;
+    font-family: var(--mono);
+    transition: color .3s var(--ease), background .3s var(--ease);
   }
-  .tabs a:hover { color: var(--cream); border-bottom-color: rgba(223,169,75,.5); }
-  .tabs a[aria-current="page"] { color: #fff; border-bottom-color: var(--accent-warm); }
+  .tabs a:hover { color: var(--cream); background: rgba(255,255,255,.06); }
+  .tabs a[aria-current="page"] {
+    color: #04121c; background: var(--grad); font-weight: 700;
+    box-shadow: 0 6px 20px -8px rgba(39,217,240,.8);
+  }
   .back {
-    background: none; color: var(--accent); border: 0; padding: 0;
-    font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline;
+    background: none; color: var(--accent-hot); border: 0; padding: 0;
+    font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline;
+    box-shadow: none;
   }
-  .panel { background: var(--panel); border: 1px solid var(--line);
-    border-top: 3px solid var(--accent); padding: 1.1rem 1.25rem; margin: 1rem 0;
-    box-shadow: 0 1px 0 rgba(15,58,49,.05), 0 10px 26px -22px rgba(15,58,49,.5); }
-  label { display: block; font-weight: 600; margin: 1rem 0 .25rem; font-size: .95rem; }
-  /* The form pairs up on a wide panel and stacks on a narrow one. The sector
-     grid spans both columns - it is the one field that carries its own. */
+  .back:hover { background: none; color: var(--cream); transform: none;
+    filter: none; box-shadow: none; }
+  .back::after { display: none; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 18px; padding: 1.5rem; margin: 1.4rem 0;
+    position: relative; overflow: hidden;
+  }
+  .panel::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: var(--grad); opacity: .8;
+  }
+
+  label { display: block; font-weight: 600; margin: 1.1rem 0 .3rem;
+    font-size: .88rem; letter-spacing: .01em; color: #c9d2e6; }
   #profile { display: grid; align-items: start; gap: 0 2.2rem;
     grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr)); }
   #profile .fld { display: flex; flex-direction: column; }
-  /* Labels are not all one line, so without this the inputs in a row sit at
-     different heights. The control drops to the bottom of its cell instead. */
   #profile .fld > :last-child { margin-top: auto; }
   #profile .fld.wide { grid-column: 1 / -1; }
-  .help { color: var(--muted); font-size: .85rem; margin: .1rem 0 .35rem; }
+  .help { color: var(--dim); font-size: .82rem; margin: .1rem 0 .4rem; }
+
   input[type=text], input[type=number], select {
-    width: 100%; max-width: 34rem; padding: .5rem .6rem;
-    border: 1px solid var(--line);
-    background: #fff; font: inherit; font-size: .95rem;
+    width: 100%; max-width: 34rem; padding: .65rem .8rem;
+    border: 1px solid var(--line); border-radius: 10px;
+    background-color: var(--field); color: var(--ink);
+    font: inherit; font-size: .93rem;
+    /* Opaque, and the same colour the open list uses. A translucent control
+       composites against whatever is behind it, which an OS-drawn popup
+       cannot do - so the two disagreed at the moment of opening, and every
+       control has to match every other one anyway. */
+    /* Deliberately NOT transitioning background: a select hands its colour
+       to the popup at the moment it opens, and a control mid-transition hands
+       over a colour that is about to change. */
+    transition: border-color .3s var(--ease), box-shadow .3s var(--ease);
   }
+  select option { background-color: var(--field); color: var(--ink); }
   input[type=text]:focus, input[type=number]:focus, select:focus {
-    outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent);
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(77,141,255,.22), 0 0 22px -6px rgba(39,217,240,.5);
   }
+  input::placeholder { color: var(--dim); }
+
+  /* BUTTONS. Pill, gradient, and lit from underneath on hover - the shape all
+     five sites share, and the one element where a little theatre is free. */
   button {
-    font: inherit; font-weight: 700; padding: .65rem 1.3rem; cursor: pointer;
-    background: var(--accent-hot); color: #fff; border: 0; letter-spacing: .02em;
+    position: relative; overflow: hidden;
+    font: inherit; font-weight: 700; font-size: .95rem;
+    padding: .8rem 1.7rem; cursor: pointer; border: 0; border-radius: 999px;
+    background: var(--grad); color: #04121c; letter-spacing: .01em;
+    box-shadow: 0 10px 30px -14px rgba(39,217,240,.9);
+    transition: transform .3s var(--ease), box-shadow .3s var(--ease),
+                filter .3s var(--ease);
   }
-  button:hover { background: #b0451f; }
-  button[disabled] { background: #9aa5a0; cursor: not-allowed; }
-  .sectors { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(21rem, 100%), 1fr)); gap: .3rem .9rem; }
-  .sectors label { font-weight: 400; margin: 0; display: flex; gap: .45rem; align-items: baseline; font-size: .9rem; }
-  /* The name is what gave when the row ran short of space, because it was the
-     only child with no flex rule of its own - which is why "Consumer
-     Defensive", the longest name carrying the longest example, was the one
-     cell in the grid that wrapped. The example absorbs the pressure instead. */
+  button::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit;
+    background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.55) 50%, transparent 80%);
+    transform: translateX(-120%);
+  }
+  button:hover { transform: translateY(-2px); filter: brightness(1.08);
+    box-shadow: 0 16px 40px -14px rgba(39,217,240,1); }
+  button:hover::after { animation: sheen .85s var(--ease); }
+  @keyframes sheen { to { transform: translateX(120%); } }
+  button:active { transform: translateY(0); }
+  button[disabled] {
+    background: rgba(255,255,255,.10); color: var(--dim); cursor: not-allowed;
+    box-shadow: none; transform: none; filter: none;
+  }
+  button[disabled]::after { display: none; }
+
+  /* SECTORS. Chips, which is what a list of eleven togglable things wants to
+     be - and the two rules that kept "Consumer Defensive" on one line are
+     carried over verbatim, because that defect is a layout law here. */
+  .sectors { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(21rem, 100%), 1fr)); gap: .35rem .9rem; }
+  .sectors label {
+    font-weight: 400; margin: 0; display: flex; gap: .5rem; align-items: baseline;
+    font-size: .88rem; padding: .4rem .6rem; border-radius: 10px;
+    border: 1px solid transparent; color: var(--ink);
+    transition: background .3s var(--ease), border-color .3s var(--ease);
+  }
+  .sectors label:hover { background: rgba(255,255,255,.05);
+    border-color: var(--line-soft); }
   .sectors .nm { flex: none; white-space: nowrap; }
-  .sectors .eg { color: var(--muted); font-size: .8rem; min-width: 0; }
-  ol.stages { list-style: none; padding: 0; margin: .5rem 0; }
-  ol.stages li { padding: .45rem 0; border-bottom: 1px dotted var(--line); }
+  .sectors .eg { color: var(--dim); font-size: .78rem; min-width: 0; }
+  input[type=checkbox] { accent-color: var(--accent-hot); transition: transform .18s var(--ease); }
+  input[type=checkbox]:checked { animation: pop .28s var(--ease); }
+  @keyframes pop { 40% { transform: scale(1.28); } 100% { transform: scale(1); } }
+
+  /* THE LIVE RUN. Five stages arriving one at a time over two to four minutes
+     - the one place on this page where something is genuinely happening, and
+     the one place motion is information rather than decoration. */
+  ol.stages { list-style: none; padding: 0; margin: .8rem 0; }
+  ol.stages li {
+    position: relative; padding: .7rem 0 .7rem 1.6rem;
+    border-bottom: 1px solid var(--line-soft);
+    transition: opacity .5s var(--ease);
+  }
+  ol.stages li::before {
+    content: ""; position: absolute; left: 0; top: 1.05rem;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--dim);
+    transition: background .4s var(--ease), box-shadow .4s var(--ease);
+  }
+  ol.stages li:not(.pending)::before {
+    background: var(--accent-hot); box-shadow: 0 0 0 4px rgba(39,217,240,.16);
+  }
+  ol.stages li.pending { opacity: .38; }
+  ol.stages li:not(.pending) + li.pending::before {
+    background: var(--accent); animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(77,141,255,.55); }
+    50%      { box-shadow: 0 0 0 7px rgba(77,141,255,0); }
+  }
   ol.stages .name { font-weight: 600; }
-  ol.stages .counts { color: var(--muted); font-size: .87rem; display: block; }
-  ol.stages li.pending { opacity: .45; }
-  .cond { margin: .6rem 0; }
-  .cond .check { color: var(--muted); font-size: .87rem; margin-left: 1rem; }
+  ol.stages .counts { color: var(--muted); font-size: .84rem; display: block;
+    font-family: var(--mono); letter-spacing: -.01em; }
+
+  .cond { margin: .7rem 0; }
+  .cond .check { color: var(--muted); font-size: .84rem; margin-left: 1rem; }
   .cond .check a { color: var(--muted); }
-  .nothing { border-left: 4px solid var(--warn); }
-  .failed { border-left: 4px solid var(--warn); }
-  .disclaimer { border-top: 2px solid var(--accent-hot); margin-top: 2.5rem; padding-top: .7rem; font-weight: 600; }
-  .quota { color: var(--muted); font-size: .85rem; }
-  /* The gallery is cards, not prose, so it takes the full shell width. */
-  #gallery-list { display: grid; gap: .5rem;
+  .nothing { border-left: 3px solid var(--warn); }
+  .failed { border-left: 3px solid var(--warn); }
+  .disclaimer {
+    border-top: 1px solid var(--line); margin-top: 2.8rem; padding-top: .9rem;
+    font-weight: 600; color: #c6cfe4;
+  }
+  /* The page-level one. It is the only thing on this site a visitor cannot
+     navigate away from, so it sits above the tabs and is dressed to be read
+     rather than skipped - amber, because that is this page's colour for
+     "stop treating this as normal". */
+  #disclaimer {
+    margin: 0 0 2rem; border: 1px solid rgba(245,165,36,.28); border-top: 0;
+    border-left: 2px solid var(--warn); border-radius: 0 10px 10px 0;
+    background: rgba(245,165,36,.06); padding: .7rem .95rem;
+    font-size: .92rem; color: #e6d6bb; max-width: 46rem;
+  }
+  #disclaimer:empty { display: none; }
+  .quota { color: var(--muted); font-size: .86rem; }
+  /* A run id IS a token, so that one keeps the mono. */
+  #runid { font-family: var(--mono); font-size: .8rem; letter-spacing: -.01em; }
+
+  /* GALLERY. Cards that lift, with a gradient edge that arrives on hover. */
+  #gallery-list { display: grid; gap: .8rem;
     grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr)); }
-  .card { background: var(--panel); border: 1px solid var(--line);
-    border-left: 3px solid var(--accent-warm);
-    padding: .7rem .9rem; margin: 0; cursor: pointer; }
-  .card:hover { border-color: var(--accent); border-left-color: var(--accent-hot); }
-  .card .asked { font-weight: 600; }
-  .card .who, .card .got { color: var(--muted); font-size: .85rem; }
-  .card .got { margin-top: .15rem; }
-  /* The brief, and only the brief, is set in the reading face. Everything
-     else on this page is interface. */
-  #result, #gallery-result { font-family: var(--doc); font-size: 1.02rem; }
-  code { font: .85em ui-monospace, Menlo, Consolas, monospace; }
-  a { color: var(--accent); }
+  .card {
+    position: relative; overflow: hidden;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 16px; padding: 1rem 1.1rem; margin: 0; cursor: pointer;
+    transition: transform .45s var(--ease), border-color .45s var(--ease),
+                background .45s var(--ease), box-shadow .45s var(--ease);
+  }
+  .card::before {
+    content: ""; position: absolute; top: 0; left: 0; bottom: 0; width: 2px;
+    background: var(--grad); transform: scaleY(0); transform-origin: 50% 0;
+    transition: transform .45s var(--ease);
+  }
+  .card:hover {
+    transform: translateY(-4px); background: var(--panel-2);
+    border-color: rgba(77,141,255,.4);
+    box-shadow: 0 22px 44px -28px rgba(39,217,240,.75);
+  }
+  .card:hover::before { transform: scaleY(1); }
+  .card .asked { font-weight: 600; color: var(--cream); }
+  .card .who, .card .got { color: var(--muted); font-size: .83rem; }
+  .card .got { margin-top: .2rem; }
+
+  /* THE ABOUT COLUMN, carried over and re-lit for the dark ground. */
+  .about { display: grid; align-items: start; gap: 1.4rem 3rem;
+    grid-template-columns: minmax(0, 46rem) minmax(0, 1fr); }
+  .logcard {
+    display: block; margin: 2.6rem 0 0; padding: 1.3rem 1.35rem;
+    text-decoration: none; color: var(--cream); border-radius: 18px;
+    background: linear-gradient(150deg, rgba(77,141,255,.20), rgba(169,123,255,.10) 60%, rgba(255,255,255,.03));
+    border: 1px solid var(--line); position: relative; overflow: hidden;
+    transition: transform .45s var(--ease), border-color .45s var(--ease),
+                box-shadow .45s var(--ease);
+  }
+  .logcard::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: var(--grad);
+  }
+  .logcard:hover, .logcard:focus-visible {
+    transform: translateY(-3px); border-color: rgba(39,217,240,.5);
+    box-shadow: 0 24px 50px -30px rgba(39,217,240,.9);
+  }
+  .logcard:focus-visible { outline: 2px solid var(--accent-hot); outline-offset: 3px; }
+  .logcard .kicker { display: block; font-family: var(--mono); font-size: .7rem;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--accent-hot); }
+  .logcard .n {
+    display: block; font-family: var(--mono); font-size: 2.3rem;
+    line-height: 1.1; font-weight: 700; letter-spacing: -.04em; margin: .4rem 0 0;
+    background: var(--grad); -webkit-background-clip: text;
+    background-clip: text; color: transparent;
+  }
+  .logcard .unit { display: block; font-size: .78rem; color: var(--muted);
+    font-family: var(--mono); letter-spacing: .02em; }
+  .logcard .d { display: block; margin: .9rem 0 0; font-size: .85rem;
+    line-height: 1.55; color: #c2cbe0; }
+  .logcard .d em { color: var(--cream); font-style: normal; font-weight: 600; }
+  .logcard .cta { display: block; margin: 1rem 0 0; font-weight: 700;
+    font-size: .85rem; color: var(--accent-hot); font-family: var(--mono);
+    letter-spacing: .02em; }
+
+  .preview {
+    display: block; margin: 1.2rem 0 0; line-height: 0; border-radius: 14px;
+    border: 1px solid var(--line); background: var(--panel); overflow: hidden;
+    transition: transform .45s var(--ease), border-color .45s var(--ease),
+                box-shadow .45s var(--ease);
+  }
+  .preview img { display: block; width: 100%; height: auto;
+    filter: brightness(.88) contrast(1.03) saturate(.95);
+    transition: filter .45s var(--ease); }
+  .preview:hover img, .preview:focus-visible img { filter: none; }
+  .preview:hover, .preview:focus-visible {
+    transform: translateY(-3px); border-color: rgba(39,217,240,.5);
+    box-shadow: 0 24px 50px -30px rgba(39,217,240,.8);
+  }
+  .preview:focus-visible { outline: 2px solid var(--accent-hot); outline-offset: 3px; }
+
+  /* The brief keeps the reading face. It is the one thing on this page that is
+     a document rather than an interface, and that was true before the repaint. */
+  #result, #gallery-result { font-family: var(--doc); font-size: 1.04rem;
+    line-height: 1.68; color: #dbe2f2; }
+  code { font: .85em var(--mono); color: var(--accent-hot);
+    background: rgba(39,217,240,.08); padding: .1em .35em; border-radius: 5px; }
+  a { color: var(--accent-hot); text-decoration-color: rgba(39,217,240,.4);
+    text-underline-offset: 3px; }
+  a:hover { color: var(--cream); }
   [hidden] { display: none !important; }
 
-  /* THE MARGINS. On a wide screen the reading column cannot honestly use the
-     whole width, so the gutters carry something true about the system rather
-     than filler: the five stages, and the rule that governs every claim.
-     Decorative and stated in the page proper too, hence aria-hidden. Below
-     1500px the gutters do not exist and neither do these. */
+  /* THE MARGINS, kept. Same argument as before: on a wide screen the gutters
+     carry something true about the system rather than filler. */
   .spine { display: none; }
   @media (min-width: 1500px) {
     .spine {
@@ -258,17 +565,41 @@
       transform: translateY(-50%) rotate(180deg); }
     .spine-r { right: calc(var(--frame) + 2.2rem); }
     .spine-text {
-      font-size: .74rem; letter-spacing: .3em; text-transform: uppercase;
-      font-weight: 700; color: var(--accent); opacity: .55;
+      font-family: var(--mono); font-size: .68rem; letter-spacing: .34em;
+      text-transform: uppercase; font-weight: 500; color: var(--accent);
+      opacity: .5;
     }
-    .spine-rule { width: 2px; height: 6rem; background:
-      linear-gradient(to bottom, transparent, var(--accent-warm), transparent); }
+    .spine-rule { width: 1px; height: 6rem; background:
+      linear-gradient(to bottom, transparent, var(--accent-hot), transparent); }
   }
 
+  /* REVEALS. Applied by the motion script to sections as they arrive, so the
+     markup carries no presentational classes of its own. */
+  [data-reveal] {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity .8s var(--ease), transform .8s var(--ease);
+  }
+  [data-reveal].in { opacity: 1; transform: none; }
+
   @media (max-width: 40rem) {
-    :root { --frame: 6px; }
+    :root { --frame: 5px; }
     .banner-in, main { padding-left: 1rem; padding-right: 1rem; }
+    main { padding-top: 2rem; }
     .banner-in { align-items: flex-start; }
+    .tabs { width: 100%; justify-content: space-between; }
+    .band { padding: 1.3rem 1.1rem; border-radius: 16px; }
+  }
+
+  /* MOTION IS OPTIONAL. Everything above is decoration except the stage pulse,
+     and somebody who has asked their system for less movement should not have
+     to negotiate with this page about it. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important; scroll-behavior: auto !important;
+    }
+    [data-reveal] { opacity: 1; transform: none; }
+    body::after { animation: none; }
   }
 </style>
 
@@ -279,7 +610,7 @@
      there are no gutters to put them in. -->
 <header class="banner">
   <div class="banner-in">
-    <h1>Investment research agent</h1>
+    <h1>Investment research <span class="fancy">agent</span></h1>
     <nav class="tabs">
       <a href="#run" data-tab="run">Run it</a>
       <a href="#gallery" data-tab="gallery">Past runs</a>
@@ -302,30 +633,31 @@
 <main>
   <!-- Two columns. The prose keeps its reading width; the tiles take the space
        to the right of it, which on every tab was empty. -->
-  <div class="intro">
-    <div>
-      <p class="sub">
-        Five agents read current news for the parts of the market you name, find
-        listed companies genuinely exposed to what they find, argue against each
-        one, and write up to three of them in plain language &mdash; or recommend
-        nothing, and say why.
-      </p>
-
-      <p class="disclaimer" id="disclaimer"></p>
-    </div>
-
-    <!-- Four figures that cannot drift: they are fixed by the design rather
-         than counted from anything. A tile reading "11 recorded runs" would be
-         a copy of a number, and this repository has a test about those. -->
-    <aside class="stats">
-      <div class="stat"><b>5</b><span>agents, in order</span></div>
-      <div class="stat"><b>2&ndash;4</b><span>minutes per run</span></div>
-      <div class="stat"><b>Every</b><span>claim cites what it read</span></div>
-      <div class="stat"><b>No</b><span>price targets, by design</span></div>
-    </aside>
-  </div>
+  <p class="disclaimer" id="disclaimer"></p>
 
   <div class="tab" id="tab-run">
+    <div class="intro">
+      <div>
+        <p class="sub">
+          Five agents read current news for the parts of the market you name, find
+          listed companies genuinely exposed to what they find, argue against each
+          one, and write up to three of them in plain language &mdash; or recommend
+          nothing, and say why.
+        </p>
+
+      </div>
+
+      <!-- Four figures that cannot drift: they are fixed by the design rather
+           than counted from anything. A tile reading "11 recorded runs" would be
+           a copy of a number, and this repository has a test about those. -->
+      <aside class="stats">
+        <div class="stat"><b>5</b><span>agents, in order</span></div>
+        <div class="stat"><b>2&ndash;4</b><span>minutes per run</span></div>
+        <div class="stat"><b>Every</b><span>claim cites what it read</span></div>
+        <div class="stat"><b>No</b><span>price targets, by design</span></div>
+      </aside>
+    </div>
+
     <section id="intro" class="panel">
       <p class="quota" id="quota">Checking what is left today&hellip;</p>
       <form id="profile"></form>
@@ -950,4 +1282,154 @@ async function showRecording(name) {
 
 route();
 loadForm().then(loadQuota).then(loadGallery);
+</script>
+
+<!-- THE MOTION LAYER.
+
+     Everything here is decoration, so it is kept apart from the page's own
+     script and written so that failing does nothing: no element it adds is
+     referenced by anything above, and no element above is required to exist.
+     It runs after the page script, which is what builds the form, the gallery
+     and the brief - so anything rendered later is caught by the observer
+     rather than missed.
+
+     It adds NO content. Every string a visitor reads is in the markup above.
+-->
+<script>
+"use strict";
+
+(() => {
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  // A scroll-progress hairline, taken from the reference sites. Injected rather
+  // than written into the markup because it says nothing - a screen reader
+  // that met it would gain a stray empty landmark for no reason.
+  const bar = document.createElement("div");
+  bar.className = "progress";
+  bar.setAttribute("aria-hidden", "true");
+  document.body.appendChild(bar);
+
+  let ticking = false;
+  const draw = () => {
+    const room = document.documentElement.scrollHeight - window.innerHeight;
+    const at = room > 0 ? window.scrollY / room : 0;
+    bar.style.transform = `scaleX(${Math.min(1, Math.max(0, at))})`;
+    ticking = false;
+  };
+  addEventListener("scroll", () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(draw); }
+  }, { passive: true });
+  addEventListener("resize", draw, { passive: true });
+  draw();
+
+  // Reveal on arrival. `once` matters: a section that re-animates every time
+  // it scrolls past reads as a page that cannot settle, and this one is read
+  // rather than toured.
+  const seen = new WeakSet();
+  const watcher = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      entry.target.classList.add("in");
+      watcher.unobserve(entry.target);
+    }
+  }, { rootMargin: "0px 0px -12% 0px", threshold: 0.08 });
+
+  const REVEALS = ".intro > div, .stats .stat, .band, .panel, #tab-about h2, " +
+                  "#tab-about p, .logcard, .preview, .card, #gallery-note, " +
+                  "#result, #gallery-result, .disclaimer";
+
+  function arm(root) {
+    for (const el of (root || document).querySelectorAll(REVEALS)) {
+      if (seen.has(el)) continue;
+      seen.add(el);
+      // Already on screen at load: show it immediately rather than fading in
+      // something the visitor is looking at.
+      const box = el.getBoundingClientRect();
+      if (box.top < innerHeight * 0.92) { el.classList.add("in"); continue; }
+      el.setAttribute("data-reveal", "");
+      watcher.observe(el);
+    }
+    // The band fills its five rails as a unit, not per card.
+    const band = document.querySelector(".band");
+    if (band && !band.classList.contains("in")) {
+      new IntersectionObserver((es, o) => {
+        for (const e of es) if (e.isIntersecting) { e.target.classList.add("in"); o.disconnect(); }
+      }, { threshold: 0.15 }).observe(band);
+    }
+  }
+
+  // --- The pointer ---------------------------------------------------------
+  //
+  // Two effects from one listener: a bloom that trails the cursor across the
+  // page, and a highlight inside whichever card the cursor is over. Both are
+  // gated on a real pointer - a touch screen has no hover, so on a phone the
+  // light would either never show or freeze wherever the last tap landed.
+  const fine = matchMedia("(hover: hover) and (pointer: fine)");
+
+  if (fine.matches && !still.matches) {
+    const glow = document.createElement("div");
+    glow.className = "cursorglow";
+    glow.setAttribute("aria-hidden", "true");
+    document.body.appendChild(glow);
+
+    // Where the pointer is, and where the light currently is. The gap between
+    // them is what makes it feel like a light rather than a cursor: it lags,
+    // catches up, and settles.
+    let tx = innerWidth / 2, ty = innerHeight * 0.4;
+    let gx = tx, gy = ty, running = false;
+
+    const ease = () => {
+      gx += (tx - gx) * 0.12;
+      gy += (ty - gy) * 0.12;
+      glow.style.setProperty("--x", `${gx}px`);
+      glow.style.setProperty("--y", `${gy}px`);
+      // Stop the loop once it has effectively arrived, or this runs forever on
+      // a page nobody is touching.
+      if (Math.abs(tx - gx) > 0.4 || Math.abs(ty - gy) > 0.4) {
+        requestAnimationFrame(ease);
+      } else {
+        running = false;
+      }
+    };
+
+    // One delegated listener rather than one per card. The card highlight is
+    // written as percentages of the card the pointer is actually inside, which
+    // is cheaper than asking every card where the pointer is.
+    const LIT = ".stat, .steps li, .card, .logcard";
+    addEventListener("pointermove", (event) => {
+      if (event.pointerType !== "mouse") return;
+      tx = event.clientX;
+      ty = event.clientY;
+      glow.classList.add("on");
+      if (!running) { running = true; requestAnimationFrame(ease); }
+
+      const card = event.target.closest ? event.target.closest(LIT) : null;
+      if (card) {
+        const box = card.getBoundingClientRect();
+        card.style.setProperty("--mx", `${((event.clientX - box.left) / box.width) * 100}%`);
+        card.style.setProperty("--my", `${((event.clientY - box.top) / box.height) * 100}%`);
+      }
+    }, { passive: true });
+
+    // A pointer that has left the window is not anywhere, and a light stuck in
+    // the last known corner looks like a bug.
+    document.addEventListener("mouseleave", () => glow.classList.remove("on"));
+    document.addEventListener("mouseenter", () => glow.classList.add("on"));
+  }
+
+  if (still.matches) {
+    // Nothing to arm: the stylesheet has already neutralised the transitions,
+    // and adding data-reveal would only risk leaving something at opacity 0.
+    document.querySelectorAll(".band").forEach((b) => b.classList.add("in"));
+  } else {
+    arm(document);
+    // The form, the gallery and the brief are all rendered by fetch after this
+    // runs, and a tab switch reveals a subtree that was display:none - which
+    // an IntersectionObserver never fires for. Re-arm on both.
+    new MutationObserver(() => arm(document)).observe(document.querySelector("main"), {
+      childList: true, subtree: true,
+    });
+    addEventListener("hashchange", () => requestAnimationFrame(() => arm(document)));
+  }
+})();
 </script>

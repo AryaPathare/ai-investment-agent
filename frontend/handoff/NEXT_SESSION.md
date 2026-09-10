@@ -3,11 +3,11 @@
 The website: the page, the HTTP layer, the gallery and the deploy.
 For the pipeline see [the backend handoff](../../backend/handoff/NEXT_SESSION.md).
 
-**Written against `396b9a4`, 2026-09-09, at the end of session 25.** Before
+**Written against `74c8370`, 2026-09-09, at the end of session 26.** Before
 trusting a word of this:
 
 ```powershell
-git log --oneline 396b9a4..HEAD
+git log --oneline 74c8370..HEAD
 ```
 
 Thirty seconds, and it is here because of entry 92: session 15 opened a handoff,
@@ -19,7 +19,7 @@ somebody about to stop working who cannot describe what happens next.
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1077 passed, 1 skipped** — 1078 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **134**, 25 sessions
+- `docs/PROJECT_LOG.md` is current through entry **136**, 26 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -139,6 +139,8 @@ his next ask, not from this file.
     F5   DONE - checked on his phone, it reads well (entry 133)
     F13  DONE - "How a run works" was on the page twice; About lost its copy
     F14  DONE - the About right column now shows the paper (entry 134)
+    F15  DONE - the guard a rename had switched off (entry 135)
+    F16  DONE - THE PAGE IS DARK NOW. Full redesign, entry 136
 
 **Three things from session 24 worth carrying forward:**
 
@@ -425,6 +427,44 @@ Four ways out, and they are not equally cheap:
 **It also may not survive F7 and F10 unchanged.** Both touch the panel this grid
 sits in; a layout that changes the available width changes which cells fit.
 Worth sequencing this after them rather than fixing it twice.
+
+---
+
+## THE DESIGN, AS IT STANDS AFTER SESSION 26 (entry 136)
+
+**The page is dark, and it is not the blue-and-black of entry 132.** Ground
+`#101423`, a blue-cyan-violet gradient as the single accent, and FOUR type
+voices where there was one:
+
+    Cormorant Garamond  headings only, 300, italic on the title's last word
+                        and on every h2. Lifted from cielhomes.in exactly.
+    Inter               anything read as a sentence
+    JetBrains Mono      anything read as a token - labels, counts, ids, 01-05
+    Georgia             the brief only
+
+**The rule that came out of it: words are set in the fancy face, tokens are
+not.** Cormorant draws its numeral 1 with no foot serif, so "15 pages" rendered
+as "I5 pages" until every figure moved to the mono. Do not move them back.
+
+**Motion is all decoration except the stage pulse**, and all of it dies under
+`prefers-reduced-motion` - the check is that NO element is left at opacity 0
+with the flag set. The cursor light and the card highlight are additionally
+gated on `(hover: hover) and (pointer: fine)` and are never created on a touch
+device.
+
+**THE DROPDOWN FLASH IS KNOWN AND DELIBERATELY UNFIXED.** Selects flash white
+for a frame when opened in Chrome. Three real causes were found and fixed
+(no `color-scheme`, translucent controls, an animated focus background) and the
+flash survived all three, because Chromium creates the popup as a separate
+native window with a white surface before its first paint. **Do not spend a
+session on this.** The only cure is a custom listbox, which costs free keyboard
+and screen-reader behaviour and replaces the native picker on a phone with
+something worse. He was shown the trade and chose to live with it.
+
+**The lede and the stat tiles are on the RUN TAB ONLY.** They used to be on all
+three and restated About's own first paragraph. The disclaimer stays outside
+the tabs - `test_the_disclaimer_sits_outside_the_tabs` explains why, and it is
+right.
 
 ---
 
