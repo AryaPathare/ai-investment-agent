@@ -6202,3 +6202,78 @@ passed against a defect that was not actually there yet. The faithful version
 releases the ticket before the work, and both tests then fail.
 
 1092 passed to **1093**.
+
+### 145. A run says "finished" between every stage, and something believed it
+
+CI went red on both platforms while the same commit passed locally fifteen times
+out of fifteen. It stayed red through two fixes, because both fixes were answers
+to the wrong question.
+
+    assert run["status"] == "stopped"
+    AssertionError: assert 'finished' == 'stopped'
+
+**It was not a flaky test. It was a real defect the flaky test kept pointing at.**
+
+### What is actually true
+
+LangGraph writes the checkpoint that ENDS a superstep **before** it writes the
+next task's schedule. Between every stage there is a window in which `next` is
+empty - and `checkpoints.py` reads empty `next` as `finished`. So a run in flight
+reports `finished` five times on its way through, once between each stage.
+
+Measured on CI, two reads of one database **2.6 milliseconds apart**:
+
+    first  call  status='finished'  resumes_at=None   checkpoint 19:19:50.544772
+    direct read  next=['research']                    checkpoint 19:19:50.547395
+    second call  status='stopped'   resumes_at=2      running=True
+
+### The harm was never the red build
+
+`GET /api/runs/{id}` hands over `brief` whenever a run is not resumable. A
+request landing in that window therefore got **a brief built from a run with
+three stages still to go, labelled finished** - and the "run you started
+earlier" card added in entry 140 reads exactly that endpoint. Entry 88's
+unreliable narrator, reachable in production, and nothing on any list.
+
+The web layer already held the missing half. `_EXECUTING` says what THIS process
+is running, and only this process can be. It simply was not allowed to overrule
+the store. A live run now reports `status: "running"` whatever checkpoint happens
+to be visible, withholds `resumes_at`, and **withholds the brief**; the page
+handles a withheld brief instead of rendering nothing.
+
+### Two wrong answers first, and what they cost
+
+**"The status logic is wrong, make it report `stopped` while running."** That
+came from outside and it would have changed working code to satisfy a broken
+test. The line ABOVE the failure disproved it: `assert run["running"] is True`
+passed, so the process knew the run was live; only the store disagreed.
+
+**"It is a race in the test."** Closer, and still wrong. The stub gained a gate -
+`entered` and `hold` events, so a test waits until the graph is provably inside
+a node instead of betting on having slept less than the stub does. That was a
+genuine improvement and it did not fix the failure, which should have been the
+signal to stop theorising sooner.
+
+Both answers were argued from a laptop that could not reproduce the failure. The
+third attempt made the assertion carry its own evidence - the events read, the
+gate's enter/leave trace, the raw checkpoint, and a second call to the same
+endpoint - and pushed THAT to CI. One run then stated the cause outright.
+
+**Instrument the failure where it happens instead of reasoning about it from
+where it does not.** Three sessions of this project have now recorded some
+version of that lesson, and this is the most expensive one.
+
+### And a green run that proved nothing
+
+One CI run passed mid-investigation and was nearly taken as a fix. Re-running the
+same commit three times failed three times. The fix was accepted only after
+**four consecutive green runs on both platforms**, against a test that had been
+failing 3 of 3.
+
+The gate stays, and so does its lesson: `dwell` says a node is slow, not that the
+observation lands inside it. `test_a_live_run_is_refused_whatever_the_store_says_
+about_it` now pins the invariant that the old assertion was making by accident -
+the store may say `stopped` or `finished` about a live run, and neither may let a
+second execution start.
+
+1093 passing, CI green on ubuntu and windows.

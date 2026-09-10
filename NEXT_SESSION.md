@@ -31,7 +31,7 @@ by somebody who is about to stop working and cannot describe what happens next.
 - **Live: <https://ai-investment-agent-gdjr.onrender.com>** — Render free plan, ONE worker
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1093 passed, 1 skipped**, 1094 collected
-- `docs/PROJECT_LOG.md` current through entry **144**, 27 sessions
+- `docs/PROJECT_LOG.md` current through entry **145**, 27 sessions
 - Tagged `v1.0.0` at `48f9c08`, which the case study quotes
 
 **The repository was restructured in session 22** into `backend/` and

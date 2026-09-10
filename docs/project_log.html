@@ -1612,5 +1612,28 @@ AssertionError: assert 'finished' == 'stopped'</code></pre>
 <p><code>test_a_live_run_is_refused_whatever_the_store_says_about_it</code> looks twice - once inside the node and once after the gate lifts, without waiting for the flag to clear - and requires the same answer from both: <code>can_resume</code> False, resume refused. <strong>The store may say <code>stopped</code> or <code>finished</code> about a live run; neither may let a second execution start.</strong> That is the invariant, and it now has a test that does not care about timing.</p>
 <p>The first attempt to reproduce the defect locally was itself wrong, for the third time this project has recorded the shape: <code>task.cancel()</code> only REQUESTS cancellation, and the assertion ran before the loop delivered it, so the test passed against a defect that was not actually there yet. The faithful version releases the ticket before the work, and both tests then fail.</p>
 <p>1092 passed to <strong>1093</strong>.</p>
+<h3 id="145-a-run-says-finished-between-every-stage-and-something-believed-it">145. A run says "finished" between every stage, and something believed it</h3>
+<p>CI went red on both platforms while the same commit passed locally fifteen times out of fifteen. It stayed red through two fixes, because both fixes were answers to the wrong question.</p>
+<pre><code>assert run["status"] == "stopped"
+AssertionError: assert 'finished' == 'stopped'</code></pre>
+<p><strong>It was not a flaky test. It was a real defect the flaky test kept pointing at.</strong></p>
+<h3 id="what-is-actually-true">What is actually true</h3>
+<p>LangGraph writes the checkpoint that ENDS a superstep <strong>before</strong> it writes the next task's schedule. Between every stage there is a window in which <code>next</code> is empty - and <code>checkpoints.py</code> reads empty <code>next</code> as <code>finished</code>. So a run in flight reports <code>finished</code> five times on its way through, once between each stage.</p>
+<p>Measured on CI, two reads of one database <strong>2.6 milliseconds apart</strong>:</p>
+<pre><code>first  call  status='finished'  resumes_at=None   checkpoint 19:19:50.544772
+direct read  next=['research']                    checkpoint 19:19:50.547395
+second call  status='stopped'   resumes_at=2      running=True</code></pre>
+<h3 id="the-harm-was-never-the-red-build">The harm was never the red build</h3>
+<p><code>GET /api/runs/{id}</code> hands over <code>brief</code> whenever a run is not resumable. A request landing in that window therefore got <strong>a brief built from a run with three stages still to go, labelled finished</strong> - and the "run you started earlier" card added in entry 140 reads exactly that endpoint. Entry 88's unreliable narrator, reachable in production, and nothing on any list.</p>
+<p>The web layer already held the missing half. <code>_EXECUTING</code> says what THIS process is running, and only this process can be. It simply was not allowed to overrule the store. A live run now reports <code>status: "running"</code> whatever checkpoint happens to be visible, withholds <code>resumes_at</code>, and <strong>withholds the brief</strong>; the page handles a withheld brief instead of rendering nothing.</p>
+<h3 id="two-wrong-answers-first-and-what-they-cost">Two wrong answers first, and what they cost</h3>
+<p><strong>"The status logic is wrong, make it report <code>stopped</code> while running."</strong> That came from outside and it would have changed working code to satisfy a broken test. The line ABOVE the failure disproved it: <code>assert run["running"] is True</code> passed, so the process knew the run was live; only the store disagreed.</p>
+<p><strong>"It is a race in the test."</strong> Closer, and still wrong. The stub gained a gate - <code>entered</code> and <code>hold</code> events, so a test waits until the graph is provably inside a node instead of betting on having slept less than the stub does. That was a genuine improvement and it did not fix the failure, which should have been the signal to stop theorising sooner.</p>
+<p>Both answers were argued from a laptop that could not reproduce the failure. The third attempt made the assertion carry its own evidence - the events read, the gate's enter/leave trace, the raw checkpoint, and a second call to the same endpoint - and pushed THAT to CI. One run then stated the cause outright.</p>
+<p><strong>Instrument the failure where it happens instead of reasoning about it from where it does not.</strong> Three sessions of this project have now recorded some version of that lesson, and this is the most expensive one.</p>
+<h3 id="and-a-green-run-that-proved-nothing">And a green run that proved nothing</h3>
+<p>One CI run passed mid-investigation and was nearly taken as a fix. Re-running the same commit three times failed three times. The fix was accepted only after <strong>four consecutive green runs on both platforms</strong>, against a test that had been failing 3 of 3.</p>
+<p>The gate stays, and so does its lesson: <code>dwell</code> says a node is slow, not that the observation lands inside it. <code>test_a_live_run_is_refused_whatever_the_store_says_ about_it</code> now pins the invariant that the old assertion was making by accident - the store may say <code>stopped</code> or <code>finished</code> about a live run, and neither may let a second execution start.</p>
+<p>1093 passing, CI green on ubuntu and windows.</p>
 </body>
 </html>

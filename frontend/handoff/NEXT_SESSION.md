@@ -19,7 +19,7 @@ somebody about to stop working who cannot describe what happens next.
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1093 passed, 1 skipped** — 1094 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **144**, 27 sessions
+- `docs/PROJECT_LOG.md` is current through entry **145**, 27 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -521,6 +521,27 @@ every spin-down after 15 minutes idle. Recovery therefore covers "I closed the
 tab / hit reload / my phone locked" inside one container lifetime, which is the
 common case, and NOT "I came back tomorrow". Same ephemerality as the run
 counter.
+
+## A RUN SAYS "finished" BETWEEN EVERY STAGE (entry 145) - DO NOT UNDO THIS
+
+**LangGraph writes the checkpoint that ENDS a superstep BEFORE it writes the
+next task's schedule.** In between, `next` is empty and `checkpoints.py` reads
+empty `next` as `finished`. So a run in flight reports **finished five times on
+its way through**, once between each stage. Measured on CI, two reads of one
+database 2.6ms apart:
+
+    first  call  status='finished'  resumes_at=None   checkpoint ...50.544772
+    direct read  next=['research']                    checkpoint ...50.547395
+    second call  status='stopped'   resumes_at=2      running=True
+
+**`_EXECUTING` OVERRIDES THE STORE, and must.** A live run reports
+`status: "running"`, withholds `resumes_at`, and **withholds `brief`**. Without
+that last one, `GET /api/runs/{id}` hands over a brief built from a run with
+three stages still to go, labelled finished - entry 88's unreliable narrator,
+and the About-tab card from entry 140 reads exactly that endpoint.
+
+**Do not "simplify" this by trusting `saved.status`.** The store is telling the
+truth about a checkpoint; the checkpoint is not the whole answer.
 
 ## `dwell` CANNOT EXPRESS "WHILE IT IS RUNNING" (entry 144)
 
