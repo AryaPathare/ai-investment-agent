@@ -573,15 +573,74 @@ resuming `_drive` a live run legitimately reads `status="finished"` with
 it happened to see. `test_a_live_run_is_refused_whatever_the_store_says_about_it`
 now asserts the property instead.
 
-## THE FREE INSTANCE WEDGED ONCE, AND IT WAS NOT THE CODE (2026-09-10)
+## RUNBOOK: THE SITE IS DOWN. WHAT TO DO, IN ORDER
 
-The site returned NOTHING for at least seven minutes - DNS resolved, TCP and TLS
-connected instantly, then zero HTTP bytes, `status=000`. Render's status page
-said all systems operational and the last deploy had been **docs only**. The
-committed code booted locally in 0.1s and served both endpoints. It recovered on
-its own. **If this happens again: check that the code boots locally first, then
-read the Render dashboard logs and events - a wedged free instance is fixed by a
-manual restart or redeploy, not by changing anything here.**
+**Happened 2026-09-10 and cost a session's confidence.** The instinct was to
+roll back the last commit; that would have discarded four days of work and fixed
+nothing, because the cause was not in the repository. Work the list instead.
+
+### 1. Say which failure this is - the symptoms are different
+
+    curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" https://ai-investment-agent-gdjr.onrender.com/api/health
+
+    200 after 30-60s   COLD START. Normal. The free plan spins down after 15
+                       minutes idle. Not a fault. Wait.
+    200 fast           It is up. The problem is elsewhere - your browser, your
+                       network, or a page-level error (open the console).
+    502 / 503          The app STARTED and is crashing or refusing. Go to 3.
+    000 / hangs        THE WEDGE. Nothing comes back at all: no status, no
+                       headers, no Render splash page. Go to 2.
+
+### 2. Prove it is not the code, before touching the code
+
+Two commands. Both were run on 2026-09-10 and both exonerated the repository:
+
+    # Does the committed code actually start?
+    python -c "import uvicorn, threading, time, urllib.request, socket; from frontend.app import app; s=socket.socket(); s.bind(('127.0.0.1',0)); p=s.getsockname()[1]; s.close(); srv=uvicorn.Server(uvicorn.Config(app,host='127.0.0.1',port=p,log_level='error')); threading.Thread(target=srv.run,daemon=True).start(); time.sleep(3); print(urllib.request.urlopen(f'http://127.0.0.1:{p}/api/health',timeout=5).read())"
+
+    # What did the last deploy actually change?
+    git show --stat HEAD
+
+If the app boots locally and the last deploy touched no Python, **the repository
+is not the problem and rolling back cannot help.** On 2026-09-10 the app booted
+in 0.1s and the last deploy was four markdown files.
+
+### 3. Ask whether it is Render rather than us
+
+    https://status.render.com          - platform incidents
+    Dashboard -> the service -> Logs   - a traceback, an OOM kill, or silence
+    Dashboard -> the service -> Events - did the last deploy finish, fail, or
+                                         is it still "in progress"?
+
+**Only the dashboard can answer WHY**, and nobody outside the account can see
+it. On 2026-09-10 the root cause was never established for exactly this reason,
+and the logs had rotated by the time it mattered. **Read the logs while it is
+still broken.**
+
+### 4. Fix it
+
+**Dashboard -> Manual Deploy -> "Deploy latest commit", or Restart service.**
+That is the whole fix for a wedged instance. It redeploys code that already
+works, so it is safe. On 2026-09-10 it recovered on its own before that was
+needed.
+
+### What this was, as far as it can be known
+
+DNS resolved, TCP connected instantly, TLS 1.3 completed, then **zero HTTP bytes
+for seven minutes across nine probes**. Render's edge was holding connections
+open for an instance that never signalled ready. Crucially the container had
+spun down from idle about 45 minutes earlier, so **it failed to WAKE rather than
+failing to deploy or crashing under load** - which rules out the two-visitor run
+an hour before, and points at a free-tier cold start that hung. The 750
+instance-hours/month allowance is the other candidate but it was the 10th.
+
+### Do not
+
+- **Do not roll back.** Verify the code boots first; on this occasion it did.
+- **Do not change code to fix an outage** you have not tied to the code.
+- **Do not read a red CI as the site being down.** They are unrelated: CI runs
+  the suite on GitHub, the site is a container on Render. CI was red for a test
+  for two sessions while the site served fine.
 
 ## PHONE LAYOUT IS CHECKED ON WEBKIT NOW (entry 138)
 
