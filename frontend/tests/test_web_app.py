@@ -604,20 +604,20 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
                 refused = await client.post(
                     "/api/runs/web-live/answer", json={"answer": ""}
                 )
-            # The SAME endpoint again, after the direct read below, while the
-            # node is still parked. If this one disagrees with the first, the
-            # first was reading something that had not settled.
-            second = (await client.get("/api/runs")).json()["runs"][0]
-            # What the store ACTUALLY holds while the node is parked, read on
-            # this side so the answer does not depend on the endpoint.
-            with checkpoints.open_store() as _s:
-                _snap = _s.graph.get_state(_s.config("web-live"))
-                direct = {
-                    "next": list(_snap.next),
-                    "created_at": str(_snap.created_at)[:26],
-                    "error": bool(_snap.values.get("error")),
-                    "keys": sorted(_snap.values.keys()),
-                }
+                # What the store ACTUALLY holds while the node is parked, read
+                # on this side so the answer does not depend on the endpoint.
+                with checkpoints.open_store() as _s:
+                    _snap = _s.graph.get_state(_s.config("web-live"))
+                    direct = {
+                        "next": list(_snap.next),
+                        "created_at": str(_snap.created_at)[:26],
+                        "error": bool(_snap.values.get("error")),
+                        "keys": sorted(_snap.values.keys()),
+                    }
+                # The SAME endpoint again, after the direct read, with the node
+                # still parked. If this disagrees with the first call, the first
+                # was reading something that had not settled.
+                second = (await client.get("/api/runs")).json()["runs"][0]
         finally:
             # Released even if the requests raise, so a broken assertion fails
             # the test rather than parking a worker thread for the backstop.
