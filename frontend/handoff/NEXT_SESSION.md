@@ -19,7 +19,7 @@ somebody about to stop working who cannot describe what happens next.
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1092 passed, 1 skipped** — 1093 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **142**, 27 sessions
+- `docs/PROJECT_LOG.md` is current through entry **143**, 27 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -125,12 +125,15 @@ Suite: 1062 passed to **1065**.
 resume-in-the-browser (entry 140), took in a corrected paper (141) and fixed
 what two real visitors turned up (142) - all from his ask rather than a list.
 
-**TWO VISITORS AT ONCE IS STILL UNVERIFIED.** He tried it on 2026-09-10 and it
-did not test the queue: his first run died after 29 seconds, so the line was
-empty by the time he started the second. `queue_depth` never reached 2. **To
-retry it, the second device's form must be filled in ADVANCE and started within
-about ten seconds of the first** - a run is only 2-4 minutes and a failure is
-much shorter than that.
+**TWO VISITORS AT ONCE IS DONE (entry 143).** `queue_depth` reached 2 in
+production on 2026-09-10: the phone was told "you are next in line" rather than
+refused, the computer's run finished in 2m15s, and the phone's was granted
+UNPROMPTED and finished in 1m57s. **Nothing about this deployment is unverified
+now.** The first attempt failed for two procedural reasons worth keeping: fill
+BOTH forms before submitting anything (a failed run can be 29 seconds, and the
+second visitor must arrive inside the first), and use a PRIVATE WINDOW on each
+device, because one run per visitor per day is a rolling-24h cookie and both
+browsers had already spent theirs.
 
 **A FOURTH CEILING EXISTS AND NOTHING COUNTS IT (entry 142).** yfinance is
 Yahoo, keyless, and rate-limits by IP. `quota.py` models news and tokens only
@@ -174,8 +177,11 @@ his next ask, not from this file.
 - **`form_fields()` had no test at all** until F8 changed its contract. It has
   three now. Worth assuming other seams are equally bare.
 
-**The site now has nothing unverified in production except two visitors at
-once.** The queue was present during the live run and never stressed - depth 0
+**NOTHING IS UNVERIFIED IN PRODUCTION ANY MORE - see entry 143.** What follows
+is the reasoning from when this was still open.
+
+~~The site now has nothing unverified in production except two visitors at
+once.~~ The queue was present during the live run and never stressed - depth 0
 throughout - so concurrency is the one remaining gap, and the site has never
 had two visitors.
 

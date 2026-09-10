@@ -1576,5 +1576,21 @@ line 482   try: fundamentals = fetch_fundamentals(...)   dropped, run continues<
 <p><code>RATE_LIMIT_HINT</code> read "If this mentions a rate limit or a quota, the daily ceiling has been reached; try again later." The daily ceiling had NOT been reached - the estimate correctly said five runs remained, and the run died on a keyless lookup. There are four services behind a run and at least three can refuse; this sentence cannot know which did, and the error above it already says. It now points at that error instead of overruling it.</p>
 <p><strong>A test was pinning the false claim.</strong> <code>assert "daily ceiling" in described["error_hint"]</code> - a guard holding the wrong sentence in place. It now asserts the opposite: that the hint does NOT name which ceiling.</p>
 <p>Verified by removing the guard again, where all three new tests fail with the production error escaping. 1089 passed to <strong>1092</strong>.</p>
+<h3 id="143-two-visitors-at-once-and-the-end-of-the-list">143. Two visitors at once, and the end of the list</h3>
+<p>The retry worked. <strong><code>queue_depth</code> reached 2 for the first time in this project's life</strong>, in production, on the real deployment:</p>
+<pre><code>12:26:48  depth=1  runs_used=1   the computer starts
+12:27:10  depth=2  runs_used=2   the phone arrives and is made to WAIT
+12:29:03  depth=1  runs_used=2   the computer finishes, 2m15s
+                                 the phone is granted, unprompted
+12:31:00  depth=0  runs_used=2   the phone finishes, 1m57s</code></pre>
+<p>Both runs completed. He saw "Someone else is running right now. You are next in line." on the phone rather than a refusal, and <strong>the handover happened on its own</strong> - the waiting ticket granted the moment the one ahead released. That half of <code>runqueue</code> had never run outside a test either.</p>
+<h3 id="what-made-the-first-attempt-fail-and-it-was-not-the-queue">What made the first attempt fail, and it was not the queue</h3>
+<p>Two things, and neither was the code:</p>
+<p><strong>The runs never overlapped (entry 142).</strong> The first died in 29 seconds, so the line was empty 18 seconds before the second started. The fix was procedural: fill BOTH forms completely first, submit, then submit the second within about ten seconds. A run is 2-4 minutes but a FAILURE is far shorter, and the second visitor has to arrive inside whichever one they get.</p>
+<p><strong>And both browsers had already spent their run.</strong> <code>RUNS_PER_VISITOR_PER_DAY = 1</code> on a rolling 24 hours, carried in the signed cookie, so his computer and phone were both going to meet a 429. A private window on each was the answer - which <code>session.py</code> already says out loud: "A cookie can be cleared, and clearing it buys another run. That is accepted... this exists to make casual repetition inconvenient rather than impossible." <strong>The speed bump behaved exactly as documented, including for its author.</strong></p>
+<h3 id="nothing-about-this-deployment-is-unverified-now">Nothing about this deployment is unverified now</h3>
+<p>Health, the page, the gallery's eleven recordings, the eight-field form, the tabs and deep links, the traversal guard, a full live run (entry 131), picking a run back up after closing the tab (140), and now two visitors at once. That was the last one, and it had been the last one since session 21.</p>
+<p><strong>The website's agenda has been empty since session 26 and is now empty with nothing outstanding behind it.</strong> Four things remain true and all four were measured, priced and chosen rather than missed: the run counter reads high because a persistent disk costs money (137); the Chrome dropdown flash survived three real fixes and lives outside CSS (136); resume only works inside a container's lifetime because the free plan is ephemeral (140); and a fourth provider ceiling exists that <code>quota.py</code> does not model (142). None is a defect a visitor meets.</p>
+<p>Suite unchanged at <strong>1092</strong> - two people with two devices produce no test, the same honest outcome F5 had, and for the same reason: no browser runs in the suite and nothing in it can hold a second visitor.</p>
 </body>
 </html>

@@ -31,7 +31,7 @@ by somebody who is about to stop working and cannot describe what happens next.
 - **Live: <https://ai-investment-agent-gdjr.onrender.com>** — Render free plan, ONE worker
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1092 passed, 1 skipped**, 1093 collected
-- `docs/PROJECT_LOG.md` current through entry **142**, 27 sessions
+- `docs/PROJECT_LOG.md` current through entry **143**, 27 sessions
 - Tagged `v1.0.0` at `48f9c08`, which the case study quotes
 
 **The repository was restructured in session 22** into `backend/` and
@@ -67,11 +67,11 @@ only instrument that could answer it. The list lives in
 opens by saying it is empty. **The next website work starts from his next ask,
 not from a file.** Do not go hunting for open items to fill the gap.
 
-One thing is known to remain, and it is not code. Nothing here is an agenda:
+**Nothing is known to remain.** Everything below is done; the rows are kept because a closed item still says what was checked:
 
 | | | |
 |---|---|---|
-| **Two visitors at once** | STILL unverified. Tried on 2026-09-10 and it did not test the queue - the first run died after 29s, so the line was empty before the second started (entry 142). It did find a real defect. **Retry: fill the second device's form in advance and start within ~10s.** | one real run's quota is the floor |
+| ~~Two visitors at once~~ | **DONE, entry 143.** `queue_depth` hit 2 in production: the phone was queued, not refused, and was granted unprompted when the computer's run ended. Both completed. | done |
 | ~~The paper's cover~~ | **DONE, entry 141.** It credits `patharearya` now, and carries a new section on the four external services. v1.0.0/95 were correct all along and were left alone. | done |
 | ~~Resume in the browser~~ | **DONE, entry 140.** `GET /api/runs` lists what the cookie already carried; a card above the form offers to read, answer or carry on. `_EXECUTING` stops a run that is merely busy being offered for resuming. | done |
 

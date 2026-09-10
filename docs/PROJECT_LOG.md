@@ -6072,3 +6072,57 @@ asserts the opposite: that the hint does NOT name which ceiling.
 
 Verified by removing the guard again, where all three new tests fail with the
 production error escaping. 1089 passed to **1092**.
+
+### 143. Two visitors at once, and the end of the list
+
+The retry worked. **`queue_depth` reached 2 for the first time in this
+project's life**, in production, on the real deployment:
+
+    12:26:48  depth=1  runs_used=1   the computer starts
+    12:27:10  depth=2  runs_used=2   the phone arrives and is made to WAIT
+    12:29:03  depth=1  runs_used=2   the computer finishes, 2m15s
+                                     the phone is granted, unprompted
+    12:31:00  depth=0  runs_used=2   the phone finishes, 1m57s
+
+Both runs completed. He saw "Someone else is running right now. You are next in
+line." on the phone rather than a refusal, and **the handover happened on its
+own** - the waiting ticket granted the moment the one ahead released. That half
+of `runqueue` had never run outside a test either.
+
+### What made the first attempt fail, and it was not the queue
+
+Two things, and neither was the code:
+
+**The runs never overlapped (entry 142).** The first died in 29 seconds, so the
+line was empty 18 seconds before the second started. The fix was procedural:
+fill BOTH forms completely first, submit, then submit the second within about
+ten seconds. A run is 2-4 minutes but a FAILURE is far shorter, and the second
+visitor has to arrive inside whichever one they get.
+
+**And both browsers had already spent their run.**
+`RUNS_PER_VISITOR_PER_DAY = 1` on a rolling 24 hours, carried in the signed
+cookie, so his computer and phone were both going to meet a 429. A private
+window on each was the answer - which `session.py` already says out loud: "A
+cookie can be cleared, and clearing it buys another run. That is accepted...
+this exists to make casual repetition inconvenient rather than impossible."
+**The speed bump behaved exactly as documented, including for its author.**
+
+### Nothing about this deployment is unverified now
+
+Health, the page, the gallery's eleven recordings, the eight-field form, the
+tabs and deep links, the traversal guard, a full live run (entry 131), picking a
+run back up after closing the tab (140), and now two visitors at once. That was
+the last one, and it had been the last one since session 21.
+
+**The website's agenda has been empty since session 26 and is now empty with
+nothing outstanding behind it.** Four things remain true and all four were
+measured, priced and chosen rather than missed: the run counter reads high
+because a persistent disk costs money (137); the Chrome dropdown flash survived
+three real fixes and lives outside CSS (136); resume only works inside a
+container's lifetime because the free plan is ephemeral (140); and a fourth
+provider ceiling exists that `quota.py` does not model (142). None is a defect a
+visitor meets.
+
+Suite unchanged at **1092** - two people with two devices produce no test, the
+same honest outcome F5 had, and for the same reason: no browser runs in the
+suite and nothing in it can hold a second visitor.
