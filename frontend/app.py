@@ -1,9 +1,9 @@
-"""A walking skeleton: one endpoint that runs the pipeline and streams it.
+"""The HTTP layer: it runs the pipeline, streams it, and serves the page.
 
 WHAT THIS IS FOR
 
-Not a feature. It exists to answer three questions about runtime behaviour that
-no amount of reading settles, before any HTML is written:
+It began as a walking skeleton - one endpoint, no HTML - built to answer three
+questions about runtime behaviour that no amount of reading settles:
 
 1. Does the graph run inside an async web handler at all?
 2. Does the existing ``stream(stream_mode="updates")`` loop give usable events?
@@ -28,13 +28,26 @@ So the graph runs in a worker thread and pushes events into an ``asyncio.Queue``
 that the response generator drains. The thread is where the blocking work
 belongs; the queue is the only thing crossing between them.
 
-WHAT IS NOT HERE YET, ON PURPOSE
+All three answered yes, and the endpoints below grew from there. The list of
+what was missing that used to close this docstring is now built - the
+clarification round trip over a signed-cookie session, the queue, the quota
+estimate and the per-visitor limit - and saying otherwise in the file that
+implements them is the trap entries 135 and 138 both recorded: a claim that
+kept looking right after the thing it described moved.
 
-* The clarification interrupt is REPORTED and not resolved. A paused run is
-  saved and resumable by id, so nothing is lost - but resuming it over HTTP
-  needs a session model, which is the next piece of work and constrains it.
-* No queue, no quota counter, no rate limit. Two concurrent runs would mean two
-  writers on one SQLite file; until the queue exists this is single-user.
+WHAT A CLOSED TAB DOES, BECAUSE IT IS NOT OBVIOUS
+
+The response generator is a READER and owns nothing. A run outlives it: the
+browser going away does not stop the graph, which carries on writing to the one
+SQLite checkpoint file and spending the one shared daily budget. So the place
+in line belongs to the run and not to the reader - see ``_drive``, which is
+where that split lives and why.
+
+WHAT IS NOT HERE YET
+
+* Nothing in the page finds a run again. The ids are in the visitor's cookie
+  and ``GET /api/runs/{id}`` serves any of them, so a finished brief survives a
+  closed tab on the server and is unreachable from the browser.
 """
 
 import asyncio
@@ -145,17 +158,52 @@ def _run_graph(store, thread_id: str, start, emit) -> None:
     )
 
 
-async def _stream(thread_id: str, start):
-    """Bridge the worker thread to the response, one event at a time.
+_RUNNING: set[asyncio.Task] = set()
+"""Strong references to runs whose reader has gone.
 
-    ``start`` is the only difference between a new run and a resumed one, the
-    same three shapes the CLI drives with: a profile to begin, a Command
-    carrying an answer, or None to pick up a run that stopped mid-stage.
+``asyncio`` keeps only a WEAK reference to a task, so a run still driving the
+graph after its response generator closed could be garbage collected mid-stage
+- losing the checkpoint writes it had already paid for, and never releasing its
+place in line. Discarded by a done callback, so this holds one entry per run in
+flight and nothing after.
+"""
+
+
+async def _wait_either(a: asyncio.Event, b: asyncio.Event) -> None:
+    """Return as soon as either event is set, leaving neither waiter behind."""
+    waiters = [asyncio.create_task(a.wait()), asyncio.create_task(b.wait())]
+    try:
+        await asyncio.wait(waiters, return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        for waiter in waiters:
+            waiter.cancel()
+
+
+async def _drive(thread_id: str, start, events: asyncio.Queue, gone: asyncio.Event):
+    """Own one run from its place in line to its last event.
+
+    A TASK rather than part of the response generator, and that separation is
+    the whole point of this function. The generator dies the moment the visitor
+    closes the tab; the RUN does not. It carries on writing to the one SQLite
+    checkpoint file and spending the one shared daily budget, and it has to keep
+    its place in line for exactly as long as it does.
+
+    Holding the ticket in the generator - which is where it used to live - meant
+    a closed tab released the slot while the graph was still running, and the
+    next visitor was let straight in on top of it. That is precisely the two
+    concurrent writers ``runqueue`` exists to prevent, and it was reachable by
+    one person closing a tab.
+
+    The two cases are opposite and only one thing tells them apart:
+
+    * Gone BEFORE the turn arrives - leave the line and spend nothing. A visitor
+      who gives up while queued must not cost 25-30k tokens.
+    * Gone AFTER it arrives - hold the line until the graph stops. The work is
+      already being paid for and the file is already being written.
     """
-    events: asyncio.Queue = asyncio.Queue()
     loop = asyncio.get_running_loop()
 
-    def emit(event: dict) -> None:
+    def emit(event) -> None:
         # call_soon_threadsafe is the whole bridge: put_nowait from another
         # thread is not safe, and awaiting from one is not possible.
         loop.call_soon_threadsafe(events.put_nowait, event)
@@ -183,40 +231,77 @@ async def _stream(thread_id: str, start):
         finally:
             loop.call_soon_threadsafe(events.put_nowait, _SENTINEL)
 
+    try:
+        # One run at a time. A context manager because a visitor who closes the
+        # tab while queued has to leave the line, or everybody behind them waits
+        # on somebody who is gone.
+        async with runqueue.queue.place() as ticket:
+            while not ticket.granted:
+                emit({
+                    "event": "queued",
+                    "data": {"position": ticket.position, "ahead": ticket.position},
+                })
+                ticket.changed.clear()
+                # Re-checked AFTER the clear. A grant landing in between would
+                # otherwise be cleared and waited on forever; a POSITION change
+                # landing there is only ever reported late, which costs a stale
+                # number on screen and nothing else.
+                if ticket.granted:
+                    break
+                # Woken by a move in the line OR by the reader leaving. Waiting
+                # only on the first would keep an abandoned run queued until its
+                # turn came, and then run it for nobody.
+                await _wait_either(ticket.changed, gone)
+                if gone.is_set() and not ticket.granted:
+                    return
+
+            await asyncio.to_thread(work)
+    finally:
+        # The reader is owed an ending even if the line was left without ever
+        # reaching ``work`` - otherwise a generator still draining would wait on
+        # a sentinel that is never coming.
+        events.put_nowait(_SENTINEL)
+
+
+async def _stream(thread_id: str, start):
+    """Bridge the run to the response, one event at a time.
+
+    ``start`` is the only difference between a new run and a resumed one, the
+    same three shapes the CLI drives with: a profile to begin, a Command
+    carrying an answer, or None to pick up a run that stopped mid-stage.
+
+    This generator is only a READER. It owns nothing the run needs, so closing
+    it - which is all a browser does when the tab goes - cannot cut a run short
+    or hand its place in line to somebody else. See ``_drive``.
+    """
+    events: asyncio.Queue = asyncio.Queue()
+    gone = asyncio.Event()
+
     # The run id goes out FIRST, before any model call is paid for. A client
     # that drops mid-run can then resume by id; one that learned the id only at
     # the end would lose exactly the runs worth recovering.
     yield {"event": "started", "data": json.dumps({"thread_id": thread_id})}
 
-    # One run at a time. A context manager because a visitor who closes the tab
-    # while queued has to leave the line, or everybody behind them waits on
-    # somebody who is gone.
-    async with runqueue.queue.place() as ticket:
-        while not ticket.granted:
-            yield {
-                "event": "queued",
-                "data": json.dumps(
-                    {"position": ticket.position, "ahead": ticket.position}
-                ),
-            }
-            ticket.changed.clear()
-            # Re-checked AFTER the clear. A grant landing in between would
-            # otherwise be cleared and waited on forever; a POSITION change
-            # landing there is only ever reported late, which costs a stale
-            # number on screen and nothing else.
-            if ticket.granted:
-                break
-            await ticket.changed.wait()
+    task = asyncio.create_task(_drive(thread_id, start, events, gone))
+    _RUNNING.add(task)
+    task.add_done_callback(_RUNNING.discard)
 
-        task = asyncio.create_task(asyncio.to_thread(work))
-
+    try:
         while True:
             item = await events.get()
             if item is _SENTINEL:
                 break
             yield {"event": item["event"], "data": json.dumps(item["data"])}
+    finally:
+        # Set on every exit, not just the abandoned one. On the normal path the
+        # run has already finished and nothing reads it; on a closed tab it is
+        # the only signal that says a queued run should give up its place.
+        gone.set()
 
-        await task
+    # Only on the path where the reader saw the run end. A cancelled generator
+    # never reaches here, which is deliberate: awaiting a two-minute run inside
+    # a closing connection is what would block the teardown.
+    await task
 
 
 # --- Sessions ----------------------------------------------------------------

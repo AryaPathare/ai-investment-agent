@@ -3,11 +3,11 @@
 The website: the page, the HTTP layer, the gallery and the deploy.
 For the pipeline see [the backend handoff](../../backend/handoff/NEXT_SESSION.md).
 
-**Written against `74c8370`, 2026-09-09, at the end of session 26.** Before
+**Written against `4aefc46`, 2026-09-10, during session 27.** Before
 trusting a word of this:
 
 ```powershell
-git log --oneline 74c8370..HEAD
+git log --oneline 4aefc46..HEAD
 ```
 
 Thirty seconds, and it is here because of entry 92: session 15 opened a handoff,
@@ -18,8 +18,8 @@ somebody about to stop working who cannot describe what happens next.
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1079 passed, 1 skipped** — 1080 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **138**, 26 sessions
+- Suite: **1081 passed, 1 skipped** — 1082 collected, and the distinction matters
+- `docs/PROJECT_LOG.md` is current through entry **139**, 27 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -121,7 +121,12 @@ Suite: 1062 passed to **1065**.
 
 ## THE AGENDA — what the website still owes
 
-**THE LIST IS EMPTY.** F13 and F14 arrived and were closed the same session;
+**THE LIST IS EMPTY, and session 27 did not add to it.** He asked what could be
+done about resuming a run in the browser; the answer is written up under
+RESUME IN THE BROWSER below and it is one read endpoint of work, not a feature.
+Nothing else was opened.
+
+F13 and F14 arrived and were closed the same session;
 they are recorded at the bottom of this file rather than here, because a list
 of done things is not an agenda. Session 24 closed F3 and F7-F12; he closed F5 himself on
 2026-09-09 by opening the live site on his phone, which is the only instrument
@@ -160,6 +165,17 @@ his next ask, not from this file.
 once.** The queue was present during the live run and never stressed - depth 0
 throughout - so concurrency is the one remaining gap, and the site has never
 had two visitors.
+
+**Session 27 found and fixed a real defect in exactly that gap (entry 139),
+without needing two visitors to do it.** A visitor who closed the tab mid-run
+released their place in line while the run carried on writing to the checkpoint
+file, so the next arrival was let straight in on top of it - the two concurrent
+writers `runqueue.py` exists to prevent. The place in line now belongs to the
+RUN and not to the reader. It was found by measuring against a real uvicorn
+server with the agents stubbed, which costs nothing, and that method is
+available for the rest of the concurrency gap too. **Two visitors in
+PRODUCTION is still unverified**, and one real run's quota is the floor for
+checking it, because the second visitor has to have something to queue behind.
 
 **F3. DONE in session 24 (2026-09-09) - it passed.** Five stages in 2m21s,
 inside the 2-4 minutes the page promises; the brief rendered with citations two
@@ -432,6 +448,45 @@ sits in; a layout that changes the available width changes which cells fit.
 Worth sequencing this after them rather than fixing it twice.
 
 ---
+
+## RESUME IN THE BROWSER — measured in session 27, not built
+
+The server side already exists. What is missing is only that the page never
+looks for it. **Measured against a real uvicorn server over a real socket, with
+the agents stubbed, for no quota:**
+
+- A visitor who closes the tab leaves a run that **carries on to completion**
+  and saves a full brief.
+- `GET /api/runs/{id}` hands that brief back **with their cookie** (200) and
+  404s without it. Ownership already works and needs nothing new.
+- The page keeps the id in a plain JS variable and persists it nowhere, so the
+  brief is reachable by the server and unreachable by the browser.
+
+**The shape that fits: `GET /api/runs`, listing the visitor's own runs.** The
+cookie already carries the ids (`session.read`), so nobody has to type or keep
+one. Return status, sectors and time - not the brief. On load, offer a card:
+finished -> read it, paused -> answer the question, stopped -> pick it up. The
+click paths reuse `GET /api/runs/{id}` and `POST /api/runs/{id}/answer`
+unchanged.
+
+**A "paste your run id" box is strictly worse and was rejected on a
+measurement.** Ownership is cookie-based, so an id pasted into another browser
+404s. It only works when the cookie is there too - the case the listing handles
+without asking anyone to copy a hex string.
+
+**THE WRINKLE THAT IS THE ACTUAL WORK.** A run still executing reads as
+`('stopped', can_resume=True)` - *identical* to one that genuinely died
+mid-stage. Offering "pick it up" on a live run would start a second execution
+of the same thread. The server needs a small in-process registry of live
+threads before any of this is safe. `_RUNNING` in `frontend/app.py` is now
+exactly that set and is the obvious place to hang it.
+
+**And know what it buys before spending a session.** Render's free plan wipes
+`.state/` - both `checkpoints.sqlite` and the ledger - on every redeploy and
+every spin-down after 15 minutes idle. Recovery therefore covers "I closed the
+tab / hit reload / my phone locked" inside one container lifetime, which is the
+common case, and NOT "I came back tomorrow". Same ephemerality as the run
+counter.
 
 ## PHONE LAYOUT IS CHECKED ON WEBKIT NOW (entry 138)
 

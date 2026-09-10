@@ -11,7 +11,7 @@ research pipeline and a website that share almost no decisions.
 **Before trusting a word of either:**
 
 ```powershell
-git log --oneline 4c1e052..HEAD
+git log --oneline 4aefc46..HEAD
 ```
 
 Thirty seconds. It is here because of entry 92: session 15 opened a handoff,
@@ -25,13 +25,13 @@ by somebody who is about to stop working and cannot describe what happens next.
 
 ---
 
-## Where things stand, 2026-09-09
+## Where things stand, 2026-09-10
 
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - **Live: <https://ai-investment-agent-gdjr.onrender.com>** — Render free plan, ONE worker
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1062 passed, 1 skipped**, 1063 collected
-- `docs/PROJECT_LOG.md` current through entry **129**, 22 sessions
+- Suite: **1081 passed, 1 skipped**, 1082 collected
+- `docs/PROJECT_LOG.md` current through entry **139**, 27 sessions
 - Tagged `v1.0.0` at `48f9c08`, which the case study quotes
 
 **The repository was restructured in session 22** into `backend/` and
@@ -59,14 +59,26 @@ its own evals, and its list is kept in
 ever picked up again. Nothing there is a live defect a visitor meets. Do not
 start on it unprompted.
 
-**The website is the focus, and its agenda is F3-F5** in
-[frontend/handoff/NEXT_SESSION.md](frontend/handoff/NEXT_SESSION.md):
+**The website's agenda is EMPTY too, and that is not the same as parked.**
+W1-W5 and F1-F16 are all done and deployed. Sessions 23-26 closed the last of
+them, and he closed F5 himself by opening the live site on his phone - still the
+only instrument that could answer it. The list lives in
+[frontend/handoff/NEXT_SESSION.md](frontend/handoff/NEXT_SESSION.md), which now
+opens by saying it is empty. **The next website work starts from his next ask,
+not from a file.** Do not go hunting for open items to fill the gap.
+
+Three things are known to remain. None of them is an agenda:
 
 | | | |
 |---|---|---|
-| **F3** | One live run against the deployed site | needs quota, ~14:00 UTC |
-| **F4** | Two pieces of in-run copy that contradict each other | free, needs a decision |
-| **F5** | Open the live site on a phone | ten seconds, and the only thing that settles F2 |
-| **F6** | A design pass — banner, colour, wider layout | free, and the biggest visible change |
+| **Two visitors at once** | The last thing unverified in PRODUCTION. Session 27 found and fixed a real defect in this gap without two visitors (entry 139) by measuring against a real uvicorn server for no quota - that method is available for the rest of it. | one real run's quota is the floor: the second visitor needs something to queue behind |
+| **The paper's cover** | Still cites the OLD repo account and v1.0.0/95 entries. Flagged to him, and it is his document. | only he can change it |
+| **Resume in the browser** | F4's third option, still not built, but now measured and specified - see RESUME IN THE BROWSER in the frontend handoff. One read endpoint, `GET /api/runs`, plus the live-thread registry that stops it offering to resume a run that is still going. | free |
 
-W1-W5, F1 and F2 are done and deployed. Entries 127 and 128 have the reasoning.
+**Two things are decided and should not be reopened.** The run counter reads
+high because Render's free plan throws `.state/` away on every deploy and every
+spin-down after 15 minutes idle - `quota.py` is correct, the only fix is a paid
+disk, and he chose to make the sentence honest instead (entry 137). And the
+Chrome dropdown flash is WON'T-FIX: three real causes were found and fixed and
+it survived all three, because Chromium builds the popup as a separate native
+window painted before its first paint, outside CSS reach (entry 136).

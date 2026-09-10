@@ -5775,3 +5775,92 @@ That is the third guard in four entries whose lesson is the same shape as entry
 than nothing, because it was cited as evidence the phone layout was fine.
 
 1078 passed to **1079**.
+
+
+## Session 27 — 2026-09-10
+
+### 139. The queue let a second visitor in on top of a run nobody was watching
+
+Nothing on the website's agenda; the list has been empty since session 26. He
+asked what could be done about resuming a run in the browser - the third option
+F4 left open - so the first job was to find out what a closed tab actually does,
+because the feature is only worth building if the run survives it.
+
+It does. Measured against a real uvicorn server over a real socket, with the
+five agents stubbed so it cost nothing: a visitor who hangs up mid-run leaves a
+run that **carries on to completion and saves a full brief**, still owned by
+their cookie. `GET /api/runs/{id}` hands it back with that cookie and 404s
+without it. So the brief a visitor "lost" is sitting on the server, complete and
+correctly protected, and nothing in the page can reach it.
+
+**The defect was in the same measurement.** The queue slot was released the
+moment the reader went, while the run kept going:
+
+    A hangs up      depth 0     A's run: stopped, still executing
+    B arrives       depth 0     B's first events: started, stage
+
+No `queued` event. B was let straight in while A was still writing to the one
+SQLite checkpoint file - **the two concurrent writers `runqueue.py` exists to
+prevent**, reachable by one person closing a tab. The queue was never wrong
+about anything it was asked; it was asked to protect the wrong lifetime.
+
+### The ticket belonged to the reader, and it should belong to the run
+
+`_stream` held `runqueue.queue.place()` across its own body, so closing the
+generator - which is all a browser does - ran the context manager's exit while
+the worker thread carried on. The run is split in two now: `_stream` is a
+READER that owns nothing, and `_drive` is a task that owns the place in line and
+the work, and outlives the response on purpose.
+
+**The two cases are opposite, which is why "hold the ticket until the graph
+ends" is not the fix.** A run that has STARTED is already being paid for and
+must keep its place. A run still WAITING is not, and running it for somebody who
+has gone would spend 25-30k tokens of a shared ceiling on nobody. Only the turn
+arriving tells them apart, so `_drive` waits on the line moving OR the reader
+leaving, and gives up its place only if it never started.
+
+`_RUNNING` holds a strong reference to each task, because asyncio keeps only a
+weak one and a run whose reader had gone could otherwise be collected mid-stage
+- losing checkpoint writes already paid for and never releasing its slot.
+
+### The first measurement was exactly backwards
+
+The probe before that one ran in-process and reported the opposite - that the
+slot was never released at all. It was wrong for the same reason session 26's
+overflow check was wrong: **the instrument moved, not the thing.**
+`asyncio.run()` waits for its executor threads on the way out, so every reading
+taken after it had already missed the window it was trying to observe. The
+mid-flight status it printed was the status of a finished run.
+
+Two probes disagreed, and the tie was broken by the one with a real socket in
+it. Reading either alone would have produced a confident, wrong entry - which
+is the third time in four sessions that a green number came from a yardstick
+rather than from the page.
+
+### Two guards, and only one of them is about the bug
+
+`test_an_abandoned_run_keeps_its_place_in_line_until_it_stops` closes the
+generator mid-run and asserts the line still holds one. Verified by putting the
+old `_stream` back, where it fails with `assert 0 == 1` - the slot gone while
+the run continued.
+
+`test_a_visitor_who_gives_up_while_queued_leaves_the_line_and_never_runs`
+**passes against the old code too, deliberately.** It is not a regression guard;
+it pins the behaviour the fix had to avoid breaking, and it is the one that
+would have caught a fix that simply held the ticket longer.
+
+Both drive `_stream` and call `aclose()` rather than going through
+`httpx.ASGITransport`, which cannot express a client that stops reading: it
+collects the whole response before returning it, so every client it drives
+reads to the end by construction. That is why no existing test could have found
+this.
+
+The module docstring is corrected in the same commit. It still opened "a walking
+skeleton" and closed with a list of what was not built yet - the session model,
+the queue, the quota counter - all of which the file now implements. Entries 135
+and 138 are the same shape: a claim that kept looking right after the thing it
+described moved.
+
+1079 passed to **1081**. Nothing here spends quota, and the resume feature
+itself is not built - what is written down now is that it is one read endpoint
+away, and what it must not do to a run that is still going.

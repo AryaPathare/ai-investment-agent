@@ -35,8 +35,10 @@ from backend.models.decision import Decision
 from backend.models.profile import InvestorProfile
 from backend.models.research import ResearchFindings
 from backend.models.risk import RiskFindings
+from backend.models.user_input import UserInput
 from backend import render
-from frontend.app import app, read_recording
+from frontend.app import app, read_recording, _stream
+from frontend import runqueue
 
 
 # --- Driving the endpoint ----------------------------------------------------
@@ -363,6 +365,111 @@ def test_two_runs_at_once_are_queued_rather_than_refused(whole_pipeline, profile
 
     with checkpoints.open_store() as store:
         assert all(store.run(tid).status == "finished" for tid in ids)
+
+
+# --- Readers that leave ------------------------------------------------------
+#
+# A closed tab is a reader that stops reading, and the only faithful way to say
+# that here is to close the response generator - which is what sse-starlette
+# and uvicorn end up doing on a real disconnect. ``httpx.ASGITransport`` cannot
+# express it at all: it collects the whole response before handing it back, so
+# every client it drives reads to the end by construction.
+#
+# Both of these were verified end to end first, against a real uvicorn server
+# over a real socket with the agents stubbed - a second visitor arriving during
+# an abandoned run was let straight in, with no ``queued`` event. These are the
+# cheap standing version of that.
+
+
+async def _read(gen, count: int) -> list[dict]:
+    """The next ``count`` frames, so a test can stop part-way through a run."""
+    return [await gen.__anext__() for _ in range(count)]
+
+
+def test_an_abandoned_run_keeps_its_place_in_line_until_it_stops(
+    whole_pipeline, profile
+):
+    """A visitor closes the tab. The run does not stop, so the queue must not
+    let anybody in on top of it.
+
+    The generator used to own the ticket, so closing it released the slot while
+    the graph was still writing to the one SQLite checkpoint file - the two
+    concurrent writers ``runqueue`` exists to prevent, reachable by one person
+    closing a tab. The slot now belongs to the run.
+    """
+    whole_pipeline(dwell=1.0)
+    user = UserInput(**profile)
+
+    async def _go():
+        gen = _stream("web-abandoned", {"user_input": user})
+        await _read(gen, 2)  # started, then the first stage: the run is under way
+        await gen.aclose()  # the tab closes
+
+        held = runqueue.queue.depth
+        for _ in range(100):
+            await asyncio.sleep(0.05)
+            if runqueue.queue.depth == 0:
+                break
+        return held, runqueue.queue.depth
+
+    while_running, once_finished = asyncio.run(_go())
+
+    assert while_running == 1, "the abandoned run gave up its place while still running"
+    assert once_finished == 0, "the run ended but never left the line"
+
+    with checkpoints.open_store() as store:
+        saved = store.run("web-abandoned")
+        assert saved.status == "finished", "a run nobody was watching was cut short"
+
+
+def test_a_visitor_who_gives_up_while_queued_leaves_the_line_and_never_runs(
+    whole_pipeline, profile
+):
+    """The opposite case, and the reason the fix above is not simply "hold the
+    ticket until the graph ends".
+
+    A run that has STARTED is already being paid for. A run still WAITING is
+    not, and running it for somebody who has gone would spend 25-30k tokens of
+    a ceiling everybody shares on nobody. Only the turn arriving tells the two
+    apart.
+    """
+    spans: list[tuple[float, float]] = []
+    whole_pipeline(dwell=1.0, spans=spans)
+    user = UserInput(**profile)
+
+    async def _go():
+        ahead = _stream("web-ahead", {"user_input": user})
+        await _read(ahead, 2)  # occupies the line and keeps running
+
+        waiting = _stream("web-waiting", {"user_input": user})
+        frames = await _read(waiting, 2)
+        await waiting.aclose()  # gives up before ever being granted
+
+        await asyncio.sleep(0.2)
+        left_behind = runqueue.queue.depth
+
+        # Drain the run in front so nothing is still in flight at teardown.
+        try:
+            while True:
+                await ahead.__anext__()
+        except StopAsyncIteration:
+            pass
+        for _ in range(100):
+            await asyncio.sleep(0.05)
+            if runqueue.queue.depth == 0:
+                break
+        return [f["event"] for f in frames], left_behind, runqueue.queue.depth
+
+    events, left_behind, at_the_end = asyncio.run(_go())
+
+    assert events == ["started", "queued"], "the second visitor was not made to wait"
+    assert left_behind == 1, "the visitor who gave up is still holding a place"
+    assert at_the_end == 0, "the line never emptied"
+
+    assert len(spans) == 1, "the run nobody was waiting for was executed anyway"
+
+    with checkpoints.open_store() as store:
+        assert store.run("web-waiting") is None, "a run was started for a visitor who left"
 
 
 # --- Serialising the result --------------------------------------------------
