@@ -556,71 +556,52 @@ def test_an_id_whose_run_is_gone_is_left_out_rather_than_reported():
     assert visit(_go).json() == {"runs": []}
 
 
-def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
+def test_a_run_that_is_still_going_is_reported_as_running_not_finished(
     whole_pipeline, profile
 ):
-    """The distinction the checkpoint database cannot draw.
+    """The window between supersteps, and why the store cannot be believed alone.
 
-    A run part-way through a stage and a run that DIED part-way through one are
-    the same shape in it - both ``stopped`` with a node pending - so
-    ``can_resume`` is true for a run that is merely busy. Offering that would
-    drive a second execution of one thread into one SQLite file and bill the
-    visitor's share twice.
+    LangGraph writes the checkpoint that ENDS a superstep before it writes the
+    next task's schedule. Between every stage there is therefore a window - 2.6
+    milliseconds when CI caught it - in which ``next`` is empty and
+    ``checkpoints.py`` reads that as ``finished``. A run reports finished
+    several times on its way through.
 
-    THIS TEST USED TO BE A RACE AND CI CALLED IT OUT. It held the node open with
-    a one-second sleep and assumed the observation would land inside it. On both
-    CI platforms it did not: the graph had finished and the store already said
-    ``finished``, so the assertion pinning ``stopped`` failed. Nothing was wrong
-    with the code - ``can_resume`` was False and the resume was still refused,
-    because ``_EXECUTING`` had not cleared yet. The test was reading a window
-    rather than a property. The gate makes the window an ordering.
+    This test found that by failing on CI and passing locally for two sessions,
+    and the first two readings of it were both wrong: it was called a status-logic
+    bug, then a race in the test. It is neither. The store is telling the truth
+    about a checkpoint; the checkpoint is simply not the whole answer, and the
+    web layer holds the half the store is missing.
+
+    So ``running`` overrides. What must never happen is the opposite: a live run
+    described as finished, offered for picking up, or handed over as a result.
     """
     entered, hold = threading.Event(), threading.Event()
-    trace: list[tuple] = []
-    whole_pipeline(entered=entered, hold=hold, trace=trace)
+    whole_pipeline(entered=entered, hold=hold)
     user = UserInput(**profile)
 
     async def _go():
         gen = _stream("web-live", {"user_input": user})
-        frames = await _read(gen, 2)  # started, then a stage
-        seen = [f["event"] for f in frames]
-
-        t0 = time.monotonic()
-        reached = await asyncio.to_thread(entered.wait, 10)  # inside a node now
-        waited = time.monotonic() - t0
-        depth = runqueue.queue.depth
+        await _read(gen, 2)  # started, then a stage
+        # Parked INSIDE a node - an ordering, not a bet on a sleep.
+        await asyncio.to_thread(entered.wait, 10)
 
         cookie = session.write(["web-live"])
         transport = httpx.ASGITransport(app=app)
-        pre = {"hold_set": hold.is_set(), "trace": list(trace),
-               "t": round(time.monotonic(), 3)}
         try:
             async with httpx.AsyncClient(
                 transport=transport,
                 base_url="http://t",
                 cookies={session.COOKIE_NAME: cookie},
             ) as client:
-                listing = (await client.get("/api/runs")).json()
+                listed = (await client.get("/api/runs")).json()["runs"][0]
+                single = (await client.get("/api/runs/web-live")).json()
                 refused = await client.post(
                     "/api/runs/web-live/answer", json={"answer": ""}
                 )
-                # What the store ACTUALLY holds while the node is parked, read
-                # on this side so the answer does not depend on the endpoint.
-                with checkpoints.open_store() as _s:
-                    _snap = _s.graph.get_state(_s.config("web-live"))
-                    direct = {
-                        "next": list(_snap.next),
-                        "created_at": str(_snap.created_at)[:26],
-                        "error": bool(_snap.values.get("error")),
-                        "keys": sorted(_snap.values.keys()),
-                    }
-                # The SAME endpoint again, after the direct read, with the node
-                # still parked. If this disagrees with the first call, the first
-                # was reading something that had not settled.
-                second = (await client.get("/api/runs")).json()["runs"][0]
         finally:
-            # Released even if the requests raise, so a broken assertion fails
-            # the test rather than parking a worker thread for the backstop.
+            # Released even if a request raises, so a broken assertion fails the
+            # test rather than parking a worker thread for the backstop.
             hold.set()
 
         try:
@@ -631,30 +612,24 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
         # The TEXT, not the parsed body: without the guard this endpoint answers
         # with an event stream rather than JSON, and a decode error is a much
         # worse description of that than the status code is.
-        why = {"events": seen, "node_reached": reached,
-               "waited_s": round(waited, 3), "queue_depth": depth,
-               "before_get": pre, "trace_after": list(trace), "direct": direct,
-               "second_call": {k: second[k] for k in
-                               ("status", "running", "can_resume", "resumes_at")}}
-        return listing, refused.status_code, refused.text, why
+        return listed, single, refused.status_code, refused.text
 
-    listing, status, body, why = asyncio.run(_go())
-    run = listing["runs"][0]
+    listed, single, status, body = asyncio.run(_go())
 
-    # Every assertion below carries the run and how the test got there. A bare
-    # "'finished' != 'stopped'" sent two sessions guessing at CI from a laptop
-    # that could not reproduce it; the diagnosis has to travel with the failure.
-    ctx = f"  run={run}  how={why}"
-
-    assert run["running"] is True, "the run was not executing when it was looked at" + ctx
-    assert run["status"] == "stopped", (
-        "the store cannot tell busy from dead; that is the point" + ctx
+    assert listed["running"] is True
+    assert listed["status"] == "running", (
+        "a run still executing was described by whichever checkpoint happened "
+        "to be visible"
     )
-    assert run["can_resume"] is False, (
-        "a run already executing was offered for picking up" + ctx
+    assert listed["can_resume"] is False, "a live run was offered for picking up"
+    assert listed["resumes_at"] is None, "a live run named a stage to resume from"
+
+    assert single["status"] == "running"
+    assert single["brief"] is None, (
+        "a brief was handed over for a run that had three stages left"
     )
 
-    assert status == 409, f"a run still executing was resumed, not refused ({status})" + ctx
+    assert status == 409, f"a run still executing was resumed, not refused ({status})"
     assert json.loads(body)["status"] == "running"
 
 

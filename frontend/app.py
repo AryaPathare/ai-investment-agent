@@ -477,18 +477,28 @@ async def read_runs(request: Request) -> dict:
                 saved = store.run(thread_id)
                 if saved is None:
                     continue
+                executing = thread_id in _EXECUTING
                 runs.append(
                     {
                         "thread_id": thread_id,
-                        "status": saved.status,
+                        # ``running`` OVERRIDES the store, and has to.
+                        # LangGraph writes the checkpoint that ends a superstep
+                        # BEFORE it writes the next task's schedule, so between
+                        # every stage there is a window - measured at 2.6ms on
+                        # CI - where ``next`` is empty and ``checkpoints.py``
+                        # reads that as "finished". A run mid-flight therefore
+                        # reports finished several times on its way through, and
+                        # a reader that believed it would be told a run had
+                        # ended while it was still paying for it (entry 145).
+                        "status": "running" if executing else saved.status,
                         "sectors": saved.sectors,
                         "updated_at": saved.updated_at,
-                        "running": thread_id in _EXECUTING,
+                        "running": executing,
                         # What the page may OFFER, which is not the same as what
                         # the graph could technically continue: a run already
                         # executing is resumable in the store's terms and must
                         # not be resumed by anybody.
-                        "can_resume": saved.can_resume and thread_id not in _EXECUTING,
+                        "can_resume": saved.can_resume and not executing,
                         "question": (
                             render.describe_question(saved.question)
                             if saved.question
@@ -500,7 +510,7 @@ async def read_runs(request: Request) -> dict:
                         # "waiting" that are in fact finished and paid for, and
                         # never report again because the graph does not repeat
                         # them.
-                        "resumes_at": _resumes_at(store, thread_id),
+                        "resumes_at": None if executing else _resumes_at(store, thread_id),
                     }
                 )
     return {"runs": runs}
@@ -524,11 +534,13 @@ async def read_run(thread_id: str, request: Request):
         if saved is None:
             return JSONResponse(status_code=404, content=_NO_SUCH_RUN)
 
+        executing = thread_id in _EXECUTING
         body = {
             "thread_id": thread_id,
-            "status": saved.status,
-            "running": thread_id in _EXECUTING,
-            "can_resume": saved.can_resume and thread_id not in _EXECUTING,
+            # Same override as the listing, and for the same reason.
+            "status": "running" if executing else saved.status,
+            "running": executing,
+            "can_resume": saved.can_resume and not executing,
             "sectors": saved.sectors,
             "updated_at": saved.updated_at,
             "question": (
@@ -538,10 +550,17 @@ async def read_run(thread_id: str, request: Request):
             # tells those apart itself, and a failed one carries its reason -
             # which is the whole of entry 88: nothing pending looks identical to
             # success from outside, so the error has to be read explicitly.
+            # WITHHELD while the run is executing. This is the half of the
+            # window that could actually mislead somebody: between supersteps
+            # the store says finished, ``can_resume`` is False, and this would
+            # otherwise hand over a brief built from a run that has not finished
+            # - three stages of it missing, presented as the result.
             "brief": (
-                render.describe_run(store.graph.get_state(store.config(thread_id)).values)
-                if not saved.can_resume
-                else None
+                None
+                if executing or saved.can_resume
+                else render.describe_run(
+                    store.graph.get_state(store.config(thread_id)).values
+                )
             ),
         }
     return body

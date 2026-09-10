@@ -1336,6 +1336,15 @@ async function readEarlier(run) {
     return;
   }
   const body = await response.json();
+  if (!body.brief) {
+    // The run started again, or was still going when the card was drawn. The
+    // server withholds a brief for a run it is still executing rather than
+    // handing over one with stages missing, so there is nothing to show yet.
+    $("earlier-note").textContent =
+      "That run is going again. Give it a moment and check back.";
+    await loadEarlier();
+    return;
+  }
   THREAD = run.thread_id;
   $("earlier").hidden = true;
   $("intro").hidden = true;
