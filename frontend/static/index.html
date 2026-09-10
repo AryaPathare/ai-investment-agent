@@ -76,6 +76,45 @@
     font-weight: 800; color: var(--accent); letter-spacing: -.02em; }
   .stat span { color: var(--muted); font-size: .8rem; }
 
+  /* THE ABOUT TAB'S RIGHT COLUMN. The same two-column grid as .intro, with
+     the same 46rem measure on the left, so the prose does not shift when you
+     move between tabs - only what sits beside it changes. */
+  .about { display: grid; align-items: start; gap: 1.4rem 2.5rem;
+    grid-template-columns: minmax(0, 46rem) minmax(0, 1fr); }
+
+  /* The log, as an object rather than a link in a sentence. The offset edges
+     are the only decoration: two rules peeking out from under the card, which
+     is what a stack of paper looks like from above. */
+  .logcard {
+    display: block; margin: 2.2rem 0 0; padding: 1.15rem 1.25rem;
+    text-decoration: none; color: var(--cream);
+    background: linear-gradient(103deg, var(--deep) 0%, var(--deep-2) 70%, #1e3a5f 100%);
+    border: 1px solid var(--deep); border-top: 3px solid var(--accent-warm);
+    box-shadow: 5px 5px 0 -1px var(--paper), 6px 6px 0 0 var(--line),
+                10px 10px 0 -1px var(--paper), 11px 11px 0 0 var(--line);
+  }
+  .logcard:hover, .logcard:focus-visible { border-top-color: var(--cream); }
+  .logcard:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .logcard .kicker { display: block; font-size: .74rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--accent-warm); }
+  .logcard .n { display: block; font-size: 2.1rem; line-height: 1.05;
+    font-weight: 800; letter-spacing: -.02em; margin: .35rem 0 0; }
+  .logcard .unit { display: block; font-size: .8rem; color: #b9c7dc; }
+  .logcard .d { display: block; margin: .8rem 0 0; font-size: .86rem;
+    line-height: 1.5; color: #d6e0ee; }
+  .logcard .cta { display: block; margin: .9rem 0 0; font-weight: 700;
+    font-size: .88rem; color: var(--cream); }
+  .logcard .d em { color: var(--cream); font-style: normal; font-weight: 600; }
+
+  /* The first page. A page of a document is mostly margin, so it needs an
+     edge of its own or it dissolves into the paper background. */
+  .preview { display: block; margin: 1.1rem 0 0; line-height: 0;
+    border: 1px solid var(--line); background: var(--panel);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .10); }
+  .preview img { display: block; width: 100%; height: auto; }
+  .preview:hover, .preview:focus-visible { border-color: var(--accent); }
+  .preview:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
   /* A full-width band, for the numbered pipeline. */
   .band { background: var(--panel); border: 1px solid var(--line);
     border-top: 3px solid var(--accent); padding: 1.3rem 1.5rem; margin: 2.2rem 0 0; }
@@ -97,7 +136,11 @@
 
   @media (max-width: 62rem) {
     .intro { grid-template-columns: 1fr; }
+    .about { grid-template-columns: 1fr; }
     .stats { grid-template-columns: 1fr 1fr; }
+    /* Stacked, the card is no longer beside anything, and the offset edges
+       would hang off a 360px screen. */
+    .logcard { margin-top: 1.6rem; box-shadow: none; }
   }
 
   /* WIDE SHELL, NARROW PROSE. 46rem is about 90 characters, the top of the
@@ -348,69 +391,72 @@
   </div>
 
   <div class="tab" id="tab-about" hidden>
-<section class="band">
-      <h2>How a run works</h2>
-      <p class="band-sub">Five agents, in order. Each hands the next only what it
-        could actually show.</p>
-      <ol class="steps">
-        <li><span class="n">01</span><strong>Validate</strong>
-          <span class="d">Checks your answers make sense together, and asks you
-          about it when two of them disagree.</span></li>
-        <li><span class="n">02</span><strong>Research</strong>
-          <span class="d">Reads current news for the parts of the market you
-          named, and keeps what it can cite.</span></li>
-        <li><span class="n">03</span><strong>Screen</strong>
-          <span class="d">Finds listed companies genuinely exposed to those
-          themes, and says why it dropped the rest.</span></li>
-        <li><span class="n">04</span><strong>Critique</strong>
-          <span class="d">Retrieves the bear case and argues against every
-          candidate before any of them survives.</span></li>
-        <li><span class="n">05</span><strong>Write</strong>
-          <span class="d">Writes up to three of them &mdash; or recommends
-          nothing, and says why.</span></li>
-      </ol>
-    </section>
+  <div class="about">
+    <div>
+      <h2>What this is</h2>
+      <p>
+        A five-agent research pipeline. It validates what you tell it, reads
+        current news for the sectors you name, finds listed companies genuinely
+        exposed to what it found, retrieves the bear case and attacks each
+        candidate, then writes up to three of them &mdash; or recommends nothing,
+        and says why.
+      </p>
+      <p>
+        Every claim it makes cites either an article it actually retrieved or a
+        figure it actually measured. It cannot cite anything else: the schema has
+        nowhere to put one.
+      </p>
 
-    <h2>What this is</h2>
-    <p>
-      A five-agent research pipeline. It validates what you tell it, reads
-      current news for the sectors you name, finds listed companies genuinely
-      exposed to what it found, retrieves the bear case and attacks each
-      candidate, then writes up to three of them &mdash; or recommends nothing,
-      and says why.
-    </p>
-    <p>
-      Every claim it makes cites either an article it actually retrieved or a
-      figure it actually measured. It cannot cite anything else: the schema has
-      nowhere to put one.
-    </p>
+      <h2>What it will not do</h2>
+      <p>
+        It will not tell you how much to buy. Dividing your money three ways is
+        two lines of code, and it is the point where research becomes advice, so
+        there is no field for it. It will not give you a price target or a sell
+        date either &mdash; it has no valuation model, and inventing that number
+        would be the only figure in the output citing nothing. What it gives you
+        instead is a list of things that would mean the idea has stopped working.
+      </p>
 
-    <h2>What it will not do</h2>
-    <p>
-      It will not tell you how much to buy. Dividing your money three ways is
-      two lines of code, and it is the point where research becomes advice, so
-      there is no field for it. It will not give you a price target or a sell
-      date either &mdash; it has no valuation model, and inventing that number
-      would be the only figure in the output citing nothing. What it gives you
-      instead is a list of things that would mean the idea has stopped working.
-    </p>
+      <h2>Limits worth knowing</h2>
+      <p>
+        It runs on free API tiers, which is roughly seven runs a day shared by
+        everyone who visits. When they are gone, the recorded runs above are what
+        the site can show. A run can also legitimately recommend nothing.
+      </p>
 
-    <h2>Limits worth knowing</h2>
-    <p>
-      It runs on free API tiers, which is roughly seven runs a day shared by
-      everyone who visits. When they are gone, the recorded runs above are what
-      the site can show. A run can also legitimately recommend nothing.
-    </p>
+      <h2>The code</h2>
+      <p>
+        <a href="https://github.com/patharearya/ai-investment-agent">github.com/patharearya/ai-investment-agent</a>
+        &mdash; MIT licensed. Five agents, the prompts they run on, and the
+        tests that hold them to it.
+      </p>
+      <p class="help">Built by Arya Pathare.</p>
+    </div>
 
-    <h2>The code</h2>
-    <p>
-      <a href="https://github.com/patharearya/ai-investment-agent">github.com/patharearya/ai-investment-agent</a>
-      &mdash; MIT licensed, and the project log is the interesting half: an
-      entry-by-entry record of what broke and why the first diagnosis was
-      usually wrong.
-    </p>
-    <p class="help">Built by Arya Pathare.</p>
+    <!-- The right column. The prose is capped at 46rem for reading, which left
+         this space empty on the one tab whose whole job is to explain the
+         project - so it holds the log, which is the explanation. -->
+    <aside>
+      <a class="logcard" href="/paper.pdf">
+        <span class="kicker">The write-up</span>
+        <b class="n" id="paper-pages">15</b>
+        <span class="unit">pages, as a PDF</span>
+        <span class="d"><em>Building and Verifying a Multi-Agent LLM
+          Pipeline</em> &mdash; a case study in 74 defects: what broke, what
+          kind of wrong each one was, and how many the tests caught.</span>
+        <span class="cta">Open the PDF &rarr;</span>
+      </a>
+
+      <!-- The first page, as the object it is. Same destination as the card
+           above it: a picture of a document that does not open when clicked is
+           a dead control. -->
+      <a class="preview" href="/paper.pdf" aria-label="Open the PDF">
+        <img src="/paper-p1.png" width="660" height="934" loading="lazy"
+             alt="First page: title, author, and the paper's contents.">
+      </a>
+    </aside>
   </div>
+</div>
 </main>
 
 <script>

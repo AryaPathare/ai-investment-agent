@@ -504,3 +504,38 @@ async def index() -> FileResponse:
     nothing that can drift from what the CLI shows.
     """
     return FileResponse(STATIC / "index.html")
+
+
+@app.get("/paper.pdf")
+async def paper() -> FileResponse:
+    """The write-up the About tab shows, served as the file it is.
+
+    A file rather than a render: this is a document that was written and
+    exported, not a view of anything the server holds, so what a visitor
+    downloads is the same artefact rather than a second rendering of it that
+    could disagree.
+
+    Served by an explicit route because this app mounts no static directory -
+    the page and these two assets are the only files it serves - which is also
+    why no path from a request ever reaches the filesystem here.
+    """
+    return FileResponse(
+        STATIC / "paper.pdf",
+        media_type="application/pdf",
+        # Named for the download, not for the URL. Without this a saved copy is
+        # called paper.pdf, with no hint of what it is a paper about.
+        filename="building-and-verifying-a-multi-agent-llm-pipeline.pdf",
+        content_disposition_type="inline",
+    )
+
+
+@app.get("/paper-p1.png")
+async def paper_preview() -> FileResponse:
+    """Page one of that PDF, as the picture on the card.
+
+    A route rather than a data: URI in the page. Inlining 44KB of base64 would
+    put it in front of every visitor including the ones who never open About,
+    and it would be re-sent on every page load; a file is fetched once, only
+    when the tab is opened, and then cached.
+    """
+    return FileResponse(STATIC / "paper-p1.png", media_type="image/png")

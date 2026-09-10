@@ -29,6 +29,7 @@ import pytest
 
 from backend import checkpoints
 from backend import workflow
+from backend.config import PROJECT_ROOT
 from backend.models.companies import CompanyFindings
 from backend.models.decision import Decision
 from backend.models.profile import InvestorProfile
@@ -891,3 +892,27 @@ def test_a_live_failure_carries_the_same_hint_as_a_reloaded_one(whole_pipeline, 
 
     assert len(failures) == 1
     assert failures[0]["hint"] == render.RATE_LIMIT_HINT
+
+
+def test_the_paper_and_its_preview_are_served():
+    """The About card links to these; a 404 behind either is a broken showcase.
+
+    Asserted through the app rather than by looking at the files, because the
+    routes are the part that can break - this app mounts no static directory,
+    so every file it serves needs a route of its own and nothing fails over to
+    a directory listing.
+    """
+    static = PROJECT_ROOT / "frontend" / "static"
+    if not (static / "paper.pdf").exists():
+        pytest.skip("no paper committed yet")
+
+    pdf = visit(lambda c: c.get("/paper.pdf"))
+    png = visit(lambda c: c.get("/paper-p1.png"))
+
+    assert pdf.status_code == 200
+    assert pdf.headers["content-type"] == "application/pdf"
+    assert pdf.content.startswith(b"%PDF-"), "served something that is not a PDF"
+
+    assert png.status_code == 200
+    assert png.headers["content-type"] == "image/png"
+    assert png.content[:4] == bytes.fromhex("89504e47"), "not a PNG"

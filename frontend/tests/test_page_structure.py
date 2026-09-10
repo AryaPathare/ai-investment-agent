@@ -21,6 +21,7 @@ wrong. They cannot prove a click works. That was checked separately by driving
 the tab functions against a DOM stub.
 """
 
+import hashlib
 import re
 
 import pytest
@@ -270,3 +271,129 @@ def test_an_unanswered_optional_menu_is_null_not_empty_string():
     neither, and would come back as a 422 on a field the model says may be
     skipped."""
     assert 'profile[field.name] = $(field.name).value || null;' in HTML
+
+
+# --- The About tab's right column --------------------------------------------
+
+PAPER = PROJECT_ROOT / "frontend" / "static" / "paper.pdf"
+PREVIEW = PROJECT_ROOT / "frontend" / "static" / "paper-p1.png"
+STAMP = PROJECT_ROOT / "frontend" / "static" / "paper-p1.source"
+
+
+def _about_tab() -> str:
+    """Just the About panel, so a check about it cannot pass on another tab."""
+    start = HTML.index('id="tab-about"')
+    return HTML[start : HTML.index("</main>", start)]
+
+
+def test_the_pipeline_band_appears_once():
+    """It used to be rendered twice, verbatim - on the run tab and on About.
+
+    Two identical copies of the same explanation is the redundancy this was
+    asked to remove, and duplicated markup is also how the two copies would
+    eventually come to disagree. The run tab keeps it, because that is where
+    somebody is deciding whether to start one.
+    """
+    assert HTML.count("<h2>How a run works</h2>") == 1
+    assert "How a run works" not in _about_tab()
+
+
+def test_the_about_tab_offers_the_paper():
+    """The card that fills the column the prose does not use.
+
+    It links to a file this app serves itself rather than to GitHub: the point
+    of the About tab is to explain the project to somebody who has not decided
+    to look at the code yet.
+    """
+    about = _about_tab()
+
+    assert 'href="/paper.pdf"' in about, "the card is gone from About"
+    assert 'class="about"' in about, "the About tab is no longer two columns"
+
+
+def test_the_preview_opens_the_thing_it_is_a_picture_of():
+    """A picture of a document that does nothing when clicked is a dead control.
+
+    The image and the card must point at the same file - it would be easy to
+    rename the PDF, fix the card's href, and leave the preview pointing at a
+    404 nobody clicks often enough to notice.
+    """
+    about = _about_tab()
+    start = about.index('class="preview"')
+    anchor = about[start : about.index("</a>", start)]
+
+    assert 'href="/paper.pdf"' in anchor, "the preview does not open the PDF"
+    assert 'src="/paper-p1.png"' in anchor, "the preview has no image"
+    assert "alt=" in anchor and 'aria-label' in anchor
+
+
+def test_the_preview_declares_its_size():
+    """Without width and height the About tab reflows when the image lands.
+
+    The preview is 44KB below the fold of a lazily-loaded tab, so it arrives
+    late by design; a box reserved for it is what stops the prose beside it
+    jumping once it does.
+    """
+    about = _about_tab()
+
+    assert re.search(r'<img src="/paper-p1\.png" width="\d+" height="\d+"', about), (
+        "the preview image declares no intrinsic size"
+    )
+
+
+def test_the_preview_was_rendered_from_the_pdf_that_is_committed():
+    """The image is a COPY, which is the failure this project keeps meeting.
+
+    `docs/project_log.html` went stale within minutes of being created and
+    entry 132 turned down a stat tile for the same reason. So the build script
+    stamps the source hash next to the image and this compares it against the
+    PDF actually committed: replace the paper, forget the preview, and the
+    suite says so rather than the site showing last month's title page.
+
+    Pure hashlib on purpose - the renderer is a build-time dependency that CI
+    does not install, so the guard must not need it.
+    """
+    if not (PAPER.exists() and STAMP.exists()):
+        pytest.skip("no paper committed yet")
+
+    actual = hashlib.sha256(PAPER.read_bytes()).hexdigest()
+
+    assert actual == STAMP.read_text(encoding="utf-8").strip(), (
+        "paper.pdf has changed since paper-p1.png was rendered - "
+        "run: python -m frontend.scripts.build_paper_preview"
+    )
+
+
+def _pdf_pages(data: bytes) -> int:
+    """Page count, read from the file rather than from anything that claims one.
+
+    Counting `/Type /Page` markers, minus the `/Type /Pages` tree nodes that
+    also match. This is a heuristic and it has a known blind spot - a producer
+    that puts its page objects in compressed object streams hides them from a
+    byte scan - so a zero here means UNKNOWN, not empty, and the caller skips
+    rather than asserting something it did not actually measure.
+    """
+    return data.count(b"/Type /Page") - data.count(b"/Type /Pages")
+
+
+def test_the_card_states_the_page_count_the_pdf_actually_has():
+    """The one number on the card, checked against the file it describes.
+
+    Entry 132 turned down a tile reading "11 recorded runs" because a figure
+    copied by hand goes stale silently. This one is copied by hand too - so it
+    gets the guard that makes the staleness loud. Swapping in a longer paper
+    and not updating the card fails here, and the fix is one number.
+    """
+    if not PAPER.exists():
+        pytest.skip("no paper committed yet")
+
+    pages = _pdf_pages(PAPER.read_bytes())
+    if pages <= 0:
+        pytest.skip("this PDF's page objects are not visible to a byte scan")
+
+    stated = re.search(r'id="paper-pages">(\d+)<', HTML)
+
+    assert stated, "the card states no page count"
+    assert int(stated.group(1)) == pages, (
+        f"the card says {stated.group(1)} pages; the PDF has {pages}"
+    )
