@@ -242,13 +242,6 @@
     letter-spacing: -.01em; }
   .steps .d { color: var(--muted); font-size: .85rem; line-height: 1.55; }
 
-  @media (max-width: 62rem) {
-    .intro { grid-template-columns: 1fr; }
-    .about { grid-template-columns: 1fr; }
-    .stats { grid-template-columns: 1fr 1fr; }
-    .logcard { margin-top: 1.6rem; box-shadow: none; }
-  }
-
   /* WIDE SHELL, NARROW PROSE - unchanged from the light design, and for the
      unchanged reason: a brief is prose and 46rem is about 90 characters. */
   .sub, .disclaimer, #progress, #clarify, #result,
@@ -580,6 +573,28 @@
     transition: opacity .8s var(--ease), transform .8s var(--ease);
   }
   [data-reveal].in { opacity: 1; transform: none; }
+
+  /* NARROW SCREENS. EVERY responsive override lives down here, after the rules
+     it overrides, and that placement is the point of this block rather than a
+     tidiness preference.
+
+     It used to sit near the top. `.intro` is declared above it, so `.intro`
+     collapsed correctly; `.about` and `.logcard` are declared BELOW it, so at
+     equal specificity the wide-screen rule won and those overrides never
+     applied at any width. The About tab kept a two-column grid on a 390px
+     screen - WebKit resolved it to `300px 0px`, hanging the paper card and its
+     preview off the right edge. Reported from an actual iPhone; entry 138.
+
+     A dead CSS rule is silent: no error, the rule is present in the file, and
+     on a desktop the page is perfect. `test_narrow_screen_rules_come_after_the
+     _rules_they_override` asserts the order, because that is what makes these
+     reachable at all. */
+  @media (max-width: 62rem) {
+    .intro { grid-template-columns: 1fr; }
+    .about { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .logcard { margin-top: 1.6rem; box-shadow: none; }
+  }
 
   @media (max-width: 40rem) {
     :root { --frame: 5px; }

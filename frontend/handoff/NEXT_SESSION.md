@@ -18,8 +18,8 @@ somebody about to stop working who cannot describe what happens next.
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1078 passed, 1 skipped** — 1079 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **137**, 26 sessions
+- Suite: **1079 passed, 1 skipped** — 1080 collected, and the distinction matters
+- `docs/PROJECT_LOG.md` is current through entry **138**, 26 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -199,7 +199,10 @@ in a browser; show the run id as something a person could bring back; or give
 the page an actual resume-by-id path, which the API already supports since the
 id is emitted before the first model call is paid for. Free either way.
 
-**F5. DONE 2026-09-09 - he checked it on his phone and it reads well.**
+**F5. DONE 2026-09-09 - he checked it on his phone and it reads well.** (And
+entry 138 proves the point harder than intended: he later found a broken
+About layout on the same phone that every automated width check had called
+fine. A person with the device is still the instrument.)
 ~~Open the live site on a phone.~~ It was never a coding task, and it was the
 reason F2 was only half-checked: no browser runs in the test suite, so every F2
 assertion says a CSS property is PRESENT, never that the result looks right. A
@@ -427,6 +430,33 @@ Four ways out, and they are not equally cheap:
 **It also may not survive F7 and F10 unchanged.** Both touch the panel this grid
 sits in; a layout that changes the available width changes which cells fit.
 Worth sequencing this after them rather than fixing it twice.
+
+---
+
+## PHONE LAYOUT IS CHECKED ON WEBKIT NOW (entry 138)
+
+**An iPhone found a rule that had never applied.** `@media (max-width: 62rem)`
+sat above `.about` and `.logcard` in the stylesheet, so at equal specificity the
+wide-screen rule won and those two phone overrides were dead from the day they
+were written. About kept a two-column grid on a 390px screen and hung the paper
+card off the edge.
+
+**Every responsive override now lives at the BOTTOM of the stylesheet**, after
+the rules it overrides. `test_narrow_screen_rules_come_after_the_rules_they
+_override` fails if a selector overridden in a `max-width` block is declared
+again later. Keep new media rules down there.
+
+**AND STOP MEASURING OVERFLOW ON CHROMIUM MOBILE EMULATION.** Session 26's "no
+horizontal overflow at five widths" was green on a page that was visibly broken
+on the device: Chromium widens its own viewport to swallow overflow, so
+`scrollWidth > innerWidth` compared 414 to 414. WebKit kept the viewport at 390
+and reported it. Both engines had the identical broken grid.
+
+    python -m playwright install webkit     # installed 2026-09-09
+    p.webkit.launch() + p.devices["iPhone 13"]
+
+An iPhone is Safari. Check phone layout on WebKit, and compare against the
+DEVICE width rather than `innerWidth`.
 
 ---
 

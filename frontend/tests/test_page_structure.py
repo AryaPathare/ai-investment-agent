@@ -422,3 +422,64 @@ def test_the_card_states_the_page_count_the_pdf_actually_has():
     assert int(stated.group(1)) == pages, (
         f"the card says {stated.group(1)} pages; the PDF has {pages}"
     )
+
+
+# --- Responsive rules that are actually reachable ----------------------------
+
+
+def _media_blocks() -> list[tuple[int, int, str]]:
+    """Every `@media (max-width: ...)` block, as (start, end, body)."""
+    blocks = []
+    for match in re.finditer(r"@media \(max-width: [^)]+\) \{", HTML):
+        start = match.start()
+        depth, i = 1, match.end()
+        while depth and i < len(HTML):
+            if HTML[i] == "{":
+                depth += 1
+            elif HTML[i] == "}":
+                depth -= 1
+            i += 1
+        blocks.append((start, i, HTML[match.end() : i - 1]))
+    return blocks
+
+
+def test_narrow_screen_rules_come_after_the_rules_they_override():
+    """A responsive override below its base rule is silent, and looks fine.
+
+    THIS IS THE DEFECT AN IPHONE FOUND. `@media (max-width: 62rem)` sat near the
+    top of the stylesheet. `.intro` is declared above it, so `.intro` collapsed
+    on a phone correctly; `.about` and `.logcard` are declared BELOW it, so at
+    equal specificity the wide-screen rule won and those two overrides never
+    applied at any width. The About tab kept a two-column grid on a 390px
+    screen - WebKit resolved it to `300px 0px` and hung the paper card and its
+    preview off the right edge of the page.
+
+    Nothing reports this. There is no CSS error, the rule is present in the
+    file, and on a desktop the page is perfect - so a test that greps for the
+    rule passes while the rule does nothing. This asserts the ORDER instead,
+    which is the property that makes the rule reachable at all.
+
+    The browser check that should have caught it did not, and how is worth
+    keeping: it compared `scrollWidth` against `innerWidth` under Chromium's
+    mobile emulation, which widens its own viewport to swallow overflow. Both
+    engines computed the same broken grid; only WebKit still called it an
+    overflow. Comparing a page against a viewport that moves with the page is
+    not a measurement.
+    """
+    failures = []
+
+    for start, _end, body in _media_blocks():
+        for selector in re.findall(r"^\s{4}([.#][\w-]+) \{", body, re.MULTILINE):
+            # Where that selector is declared OUTSIDE any media block.
+            base = [
+                m.start()
+                for m in re.finditer(rf"^  {re.escape(selector)} \{{", HTML, re.MULTILINE)
+            ]
+            later = [pos for pos in base if pos > start]
+            if later:
+                failures.append(
+                    f"{selector} is overridden in a media block at {start}, "
+                    f"but declared again at {later[0]} - the override is dead"
+                )
+
+    assert not failures, "\n".join(failures)

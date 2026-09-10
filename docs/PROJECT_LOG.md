@@ -5712,3 +5712,66 @@ word "estimate" while adding the new caveat, and
 written in an earlier session catching a regression in the sentence it exists
 to protect, in the same edit that was making that sentence more honest. 1077
 passed to **1078**.
+
+### 138. A responsive rule that had never once applied, and the check that hid it
+
+He opened the About tab on his iPhone and found the paper card and its preview
+cut off and running off the side of the screen. Everything else on the phone was
+fine, and the desktop page was perfect.
+
+**The rule that should have fixed it was in the file, and had never applied.**
+
+    line 245   @media (max-width: 62rem) { .intro ... .about ... .logcard ... }
+    line 492   .about   { grid-template-columns: minmax(0, 46rem) minmax(0, 1fr); }
+    line 494   .logcard { ... }
+
+Same specificity, and the later rule wins. `.intro` is declared ABOVE the media
+block, so `.intro` collapsed on a phone exactly as intended - which is why the
+run tab was fine and only About was broken. `.about` and `.logcard` are declared
+BELOW it, so their phone rules lost, at every width, since the day they were
+written. WebKit resolved the surviving two-column grid to **`300px 0px`** and
+put the card in the zero-width column: 45px wide, starting at x=369 on a 390px
+screen, with the preview at 2px.
+
+**Nothing reports this.** There is no CSS error, the rule is present, greping
+for it succeeds, and on a desktop the page looks right. The fix was to move
+every responsive override below the rules it overrides.
+
+### The check that should have caught it, and why it did not
+
+Session 26 measured "no horizontal overflow at 320, 360, 390, 768 and 1440" and
+that measurement was worthless. It compared `document.scrollWidth` to
+`window.innerWidth` in Chromium's mobile emulation - **which widens its own
+viewport to swallow overflow.** Run against the live, unfixed page:
+
+    webkit    iPhone 13   vw 390   scrollWidth 414   overflow TRUE
+    chromium  iPhone 13   vw 414   scrollWidth 414   overflow false
+
+**Both engines computed the identical broken grid** - `300px 0px`, card 45px.
+The bug was fully present in Chromium. Only the yardstick moved. Comparing a
+page against a viewport that grows with the page is not a measurement, and it
+produced a green result on a page that was visibly broken on the device.
+
+**WebKit is now installed** (`python -m playwright install webkit`) and the two
+engines disagree usefully. An iPhone is Safari, and this project had been
+checking phone layout on Chromium only.
+
+### The guard is about order, not about pixels
+
+No browser runs in the suite and adding one to CI for this is not worth it, so
+`test_narrow_screen_rules_come_after_the_rules_they_override` parses the
+stylesheet: for every selector overridden inside a `max-width` block, it fails
+if that selector is declared again later in the file. It reports the offender
+and the position.
+
+**Verified by reintroducing the regression**, since a guard that has only ever
+passed proves nothing:
+
+    .about is overridden in a media block at 11688, but declared again at
+    23569 - the override is dead
+
+That is the third guard in four entries whose lesson is the same shape as entry
+135's: a check can be present, green, and testing nothing. Here it was worse
+than nothing, because it was cited as evidence the phone layout was fine.
+
+1078 passed to **1079**.
