@@ -5431,3 +5431,83 @@ finish - so concurrency is untested against the real deployment, and the site
 has never had two visitors. It is not on the agenda because nobody put it
 there; it is simply the last thing about this deployment that has never
 happened.
+
+### 134. The About tab stops repeating itself, and starts showing the paper
+
+Two asks after he read the deployed site.
+
+**"How a run works" was on the page twice, verbatim** - the numbered 01-05 band
+from entry 132, rendered once on the run tab and again on About. Deleted from
+About. The run tab keeps it because that is where somebody is deciding whether
+to start one; About is for somebody deciding whether to care. A test holds the
+count at one, which is worth having for a reason beyond tidiness: **two copies
+of the same explanation are two things that can come to disagree**, and that is
+the defect category this project has recorded most often.
+
+The same pass found the About prose describing the log in nearly the words the
+new card uses, so that sentence was cut back to the repository.
+
+### Filling the column the reading measure leaves behind
+
+Entry 132 widened the shell to 72rem and kept the prose at 46rem, which is what
+put stat tiles beside the intro. **On About that left the rest of the column
+empty below the tiles** - on the one tab whose whole job is explanation.
+
+It now holds the write-up: a dark card, and under it the first page as a
+picture. Both open `/paper.pdf`. **A picture of a document that does nothing
+when clicked is a dead control**, so the preview is wrapped in the same link
+and a test compares the two hrefs - renaming the file, fixing the card and
+leaving the image pointing at a 404 is the easy version of this mistake.
+
+**Why a rendered image and not an inline `<object>`.** The browser's own PDF
+viewer needs no build step and can never drift, which is a real argument for it.
+It is still wrong here: it is a whole application with its own toolbar and
+scrollbars sitting inside a decoration, several mobile browsers decline to
+inline a PDF at all and offer a download instead, and it would pull 250KB before
+a visitor has said they want it. A picture is 44KB, lazily loaded, and behaves
+the same everywhere.
+
+    /paper.pdf       15 pages, 250KB, served as the file it is
+    /paper-p1.png    660x934, 44KB, page one
+    frontend/scripts/build_paper_preview.py
+
+Two explicit routes rather than a static mount, which is also why no path from a
+request reaches the filesystem: the page and these two assets are every file
+this app serves.
+
+### Both new facts are copies, so both are guarded
+
+The card states 15 pages and the image is a picture of page one. **Neither is
+derived from anything at runtime** - they are hand-made copies of a file, which
+is exactly what `docs/project_log.html` was when it went stale within minutes of
+being created, and what entry 132 turned down a "11 recorded runs" tile for.
+
+So the staleness is made loud rather than avoided:
+
+- the page count is read back out of the PDF by counting `/Type /Page` markers
+  and compared to the number in the card. The scan has a blind spot - a producer
+  using compressed object streams hides its page objects from it - so **zero
+  means UNKNOWN and the test skips**, rather than asserting an emptiness it did
+  not measure. On this file it reads 15, which is right.
+- the build script writes the sha256 of the PDF beside the image, and a test
+  compares it against the PDF actually committed. Swap the paper, forget the
+  preview, and the suite names the command to re-run.
+
+That second guard is pure `hashlib` deliberately. **The renderer is a build-time
+dependency that CI does not install** - `pypdfium2` and Pillow went into the
+venv and stayed out of `requirements.txt`, the standing Playwright already has,
+because nothing at runtime rasterises anything. A guard that needed them would
+skip on the machine that matters.
+
+Checked in a real browser at 1440 and 360: beside the prose, then stacked under
+it, no horizontal overflow either way. 1070 passed to **1077**.
+
+### Found while working, not fixed
+
+`test_every_start_command_names_an_importable_app` no longer tests anything. It
+scans `render.yaml` and `Procfile` for a `module:attribute` reference and skips
+any whose module does not start with `web` - and session 22 renamed that package
+to `frontend`. The filter now matches nothing, the loop body never runs, and the
+test passes without an assertion. **It is the trap that move kept producing: a
+rule that still looks right after the thing it guarded moved.** Left alone
+because it is not what this session was asked to work on.

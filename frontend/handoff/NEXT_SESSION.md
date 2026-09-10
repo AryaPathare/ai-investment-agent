@@ -3,11 +3,11 @@
 The website: the page, the HTTP layer, the gallery and the deploy.
 For the pipeline see [the backend handoff](../../backend/handoff/NEXT_SESSION.md).
 
-**Written against `a59e49b`, 2026-09-09, at the end of session 25.** Before
+**Written against `396b9a4`, 2026-09-09, at the end of session 25.** Before
 trusting a word of this:
 
 ```powershell
-git log --oneline a59e49b..HEAD
+git log --oneline 396b9a4..HEAD
 ```
 
 Thirty seconds, and it is here because of entry 92: session 15 opened a handoff,
@@ -18,8 +18,8 @@ somebody about to stop working who cannot describe what happens next.
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1070 passed, 1 skipped** — 1071 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **133**, 25 sessions
+- Suite: **1077 passed, 1 skipped** — 1078 collected, and the distinction matters
+- `docs/PROJECT_LOG.md` is current through entry **134**, 25 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -121,7 +121,9 @@ Suite: 1062 passed to **1065**.
 
 ## THE AGENDA — what the website still owes
 
-**THE LIST IS EMPTY.** Session 24 closed F3 and F7-F12; he closed F5 himself on
+**THE LIST IS EMPTY.** F13 and F14 arrived and were closed the same session;
+they are recorded at the bottom of this file rather than here, because a list
+of done things is not an agenda. Session 24 closed F3 and F7-F12; he closed F5 himself on
 2026-09-09 by opening the live site on his phone, which is the only instrument
 that could answer it. **W1-W5 and F1-F12 are all done.** Nothing the website
 owes is written down anywhere, so the next person to work on it is starting from
@@ -135,6 +137,8 @@ his next ask, not from this file.
     F11  DONE - the lede was DELETED, not moved; see below
     F12  DONE - the Consumer Defensive example shortened, all 11 rows one line
     F5   DONE - checked on his phone, it reads well (entry 133)
+    F13  DONE - "How a run works" was on the page twice; About lost its copy
+    F14  DONE - the About right column now shows the paper (entry 134)
 
 **Three things from session 24 worth carrying forward:**
 
@@ -421,6 +425,42 @@ Four ways out, and they are not equally cheap:
 **It also may not survive F7 and F10 unchanged.** Both touch the panel this grid
 sits in; a layout that changes the available width changes which cells fit.
 Worth sequencing this after them rather than fixing it twice.
+
+---
+
+## THE ABOUT TAB, AND THE TWO GUARDS IT ADDED (entry 134)
+
+`/paper.pdf` and `/paper-p1.png` are two explicit routes, because this app
+mounts no static directory - the page and those two assets are every file it
+serves, which is also why no request path reaches the filesystem.
+
+**If the paper is ever replaced, two things must be re-done or the suite
+fails, by design:**
+
+```powershell
+python -m frontend.scripts.build_paper_preview   # re-renders page one + hash
+# then update the page count in index.html, id="paper-pages"
+```
+
+The card's "15 pages" and the preview image are both hand-made COPIES of that
+file - the failure mode `docs/project_log.html` and entry 132's rejected stat
+tile are both about. The page-count test reads the PDF back; the preview test
+compares a stored sha256. **The renderer (`pypdfium2`, Pillow) is deliberately
+NOT in `requirements.txt`** - nothing at runtime rasterises anything, the same
+standing Playwright has - so the hash guard is pure `hashlib` and still runs in
+CI.
+
+**The paper's own cover is a v1.0.0 document.** It cites
+`github.com/AryaPathare/ai-investment-agent` and a 95-entry log; the repository
+moved to `patharearya` in session 21 and the log is past 130. Nothing in the
+site is wrong - the PDF says what it said when it was written - but it is the
+first thing a visitor reads, and only he can change it.
+
+**A dead test found on the way past, deliberately not fixed:**
+`test_every_start_command_names_an_importable_app` filters for modules starting
+with `web`, which session 22 renamed to `frontend`. It matches nothing now and
+passes without asserting anything. One word to fix; it was not this session's
+job.
 
 ---
 
