@@ -85,7 +85,8 @@ def whole_pipeline(monkeypatch):
     """
 
     def _install(*, clarify=False, fail_at=None, dwell=0.0, spans=None,
-                 clarifications_seen=None, entered=None, hold=None):
+                 clarifications_seen=None, entered=None, hold=None,
+                 trace=None):
         def profile_agent(user_input, clarifications=None):
             if clarifications_seen is not None:
                 # What Agent 1 was actually handed, per call. The point of
@@ -107,6 +108,8 @@ def whole_pipeline(monkeypatch):
                 # turn it into a recorded error the way a real failure would.
                 # This is a worker being killed, not a stage failing.
                 raise KeyboardInterrupt("the process went away")
+            if trace is not None:
+                trace.append(("enter", round(time.monotonic(), 3)))
             if entered is not None:
                 # "The graph is inside this node" becomes a fact the test can
                 # wait for, instead of something it infers from having slept
@@ -122,7 +125,12 @@ def whole_pipeline(monkeypatch):
                 # The timeout is a backstop, not a design: a test that fails
                 # its assertions before releasing the gate should fail rather
                 # than hang the suite.
-                hold.wait(timeout=30)
+                released = hold.wait(timeout=30)
+                if trace is not None:
+                    # True = the test released it; False = the backstop expired,
+                    # which means the node ran on regardless and any assertion
+                    # about "while it is running" was reading a finished run.
+                    trace.append(("leave", round(time.monotonic(), 3), released))
             if dwell:
                 # Hold the node open long enough that two runs genuinely
                 # overlap. Without it the stubbed pipeline finishes in under a
@@ -568,7 +576,8 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
     rather than a property. The gate makes the window an ordering.
     """
     entered, hold = threading.Event(), threading.Event()
-    whole_pipeline(entered=entered, hold=hold)
+    trace: list[tuple] = []
+    whole_pipeline(entered=entered, hold=hold, trace=trace)
     user = UserInput(**profile)
 
     async def _go():
@@ -583,6 +592,8 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
 
         cookie = session.write(["web-live"])
         transport = httpx.ASGITransport(app=app)
+        pre = {"hold_set": hold.is_set(), "trace": list(trace),
+               "t": round(time.monotonic(), 3)}
         try:
             async with httpx.AsyncClient(
                 transport=transport,
@@ -607,7 +618,8 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
         # with an event stream rather than JSON, and a decode error is a much
         # worse description of that than the status code is.
         why = {"events": seen, "node_reached": reached,
-               "waited_s": round(waited, 3), "queue_depth": depth}
+               "waited_s": round(waited, 3), "queue_depth": depth,
+               "before_get": pre, "trace_after": list(trace)}
         return listing, refused.status_code, refused.text, why
 
     listing, status, body, why = asyncio.run(_go())
