@@ -604,6 +604,10 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
                 refused = await client.post(
                     "/api/runs/web-live/answer", json={"answer": ""}
                 )
+            # The SAME endpoint again, after the direct read below, while the
+            # node is still parked. If this one disagrees with the first, the
+            # first was reading something that had not settled.
+            second = (await client.get("/api/runs")).json()["runs"][0]
             # What the store ACTUALLY holds while the node is parked, read on
             # this side so the answer does not depend on the endpoint.
             with checkpoints.open_store() as _s:
@@ -629,7 +633,9 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
         # worse description of that than the status code is.
         why = {"events": seen, "node_reached": reached,
                "waited_s": round(waited, 3), "queue_depth": depth,
-               "before_get": pre, "trace_after": list(trace), "direct": direct}
+               "before_get": pre, "trace_after": list(trace), "direct": direct,
+               "second_call": {k: second[k] for k in
+                               ("status", "running", "can_resume", "resumes_at")}}
         return listing, refused.status_code, refused.text, why
 
     listing, status, body, why = asyncio.run(_go())
