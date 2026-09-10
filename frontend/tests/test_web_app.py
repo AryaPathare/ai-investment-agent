@@ -604,6 +604,16 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
                 refused = await client.post(
                     "/api/runs/web-live/answer", json={"answer": ""}
                 )
+            # What the store ACTUALLY holds while the node is parked, read on
+            # this side so the answer does not depend on the endpoint.
+            with checkpoints.open_store() as _s:
+                _snap = _s.graph.get_state(_s.config("web-live"))
+                direct = {
+                    "next": list(_snap.next),
+                    "created_at": str(_snap.created_at)[:26],
+                    "error": bool(_snap.values.get("error")),
+                    "keys": sorted(_snap.values.keys()),
+                }
         finally:
             # Released even if the requests raise, so a broken assertion fails
             # the test rather than parking a worker thread for the backstop.
@@ -619,7 +629,7 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
         # worse description of that than the status code is.
         why = {"events": seen, "node_reached": reached,
                "waited_s": round(waited, 3), "queue_depth": depth,
-               "before_get": pre, "trace_after": list(trace)}
+               "before_get": pre, "trace_after": list(trace), "direct": direct}
         return listing, refused.status_code, refused.text, why
 
     listing, status, body, why = asyncio.run(_go())
