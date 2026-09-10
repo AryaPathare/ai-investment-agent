@@ -5663,3 +5663,52 @@ fixed size. Same lesson as entry 135, two entries later.
 Measured, not eyeballed: headline 35.2px at 320px, no horizontal overflow at
 320, 360, 390, 768 or 1440, controls all one opaque colour, and 1077 passed
 throughout - the redesign needed no other test changed.
+
+### 137. The run counter was right; the thing it was written on was not
+
+Two or three people ran the deployed site on 2026-09-09 and it went on saying
+"About 7 runs left today". Reported as a counter that does not decrement.
+
+**The counter decrements.** `quota.record()` is called at run START, before the
+first model call, and `describe()` counts what is in the ledger. Both were doing
+exactly what they were written to do. What does not survive is the FILE: Render's
+free plan replaces the container on every deploy and on every spin-up after
+fifteen minutes idle, and `.state/runs_served.json` goes with it. Three pushes
+that afternoon threw the ledger away three times.
+
+**`render.yaml` predicted this in a comment written before it happened** - "the
+runs-served ledger resets - which hands out a fresh day's allowance early" -
+and names the fix: a persistent disk mounted at the `.state` path.
+
+**That fix is not available on the plan this runs on.** Render allows disks only
+on paid instance types, so the real choice was to pay for a number, or to stop
+the number claiming more than it knows. He chose the second.
+
+    About N runs left today. This is an estimate, and it can read high: the
+    provider does not report the daily budget, so the real limit only shows up
+    as a refusal - which costs nothing and states the numbers exactly. The
+    count also restarts when the site does, so runs served earlier may not be
+    in it.
+
+**Why that is a sufficient fix rather than a cop-out.** This module never
+refuses anyone - its own docstring says never to refuse a visitor on the
+strength of a number it produced, because the 429 states Limit, Used and
+Requested exactly and costs nothing. A count that reads high is therefore a
+LABELLING problem, not a spending one. The per-visitor limit is unaffected: it
+rides on a signed browser cookie, so it survives restarts the ledger does not.
+
+### Two things this turned up on the way past
+
+**A test was overpromising in its name.** `test_it_survives_a_restart` proves
+the count is on disk rather than in memory, which is all a file can prove - not
+that it survives a deploy, which on this host it does not. Renamed to
+`test_it_survives_a_process_restart`, with a docstring saying what it does not
+cover. A test whose name is broader than its assertion is how a known gap gets
+mistaken for a guarded one.
+
+**And an old guard caught the fix.** The first rewrite of the note dropped the
+word "estimate" while adding the new caveat, and
+`test_it_says_out_loud_that_it_is_an_estimate` failed immediately - a guard
+written in an earlier session catching a regression in the sentence it exists
+to protect, in the same edit that was making that sentence more honest. 1077
+passed to **1078**.

@@ -77,6 +77,25 @@ and somebody clearing it should not thereby hand the day's budget back.
 
 Durable rather than in-process for the same reason: a restart that reset the
 count to zero would let a deploy spend the day twice.
+
+AND ON RENDER IT RESETS ANYWAY, WHICH THE SCREEN NOW SAYS
+---------------------------------------------------------
+A file survives a process restart. It does not survive the container being
+replaced, and on Render's free plan that happens on every deploy AND every
+spin-up after fifteen minutes idle. Three people ran the deployed site on
+2026-09-09 and it still read "About 7 runs left today", because three pushes
+that afternoon had thrown the ledger away each time.
+
+`render.yaml` predicted this in a comment before it was reported, and names the
+fix: a persistent disk mounted at the .state path. **That fix is not available
+on the free plan** - Render allows disks only on paid instance types - so the
+choice was between paying for a number that gates nobody, and telling the truth
+about it. The note below tells the truth about it.
+
+That is consistent with what this module is for. It never refuses anyone; the
+429 does that, exactly and for free. A count that can read high is therefore a
+labelling problem, not a spending one - so the label carries the caveat, and
+the estimate stays an estimate.
 """
 
 
@@ -141,8 +160,10 @@ def describe(now: datetime | None = None) -> dict:
         "estimate": True,
         "note": (
             f"About {remaining} run{'' if remaining == 1 else 's'} left today. "
-            "This is an estimate: the provider does not report the daily budget, "
-            "so the real limit only shows up as a refusal - which costs nothing "
-            "and states the numbers exactly."
+            "This is an estimate, and it can read high: the provider does not "
+            "report the daily budget, so the real limit only shows up as a "
+            "refusal - which costs nothing and states the numbers exactly. The "
+            "count also restarts when the site does, so runs served earlier may "
+            "not be in it."
         ),
     }

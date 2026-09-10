@@ -56,8 +56,16 @@ def test_the_window_rolls_rather_than_resetting_at_midnight(ledger):
     assert quota.describe(now=NOW)["runs_used"] == 1
 
 
-def test_it_survives_a_restart(ledger):
-    """In-process counting would let a deploy hand the day's budget back."""
+def test_it_survives_a_process_restart(ledger):
+    """In-process counting would let a deploy hand the day's budget back.
+
+    Named carefully. This proves the count is on DISK rather than in memory,
+    which is all a file can prove. It does not prove the count survives a
+    deploy: on Render's free plan the container is replaced on every push and
+    on every spin-up after fifteen minutes idle, and the file goes with it.
+    That happened on 2026-09-09 and is why the note now says so - see the
+    module docstring, and `render.yaml`, which predicted it.
+    """
     quota.record(now=NOW)
 
     assert json.loads(ledger.read_text(encoding="utf-8"))
@@ -94,6 +102,24 @@ def test_it_says_out_loud_that_it_is_an_estimate():
     assert described["estimate"] is True
     assert "estimate" in described["note"]
     assert "refusal" in described["note"]
+
+
+def test_the_note_admits_the_count_can_read_high():
+    """The failure a visitor actually met.
+
+    Three people ran the deployed site and it still offered a full allowance,
+    because three deploys that afternoon had each thrown the ledger away. The
+    number was not fixable on a free plan - Render puts persistent disks behind
+    a paid instance type - so the sentence had to stop implying a figure that
+    is carried across the whole day.
+
+    Asserted on the note rather than on the number because the number is
+    correct for what it counts. It was the CLAIM that was wrong.
+    """
+    described = quota.describe(now=NOW)
+
+    assert "restarts" in described["note"]
+    assert "read high" in described["note"]
 
 
 def test_the_ceiling_is_the_lower_of_the_two_measured_ones():

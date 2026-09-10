@@ -18,8 +18,8 @@ somebody about to stop working who cannot describe what happens next.
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1077 passed, 1 skipped** — 1078 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **136**, 26 sessions
+- Suite: **1078 passed, 1 skipped** — 1079 collected, and the distinction matters
+- `docs/PROJECT_LOG.md` is current through entry **137**, 26 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -427,6 +427,27 @@ Four ways out, and they are not equally cheap:
 **It also may not survive F7 and F10 unchanged.** Both touch the panel this grid
 sits in; a layout that changes the available width changes which cells fit.
 Worth sequencing this after them rather than fixing it twice.
+
+---
+
+## THE RUN COUNTER READS HIGH, ON PURPOSE (entry 137)
+
+**Do not "fix" the quota counter by rewriting quota.py.** It is correct.
+`record()` is called at run start and `describe()` counts the ledger; what does
+not survive is the FILE. Render's free plan replaces the container on every
+deploy and on every spin-up after 15 minutes idle, so `.state/runs_served.json`
+is thrown away - which is why the site read "About 7 runs left" after three
+people had run it.
+
+**The real fix costs money and is already written down.** `render.yaml` names
+it: a persistent disk mounted at the `.state` path. Render allows disks only on
+PAID instance types. He was offered it at $7/mo and chose instead to make the
+sentence honest, on the argument that this number gates nobody - the 429 does,
+exactly and for free - so a count that reads high is a labelling problem rather
+than a spending one.
+
+A disk would also make a paused clarification survive a redeploy, and keep the
+checkpoints. **It is the first thing to buy if this ever gets real traffic.**
 
 ---
 
