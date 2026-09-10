@@ -6126,3 +6126,79 @@ visitor meets.
 Suite unchanged at **1092** - two people with two devices produce no test, the
 same honest outcome F5 had, and for the same reason: no browser runs in the
 suite and nothing in it can hold a second visitor.
+
+### 144. A test that timed the code instead of testing it
+
+CI went red on **both** platforms, ubuntu and windows, at the same assertion,
+while the same commit passed locally fifteen times out of fifteen:
+
+    assert run["status"] == "stopped", "the store cannot tell busy from dead"
+    AssertionError: assert 'finished' == 'stopped'
+
+The first read of it - that the status logic was wrong and should report
+`stopped` while a run executes - was the wrong tree, and an expensive one to
+climb, because it would have changed working code to satisfy a broken test.
+
+**The line above it passed.** `assert run["running"] is True` succeeded, so
+`_EXECUTING` correctly knew the run was live; only the STORE said `finished`.
+That pair is not a contradiction, it is a real and legitimate window:
+`_EXECUTING.discard` runs in a `finally` **on the event loop**, after
+`to_thread(work)` resolves. So between the graph writing its last checkpoint and
+the loop coming back to `_drive`, a live run reads as `finished` and `running`.
+
+### Nothing was broken, which is the part worth being sure about
+
+In that window `saved.can_resume` is already False, so the reported `can_resume`
+is False; and `/answer` refuses with 409 on the `_EXECUTING` check before it
+ever consults the store. **The safety property holds in every window** - a run
+in flight is never offered for picking up and never double-executed. The test
+was asserting WHICH window it happened to observe, which is not a property of
+the system at all.
+
+### `dwell` cannot express "while it is running"
+
+The test held the node open with `time.sleep(1.0)` and assumed the observation
+would land inside it. Locally the whole observation took **65ms against a
+1000ms dwell** - a 15x margin, which is exactly the kind of margin that reads as
+safe and is not. **A sleep says the node is slow. It does not say the
+observation lands inside it**, and whether it does is then a race between two
+machines, decided by whichever is running the suite.
+
+The fix is not a longer sleep. The stub now takes an `entered` event it sets on
+arrival and a `hold` event it waits on, so the test can wait until the run is
+provably inside a node, look, and then release it. A window became an ordering.
+
+**Proved both ways.** A deliberate 3-second stall inserted exactly where CI was
+losing the race - fifty times the margin that used to decide it - and the test
+still passes. And with the guard removed it still fails, on the assertion that
+matters rather than on a decode error.
+
+### Two more tests had the same flaw and had been passing by luck
+
+`test_an_abandoned_run_keeps_its_place_in_line_until_it_stops` and
+`test_a_visitor_who_gives_up_while_queued_leaves_the_line_and_never_runs` both
+read a queue depth inside a one-second sleep. CI happened to win those races.
+Both are gated now, and both were re-verified against a faithful reintroduction
+of entry 139's defect - the second failing with the production symptom exactly:
+
+    assert ['started', 'stage'] == ['started', 'queued']
+
+Fixing only the test that went red would have left two more of the same kind in
+the suite, waiting for a slower machine.
+
+### And one new test, for the property the old one asserted by accident
+
+`test_a_live_run_is_refused_whatever_the_store_says_about_it` looks twice - once
+inside the node and once after the gate lifts, without waiting for the flag to
+clear - and requires the same answer from both: `can_resume` False, resume
+refused. **The store may say `stopped` or `finished` about a live run; neither
+may let a second execution start.** That is the invariant, and it now has a test
+that does not care about timing.
+
+The first attempt to reproduce the defect locally was itself wrong, for the
+third time this project has recorded the shape: `task.cancel()` only REQUESTS
+cancellation, and the assertion ran before the loop delivered it, so the test
+passed against a defect that was not actually there yet. The faithful version
+releases the ticket before the work, and both tests then fail.
+
+1092 passed to **1093**.

@@ -21,6 +21,7 @@ evidence, so rather than assert timing weakly, these assert content only.
 """
 
 import asyncio
+import threading
 import time
 import json
 
@@ -84,7 +85,7 @@ def whole_pipeline(monkeypatch):
     """
 
     def _install(*, clarify=False, fail_at=None, dwell=0.0, spans=None,
-                 clarifications_seen=None):
+                 clarifications_seen=None, entered=None, hold=None):
         def profile_agent(user_input, clarifications=None):
             if clarifications_seen is not None:
                 # What Agent 1 was actually handed, per call. The point of
@@ -106,6 +107,22 @@ def whole_pipeline(monkeypatch):
                 # turn it into a recorded error the way a real failure would.
                 # This is a worker being killed, not a stage failing.
                 raise KeyboardInterrupt("the process went away")
+            if entered is not None:
+                # "The graph is inside this node" becomes a fact the test can
+                # wait for, instead of something it infers from having slept
+                # less than the stub does.
+                entered.set()
+            if hold is not None:
+                # Parked here until the test releases it. A test that needs a
+                # run to still be executing while it looks at it CANNOT get
+                # that from `dwell`: dwell only says the node is slow, and
+                # whether the observation lands inside it is then a race
+                # between two machines. This makes it an ordering.
+                #
+                # The timeout is a backstop, not a design: a test that fails
+                # its assertions before releasing the gate should fail rather
+                # than hang the suite.
+                hold.wait(timeout=30)
             if dwell:
                 # Hold the node open long enough that two runs genuinely
                 # overlap. Without it the stubbed pipeline finishes in under a
@@ -114,6 +131,11 @@ def whole_pipeline(monkeypatch):
                 time.sleep(dwell)
                 if spans is not None:
                     spans.append((started, time.monotonic()))
+            elif spans is not None:
+                # Gated runs still record that they got here, so a test can say
+                # how many times the node actually ran.
+                now = time.monotonic()
+                spans.append((now, now))
             return ResearchFindings(articles_retrieved=12, notes="ok")
 
         def companies(research_findings, **kwargs):
@@ -397,16 +419,21 @@ def test_an_abandoned_run_keeps_its_place_in_line_until_it_stops(
     concurrent writers ``runqueue`` exists to prevent, reachable by one person
     closing a tab. The slot now belongs to the run.
     """
-    whole_pipeline(dwell=1.0)
+    entered, hold = threading.Event(), threading.Event()
+    whole_pipeline(entered=entered, hold=hold)
     user = UserInput(**profile)
 
     async def _go():
         gen = _stream("web-abandoned", {"user_input": user})
-        await _read(gen, 2)  # started, then the first stage: the run is under way
+        await _read(gen, 2)  # started, then the first stage
+        # The run is now parked INSIDE a node, which is a fact rather than a
+        # bet on having slept less than the stub does.
+        await asyncio.to_thread(entered.wait, 10)
         await gen.aclose()  # the tab closes
 
         held = runqueue.queue.depth
-        for _ in range(100):
+        hold.set()
+        for _ in range(200):
             await asyncio.sleep(0.05)
             if runqueue.queue.depth == 0:
                 break
@@ -433,28 +460,32 @@ def test_a_visitor_who_gives_up_while_queued_leaves_the_line_and_never_runs(
     a ceiling everybody shares on nobody. Only the turn arriving tells the two
     apart.
     """
+    entered, hold = threading.Event(), threading.Event()
     spans: list[tuple[float, float]] = []
-    whole_pipeline(dwell=1.0, spans=spans)
+    whole_pipeline(entered=entered, hold=hold, spans=spans)
     user = UserInput(**profile)
 
     async def _go():
         ahead = _stream("web-ahead", {"user_input": user})
-        await _read(ahead, 2)  # occupies the line and keeps running
+        await _read(ahead, 2)
+        # Parked in a node, so the line is genuinely occupied while the second
+        # visitor arrives - not merely likely to be.
+        await asyncio.to_thread(entered.wait, 10)
 
         waiting = _stream("web-waiting", {"user_input": user})
         frames = await _read(waiting, 2)
         await waiting.aclose()  # gives up before ever being granted
 
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.05)
         left_behind = runqueue.queue.depth
 
-        # Drain the run in front so nothing is still in flight at teardown.
+        hold.set()
         try:
             while True:
                 await ahead.__anext__()
         except StopAsyncIteration:
             pass
-        for _ in range(100):
+        for _ in range(200):
             await asyncio.sleep(0.05)
             if runqueue.queue.depth == 0:
                 break
@@ -527,23 +558,40 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
     ``can_resume`` is true for a run that is merely busy. Offering that would
     drive a second execution of one thread into one SQLite file and bill the
     visitor's share twice.
+
+    THIS TEST USED TO BE A RACE AND CI CALLED IT OUT. It held the node open with
+    a one-second sleep and assumed the observation would land inside it. On both
+    CI platforms it did not: the graph had finished and the store already said
+    ``finished``, so the assertion pinning ``stopped`` failed. Nothing was wrong
+    with the code - ``can_resume`` was False and the resume was still refused,
+    because ``_EXECUTING`` had not cleared yet. The test was reading a window
+    rather than a property. The gate makes the window an ordering.
     """
-    whole_pipeline(dwell=1.0)
+    entered, hold = threading.Event(), threading.Event()
+    whole_pipeline(entered=entered, hold=hold)
     user = UserInput(**profile)
 
     async def _go():
         gen = _stream("web-live", {"user_input": user})
-        await _read(gen, 2)  # started, then a stage: it is inside a node now
+        await _read(gen, 2)  # started, then a stage
+        await asyncio.to_thread(entered.wait, 10)  # provably inside a node now
 
         cookie = session.write(["web-live"])
         transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(
-            transport=transport,
-            base_url="http://t",
-            cookies={session.COOKIE_NAME: cookie},
-        ) as client:
-            listing = (await client.get("/api/runs")).json()
-            refused = await client.post("/api/runs/web-live/answer", json={"answer": ""})
+        try:
+            async with httpx.AsyncClient(
+                transport=transport,
+                base_url="http://t",
+                cookies={session.COOKIE_NAME: cookie},
+            ) as client:
+                listing = (await client.get("/api/runs")).json()
+                refused = await client.post(
+                    "/api/runs/web-live/answer", json={"answer": ""}
+                )
+        finally:
+            # Released even if the requests raise, so a broken assertion fails
+            # the test rather than parking a worker thread for the backstop.
+            hold.set()
 
         try:
             while True:
@@ -564,6 +612,61 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
 
     assert status == 409, f"a run that was still executing was resumed, not refused ({status})"
     assert json.loads(body)["status"] == "running"
+
+
+def test_a_live_run_is_refused_whatever_the_store_says_about_it(
+    whole_pipeline, profile
+):
+    """The property the test above used to assert by accident.
+
+    Between the graph writing its last checkpoint and ``_EXECUTING`` clearing,
+    a live run reads as ``finished`` rather than ``stopped`` - the loop has to
+    come back to ``_drive`` before the flag goes. CI observed exactly that. What
+    must hold is not WHICH of those two the store says, but that neither of them
+    lets a second execution start while the first is in flight.
+    """
+    entered, hold = threading.Event(), threading.Event()
+    whole_pipeline(entered=entered, hold=hold)
+    user = UserInput(**profile)
+
+    async def _go():
+        gen = _stream("web-both", {"user_input": user})
+        await _read(gen, 2)
+        await asyncio.to_thread(entered.wait, 10)
+
+        cookie = session.write(["web-both"])
+        transport = httpx.ASGITransport(app=app)
+        seen = []
+        try:
+            async with httpx.AsyncClient(
+                transport=transport,
+                base_url="http://t",
+                cookies={session.COOKIE_NAME: cookie},
+            ) as client:
+                # Inside the node, and then again after the gate lifts, without
+                # waiting for the flag to clear - two different store answers,
+                # one required behaviour.
+                for release in (False, True):
+                    if release:
+                        hold.set()
+                    body = (await client.get("/api/runs")).json()["runs"][0]
+                    refused = await client.post(
+                        "/api/runs/web-both/answer", json={"answer": ""}
+                    )
+                    seen.append((body["status"], body["can_resume"], refused.status_code))
+        finally:
+            hold.set()
+
+        try:
+            while True:
+                await gen.__anext__()
+        except StopAsyncIteration:
+            pass
+        return seen
+
+    for status, can_resume, code in asyncio.run(_go()):
+        assert can_resume is False, f"a run was offered for picking up while {status}"
+        assert code == 409, f"a resume was accepted while the run was {status}"
 
 
 def test_the_listing_says_which_stage_a_picked_up_run_would_start_at(

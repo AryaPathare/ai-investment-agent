@@ -18,8 +18,8 @@ somebody about to stop working who cannot describe what happens next.
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1092 passed, 1 skipped** — 1093 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **143**, 27 sessions
+- Suite: **1093 passed, 1 skipped** — 1094 collected, and the distinction matters
+- `docs/PROJECT_LOG.md` is current through entry **144**, 27 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -521,6 +521,46 @@ every spin-down after 15 minutes idle. Recovery therefore covers "I closed the
 tab / hit reload / my phone locked" inside one container lifetime, which is the
 common case, and NOT "I came back tomorrow". Same ephemerality as the run
 counter.
+
+## `dwell` CANNOT EXPRESS "WHILE IT IS RUNNING" (entry 144)
+
+**CI went red on BOTH platforms while the same commit passed locally 15/15.**
+Three tests held a stub node open with `time.sleep(1.0)` and assumed the
+observation would land inside it. Locally the observation took **65ms against a
+1000ms dwell** - a 15x margin, which reads as safe and is not. **A sleep says
+the node is slow; it does not say the look lands inside it**, and whether it
+does is a race between two machines.
+
+**Use the GATE, not a longer sleep.** `whole_pipeline` takes `entered` and
+`hold` (`threading.Event`): the stub sets `entered` on arrival and blocks on
+`hold`, so a test can wait until the run is provably inside a node, look, and
+release it:
+
+    entered, hold = threading.Event(), threading.Event()
+    whole_pipeline(entered=entered, hold=hold)
+    ...
+    await asyncio.to_thread(entered.wait, 10)   # provably inside the node
+    ...                                          # assert here
+    hold.set()                                   # let it finish
+
+**The failure was NOT a bug in the code, and nearly got "fixed" as one.**
+`_EXECUTING.discard` runs in a `finally` ON THE EVENT LOOP after
+`to_thread(work)` resolves, so between the graph's last checkpoint and the loop
+resuming `_drive` a live run legitimately reads `status="finished"` with
+`running=True`. `can_resume` is False and `/answer` still 409s in that window -
+**the safety property holds in every window**; the test was pinning which window
+it happened to see. `test_a_live_run_is_refused_whatever_the_store_says_about_it`
+now asserts the property instead.
+
+## THE FREE INSTANCE WEDGED ONCE, AND IT WAS NOT THE CODE (2026-09-10)
+
+The site returned NOTHING for at least seven minutes - DNS resolved, TCP and TLS
+connected instantly, then zero HTTP bytes, `status=000`. Render's status page
+said all systems operational and the last deploy had been **docs only**. The
+committed code booted locally in 0.1s and served both endpoints. It recovered on
+its own. **If this happens again: check that the code boots locally first, then
+read the Render dashboard logs and events - a wedged free instance is fixed by a
+manual restart or redeploy, not by changing anything here.**
 
 ## PHONE LAYOUT IS CHECKED ON WEBKIT NOW (entry 138)
 
