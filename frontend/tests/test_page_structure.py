@@ -34,6 +34,19 @@ HTML = PAGE.read_text(encoding="utf-8")
 TABS = ("run", "gallery", "about")
 
 
+def _uncommented() -> str:
+    """The page with its own commentary removed.
+
+    Needed because a comment EXPLAINING a sentence that was deleted contains
+    that sentence, and a check reading the raw file cannot tell the two apart -
+    it would fail on the note recording why the words went, which is the one
+    place they should still be allowed to appear.
+    """
+    kept = [line for line in HTML.splitlines(keepends=True)
+            if not line.lstrip().startswith("//")]
+    return re.sub(r"<!--.*?-->", "", "".join(kept), flags=re.DOTALL)
+
+
 def _function_body(name: str) -> str:
     """The source of one top-level function in the page's script.
 
@@ -96,7 +109,8 @@ def test_the_run_sections_live_inside_the_run_tab():
     end = HTML.index('<div class="tab" id="tab-gallery"')
     run_tab = HTML[start:end]
 
-    for section in ('id="intro"', 'id="progress"', 'id="clarify"', 'id="result"'):
+    for section in ('id="intro"', 'id="progress"', 'id="clarify"', 'id="result"',
+                    'id="earlier"'):
         assert section in run_tab, f"{section} is not inside the run tab"
 
 
@@ -126,6 +140,47 @@ def test_the_in_run_guidance_does_not_warn_people_off_the_tabs():
     should be looking at once the day's runs are gone."""
     assert "Switching tabs is fine" in HTML
     assert re.search(r"two to four minutes", HTML)
+
+
+def test_the_page_no_longer_tells_anybody_to_keep_the_tab_open():
+    """It stopped being true, and it was the last half of F4 still overclaiming.
+
+    A closed tab does not stop a run and no longer loses it: the run finishes,
+    the brief is saved, and `loadEarlier` finds it from the session cookie. The
+    sentence that survived F4's edit told visitors the opposite - not a lie
+    about the SERVER this time, but a warning that would make somebody sit and
+    wait for four minutes who did not have to.
+    """
+    assert "keep this tab open" not in _uncommented().lower(), (
+        "the page still warns visitors not to close a tab it can now recover from"
+    )
+    assert "you come back" in HTML.lower(), "nothing tells them they can come back"
+
+
+def test_the_run_a_visitor_left_behind_is_offered_before_the_form():
+    """Order is the whole of this one.
+
+    Somebody returning to a finished run is looking for that run, not for the
+    form - and the form will refuse them anyway, because they have had their
+    run for the day. Below the form it would be under a disabled button and a
+    "you have already had a run today" notice, which reads as a dead end.
+    """
+    assert HTML.index('id="earlier"') < HTML.index('id="intro"')
+
+
+def test_picking_up_a_run_does_not_start_a_new_one():
+    """`pickUp` must go to the answer endpoint, never to `POST /api/runs`.
+
+    Starting a fresh run on an id that already exists is entry 48's defect:
+    LangGraph merges new input into the existing thread, so the run silently
+    inherits the earlier clarification answers and Agent 1 reports a conflict
+    resolved that nobody resolved. It would also spend a second run's quota to
+    do it.
+    """
+    body = _function_body("pickUp")
+
+    assert "/answer" in body
+    assert 'stream("/api/runs",' not in body, "picking up a run started a new one"
 
 
 def test_a_recording_is_opened_by_the_hash_not_by_a_click_handler():

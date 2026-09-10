@@ -673,6 +673,16 @@
       </aside>
     </div>
 
+    <!-- A run this visitor started earlier, which they have no other way back
+         to: the id lives in a JS variable and a closed tab loses it, while the
+         run itself carries on and saves a brief. Hidden and empty for a
+         first-time visitor; filled by loadEarlier() from the session cookie. -->
+    <section id="earlier" class="panel" hidden>
+      <h2>A run you started earlier</h2>
+      <p class="help" id="earlier-note"></p>
+      <div id="earlier-list"></div>
+    </section>
+
     <section id="intro" class="panel">
       <p class="quota" id="quota">Checking what is left today&hellip;</p>
       <form id="profile"></form>
@@ -680,7 +690,9 @@
         <button id="start" type="submit" form="profile">Run the research</button>
       </p>
       <p class="help">A run takes two to four minutes. Switching tabs is fine
-        &mdash; it keeps running. Keep the page open to see the result.</p>
+        &mdash; it keeps running. You can close the page too: the run carries on
+        without you, and it will be waiting here when you come back, unless the
+        server has restarted in the meantime.</p>
     </section>
 
     <section id="progress" hidden>
@@ -1000,13 +1012,18 @@ async function stream(url, body, onEvent) {
 
 const STAGE_COUNT = 5;
 
-function resetStages() {
+// `resumesAt` is the stage a picked-up run will START at, from the graph's own
+// pending nodes. The ones before it finished in an earlier request and will
+// never report again, so leaving them on "waiting" would show four stages as
+// outstanding that are done and already paid for.
+function resetStages(resumesAt = 1) {
   const list = $("stages");
   list.replaceChildren();
   for (let n = 1; n <= STAGE_COUNT; n++) {
-    const item = el("li", null, "pending");
+    const done = n < resumesAt;
+    const item = el("li", null, done ? "" : "pending");
     item.id = "stage-" + n;
-    item.append(el("span", n + ". waiting", "name"));
+    item.append(el("span", n + (done ? ". done earlier" : ". waiting"), "name"));
     list.append(item);
   }
 }
@@ -1165,7 +1182,10 @@ function showBrief(brief, targetId = "result") {
 function handle(name, data) {
   if (name === "started") {
     THREAD = data.thread_id;
-    $("runid").textContent = "Run " + THREAD + " — keep this tab open. The brief appears here when it is done.";
+    // Not "keep this tab open" any more: closing it no longer loses the run,
+    // and the panel above finds it again. Saying otherwise was the half of F4
+    // that stayed wrong after the other half was made honest.
+    $("runid").textContent = "Run " + THREAD + " — the brief appears here when it is done. Closing this page does not stop it.";
   } else if (name === "queued") {
     $("queued").hidden = false;
     $("queued").textContent = data.position === 1
@@ -1222,6 +1242,124 @@ async function loadQuota() {
     ? q.note
     : "You have already had a run today. " + q.note;
   $("start").disabled = !q.you_may_start;
+}
+
+// --- A run this visitor already started --------------------------------------
+//
+// A run outlives the tab it was started in. Closing the page does not stop the
+// graph: it carries on, writes its checkpoints and saves a brief whether
+// anybody is watching or not. What was missing was any way BACK to it - the id
+// lived in THREAD and nowhere else, so a closed tab lost the only reference to
+// work the visitor had already paid for.
+//
+// Nobody is asked to keep an id. They are in the signed session cookie, which
+// is how the server has always decided whose run is whose, and /api/runs hands
+// back the ones it can still find. Ids whose runs are gone - the free plan
+// takes the checkpoint file with the container - are simply not listed, since
+// "your run no longer exists" is not something a visitor can act on.
+
+function describeWhen(stamp) {
+  if (!stamp) return "";
+  return new Date(stamp).toLocaleString(undefined,
+    { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+async function loadEarlier() {
+  let body;
+  try {
+    body = await (await fetch("/api/runs")).json();
+  } catch (err) {
+    // A visitor who has never run anything is the common case and this panel
+    // is pure addition, so it fails closed and silently rather than putting an
+    // error above a form that works perfectly well.
+    $("earlier").hidden = true;
+    return;
+  }
+
+  const list = $("earlier-list");
+  list.replaceChildren();
+  if (!body.runs || !body.runs.length) {
+    $("earlier").hidden = true;
+    return;
+  }
+
+  $("earlier-note").textContent = body.runs.length === 1
+    ? "It kept going after you left. You can pick it up here."
+    : "They kept going after you left. You can pick them up here.";
+
+  for (const run of body.runs) {
+    const card = el("div", null, "card");
+    card.append(el("div", run.sectors.length ? run.sectors.join(", ") : "Your run", "asked"));
+    card.append(el("div", describeWhen(run.updated_at), "who"));
+
+    let says, action, act;
+    if (run.running) {
+      says = "Still running now. It does not need this page to be open.";
+      action = "Check again";
+      act = loadEarlier;
+    } else if (run.question) {
+      says = "It stopped to ask you one thing.";
+      action = "Answer it";
+      act = () => pickUp(run);
+    } else if (run.can_resume) {
+      says = "It stopped part-way. It can carry on from where it got to.";
+      action = "Pick it up";
+      act = () => pickUp(run);
+    } else if (run.status === "failed") {
+      says = "It ended without a brief, and says why.";
+      action = "Read what happened";
+      act = () => readEarlier(run);
+    } else {
+      says = "Finished. The brief is ready.";
+      action = "Read it";
+      act = () => readEarlier(run);
+    }
+
+    card.append(el("div", says, "got"));
+    const button = el("button", action);
+    button.type = "button";
+    button.addEventListener("click", act);
+    card.append(button);
+    list.append(card);
+  }
+  $("earlier").hidden = false;
+}
+
+async function readEarlier(run) {
+  const response = await fetch("/api/runs/" + encodeURIComponent(run.thread_id));
+  if (!response.ok) {
+    // The run was there when the list was drawn and is not there now - a
+    // redeploy between the two requests. Saying so beats a dead button.
+    $("earlier-note").textContent =
+      "That run is no longer on the server. It was lost when the site restarted.";
+    $("earlier-list").replaceChildren();
+    return;
+  }
+  const body = await response.json();
+  THREAD = run.thread_id;
+  $("earlier").hidden = true;
+  $("intro").hidden = true;
+  showBrief(body.brief);
+  $("result").scrollIntoView({ behavior: "smooth" });
+}
+
+async function pickUp(run) {
+  THREAD = run.thread_id;
+  $("earlier").hidden = true;
+  $("intro").hidden = true;
+  $("progress").hidden = false;
+  resetStages(run.resumes_at || 1);
+  $("runid").textContent =
+    "Run " + THREAD + " — carrying on from where it stopped.";
+
+  if (run.question) {
+    // The same panel the live interrupt raises, from the same describe_question
+    // payload, so a question asked two hours ago reads exactly as it did then.
+    handle("interrupt", run.question);
+    return;
+  }
+  await stream("/api/runs/" + encodeURIComponent(run.thread_id) + "/answer",
+    { answer: "" }, handle);
 }
 
 // --- Runs it has already made ------------------------------------------------
@@ -1296,7 +1434,7 @@ async function showRecording(name) {
 }
 
 route();
-loadForm().then(loadQuota).then(loadGallery);
+loadForm().then(loadQuota).then(loadGallery).then(loadEarlier);
 </script>
 
 <!-- THE MOTION LAYER.

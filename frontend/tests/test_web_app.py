@@ -38,7 +38,7 @@ from backend.models.risk import RiskFindings
 from backend.models.user_input import UserInput
 from backend import render
 from frontend.app import app, read_recording, _stream
-from frontend import runqueue
+from frontend import runqueue, session
 
 
 # --- Driving the endpoint ----------------------------------------------------
@@ -470,6 +470,140 @@ def test_a_visitor_who_gives_up_while_queued_leaves_the_line_and_never_runs(
 
     with checkpoints.open_store() as store:
         assert store.run("web-waiting") is None, "a run was started for a visitor who left"
+
+
+# --- Finding a run again -----------------------------------------------------
+#
+# A run outlives the tab it was started in, so a visitor who closes the page
+# has a finished brief on the server and no way to reach it. The ids were never
+# lost - they are in the signed cookie that `owns` already reads - so this is a
+# listing rather than anything new about ownership.
+
+
+def test_a_visitor_gets_their_own_runs_back_and_nobody_elses(whole_pipeline, profile):
+    """The cookie is the whole mechanism. Nobody is asked to keep an id."""
+    whole_pipeline()
+
+    async def _go(client):
+        started = _events((await client.post("/api/runs", json=profile)).text)
+        return started[0][1]["thread_id"], (await client.get("/api/runs")).json()
+
+    thread_id, mine = visit(_go)
+
+    assert [run["thread_id"] for run in mine["runs"]] == [thread_id]
+    assert mine["runs"][0]["status"] == "finished"
+    assert mine["runs"][0]["sectors"] == profile["sectors_of_interest"], (
+        "the sectors are what makes a list of thread ids identifiable to a person"
+    )
+
+    # A different browser carries no cookie and must see none of it - the same
+    # rule `read_run` follows, where somebody else's id is reported as missing
+    # rather than as forbidden.
+    stranger = visit(lambda c: c.get("/api/runs"))
+    assert stranger.json() == {"runs": []}
+
+
+def test_an_id_whose_run_is_gone_is_left_out_rather_than_reported():
+    """The free plan takes the checkpoint file with the container, so a cookie
+    routinely outlives the runs it names.
+
+    "Your run no longer exists" is not something a visitor can act on, and a
+    list of dead entries is worse than a shorter list.
+    """
+    def _go(client):
+        client.cookies.set(session.COOKIE_NAME, session.write(["web-longgone"]))
+        return client.get("/api/runs")
+
+    assert visit(_go).json() == {"runs": []}
+
+
+def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
+    whole_pipeline, profile
+):
+    """The distinction the checkpoint database cannot draw.
+
+    A run part-way through a stage and a run that DIED part-way through one are
+    the same shape in it - both ``stopped`` with a node pending - so
+    ``can_resume`` is true for a run that is merely busy. Offering that would
+    drive a second execution of one thread into one SQLite file and bill the
+    visitor's share twice.
+    """
+    whole_pipeline(dwell=1.0)
+    user = UserInput(**profile)
+
+    async def _go():
+        gen = _stream("web-live", {"user_input": user})
+        await _read(gen, 2)  # started, then a stage: it is inside a node now
+
+        cookie = session.write(["web-live"])
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://t",
+            cookies={session.COOKIE_NAME: cookie},
+        ) as client:
+            listing = (await client.get("/api/runs")).json()
+            refused = await client.post("/api/runs/web-live/answer", json={"answer": ""})
+
+        try:
+            while True:
+                await gen.__anext__()
+        except StopAsyncIteration:
+            pass
+        # The TEXT, not the parsed body: without the guard this endpoint answers
+        # with an event stream rather than JSON, and a decode error is a much
+        # worse description of that than the status code is.
+        return listing, refused.status_code, refused.text
+
+    listing, status, body = asyncio.run(_go())
+    run = listing["runs"][0]
+
+    assert run["running"] is True
+    assert run["status"] == "stopped", "the store cannot tell busy from dead; that is the point"
+    assert run["can_resume"] is False, "a run already executing was offered for picking up"
+
+    assert status == 409, f"a run that was still executing was resumed, not refused ({status})"
+    assert json.loads(body)["status"] == "running"
+
+
+def test_the_listing_says_which_stage_a_picked_up_run_would_start_at(
+    whole_pipeline, profile
+):
+    """So the page can show the stages already paid for as done.
+
+    Read from the graph's own pending nodes rather than counted on screen. Left
+    out, a picked-up run renders four stages stuck on "waiting" which are in
+    fact finished and will never report again, because the graph does not
+    repeat them.
+    """
+    whole_pipeline(fail_at="killed")
+
+    async def _go(client):
+        started = _events((await client.post("/api/runs", json=profile)).text)
+        return started[0][1]["thread_id"], (await client.get("/api/runs")).json()
+
+    thread_id, listing = visit(_go)
+    run = listing["runs"][0]
+
+    assert run["thread_id"] == thread_id
+    assert run["status"] == "stopped" and run["can_resume"] is True
+    assert run["resumes_at"] == 2, "research is stage 2 and is the node that did not finish"
+
+
+def test_a_finished_run_reports_no_stage_to_start_at(whole_pipeline, profile):
+    """Nothing pending, so nothing to resume - and the page reads the brief
+    instead of offering to carry on."""
+    whole_pipeline()
+
+    async def _go(client):
+        await client.post("/api/runs", json=profile)
+        return (await client.get("/api/runs")).json()
+
+    run = visit(_go)["runs"][0]
+
+    assert run["resumes_at"] is None
+    assert run["can_resume"] is False
+    assert run["question"] is None
 
 
 # --- Serialising the result --------------------------------------------------

@@ -5864,3 +5864,78 @@ described moved.
 1079 passed to **1081**. Nothing here spends quota, and the resume feature
 itself is not built - what is written down now is that it is one read endpoint
 away, and what it must not do to a run that is still going.
+
+### 140. The run you left behind, and the one thing the checkpoint file cannot say
+
+Entry 139 measured what a closed tab does and stopped there. This builds the
+rest: a visitor who closes the page now finds their run again when they come
+back, and the sentence telling them not to close it is gone.
+
+**Almost nothing new had to exist.** The run already survived. The brief was
+already saved. `GET /api/runs/{id}` already served it, and already refused it to
+anybody else. The only missing piece was that the page kept the id in a
+JavaScript variable and nowhere else - while the ids were in the signed cookie
+the whole time, which is how `owns` has decided whose run is whose since session
+18. So the work was one read endpoint, `GET /api/runs`, handing back what the
+cookie already carried. **Nobody is asked to keep an id**, which is why a
+"paste your run id" box was rejected before it was built: ownership is
+cookie-based, so an id pasted into another browser 404s anyway, and the only
+case it serves is the one the listing already handles without asking anyone to
+copy a hex string.
+
+### The distinction the database cannot draw
+
+A run part-way through a stage and a run that DIED part-way through one are the
+same shape in the checkpoint file - both `stopped`, with a node pending - so
+`can_resume` is true for a run that is merely busy. Offering that would drive a
+second execution of one thread into one SQLite file and bill a visitor's share
+twice, which is entry 48's defect arriving by a new road.
+
+Nothing durable can answer it, because the question is not about the run, it is
+about this process: **am I already executing this?** `_EXECUTING` holds the
+thread ids whose graph is running here, `/api/runs` reports `running` and
+withholds `can_resume`, and `/answer` refuses a live run with 409 rather than
+starting it again. A restart empties the set, correctly - a run that was
+executing then is genuinely no longer executing.
+
+### Stages that were paid for should not read as outstanding
+
+A resumed run does not repeat the nodes that finished, so they never report
+again, and a picked-up run rendered four stages stuck on "waiting" that were in
+fact done. `resumes_at` is read from the graph's own `next` - what LangGraph
+will actually execute - so it cannot drift from what the resumed run then says,
+and the page marks the earlier ones "done earlier" instead.
+
+### The half of F4 that was still wrong
+
+F4 fixed the sentence claiming a closed tab lost nothing. It left the other one:
+**"keep this tab open"**. That was true when it was written and is not now, and
+it is the more expensive kind of wrong - not a false claim about the server, but
+a warning that would make somebody sit and watch a progress list for four
+minutes when they did not have to. Deleted, and the guard reads the page with
+its own comments stripped, because a note explaining a deleted sentence contains
+that sentence.
+
+### Checked in a browser, and one thing that looked broken and was not
+
+Both paths driven in Chromium end to end: start a run, reload the page, find it
+listed as still running, watch it finish, read the brief. And the harder one -
+a run that stopped to ask a question, reopened, the ORIGINAL question shown
+again from the same `describe_question` payload, answered, finished. No console
+errors either time.
+
+On WebKit at an iPhone 13's 390px - **the device width, never `innerWidth`, per
+entry 138** - no overflow, and the button is 106x50 against a 44px minimum.
+Under `prefers-reduced-motion`, zero elements left at opacity 0.
+
+**The first phone screenshot showed the card as blank space** and looked like a
+real defect. It was the reveal transition: `locator.screenshot()` scrolls the
+element into view, and the shot was taken before the 0.8s fade finished.
+Measuring the computed opacity after a wait gave 1. That is the third time in
+two sessions that the instrument, not the page, was the thing that had moved -
+and the second time this session that checking before fixing avoided inventing
+a bug.
+
+1081 passed to **1089**, of which five are about the listing and three about
+the page. Nothing here spends quota. Two visitors in production and the paper's
+cover are what remain, and neither is code.

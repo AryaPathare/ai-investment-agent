@@ -18,8 +18,8 @@ somebody about to stop working who cannot describe what happens next.
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1081 passed, 1 skipped** — 1082 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **139**, 27 sessions
+- Suite: **1089 passed, 1 skipped** — 1090 collected, and the distinction matters
+- `docs/PROJECT_LOG.md` is current through entry **140**, 27 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -121,10 +121,11 @@ Suite: 1062 passed to **1065**.
 
 ## THE AGENDA — what the website still owes
 
-**THE LIST IS EMPTY, and session 27 did not add to it.** He asked what could be
-done about resuming a run in the browser; the answer is written up under
-RESUME IN THE BROWSER below and it is one read endpoint of work, not a feature.
-Nothing else was opened.
+**THE LIST IS EMPTY.** Session 27 fixed the queue defect (entry 139) and built
+resume-in-the-browser (entry 140), both from his ask rather than from a list,
+and opened nothing. **What is left is not code:** two visitors in PRODUCTION,
+which needs one real run's quota and a second person, and the paper's cover,
+which only he can change.
 
 F13 and F14 arrived and were closed the same session;
 they are recorded at the bottom of this file rather than here, because a list
@@ -449,10 +450,24 @@ Worth sequencing this after them rather than fixing it twice.
 
 ---
 
-## RESUME IN THE BROWSER — measured in session 27, not built
+## RESUME IN THE BROWSER — BUILT in session 27 (entry 140)
 
-The server side already exists. What is missing is only that the page never
-looks for it. **Measured against a real uvicorn server over a real socket, with
+**DONE.** A visitor who closes the page finds their run again when they come
+back. `GET /api/runs` lists the runs the cookie already carried; the page shows
+a card above the form offering to read a finished brief, answer a pending
+question, or carry on a stopped run. `_EXECUTING` holds the thread ids running
+in this process, so a run that is merely BUSY is reported `running` and is
+never offered for resuming - and `/answer` refuses one with 409. `resumes_at`
+comes from the graph's own `next`, so stages already paid for show as done
+rather than as waiting. **"Keep this tab open" is gone**, which was the half of
+F4 that stayed wrong.
+
+Checked in a browser both ways (finish-and-read, and pause-answer-finish), on
+WebKit at 390px with no overflow, and with zero elements at opacity 0 under
+reduced motion. What follows is what was measured before building it, kept
+because it is why the shape is what it is.
+
+**Measured against a real uvicorn server over a real socket, with
 the agents stubbed, for no quota:**
 
 - A visitor who closes the tab leaves a run that **carries on to completion**
@@ -474,12 +489,13 @@ measurement.** Ownership is cookie-based, so an id pasted into another browser
 404s. It only works when the cookie is there too - the case the listing handles
 without asking anyone to copy a hex string.
 
-**THE WRINKLE THAT IS THE ACTUAL WORK.** A run still executing reads as
-`('stopped', can_resume=True)` - *identical* to one that genuinely died
-mid-stage. Offering "pick it up" on a live run would start a second execution
-of the same thread. The server needs a small in-process registry of live
-threads before any of this is safe. `_RUNNING` in `frontend/app.py` is now
-exactly that set and is the obvious place to hang it.
+**THE WRINKLE THAT WAS THE ACTUAL WORK, now handled.** A run still executing
+reads as `('stopped', can_resume=True)` - *identical* to one that genuinely
+died mid-stage. Offering "pick it up" on a live run would start a second
+execution of the same thread. `_EXECUTING` in `frontend/app.py` is the
+in-process set that answers it. **Do not remove it on the grounds that the
+checkpoint file already says `can_resume`** - it does, and it is wrong about
+exactly this case.
 
 **And know what it buys before spending a session.** Render's free plan wipes
 `.state/` - both `checkpoints.sqlite` and the ledger - on every redeploy and

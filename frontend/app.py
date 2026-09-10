@@ -158,6 +158,22 @@ def _run_graph(store, thread_id: str, start, emit) -> None:
     )
 
 
+_EXECUTING: set[str] = set()
+"""Thread ids whose graph is running in THIS process, right now.
+
+The checkpoint database cannot answer this. A run part-way through a stage and
+a run that died part-way through one look identical in it - both are
+``stopped`` with a node still pending - so ``can_resume`` is true for a run
+that is merely BUSY. Resuming that would start a second execution of the same
+thread, against the same SQLite file, and bill a visitor's share twice.
+
+In-process and therefore not durable, which is correct rather than a
+limitation: what it answers is "am I already running this", and only this
+process can be. A restart empties it, and a run that was executing then is
+genuinely no longer executing.
+"""
+
+
 _RUNNING: set[asyncio.Task] = set()
 """Strong references to runs whose reader has gone.
 
@@ -255,7 +271,11 @@ async def _drive(thread_id: str, start, events: asyncio.Queue, gone: asyncio.Eve
                 if gone.is_set() and not ticket.granted:
                     return
 
-            await asyncio.to_thread(work)
+            _EXECUTING.add(thread_id)
+            try:
+                await asyncio.to_thread(work)
+            finally:
+                _EXECUTING.discard(thread_id)
     finally:
         # The reader is owed an ending even if the line was left without ever
         # reaching ``work`` - otherwise a generator still draining would wait on
@@ -414,6 +434,78 @@ async def read_quota(request: Request) -> dict:
     }
 
 
+def _resumes_at(store, thread_id: str) -> int | None:
+    """The stage number a resume of this run would begin at, or None.
+
+    Read from the graph's own pending nodes rather than counted from anything
+    on screen: ``next`` is what LangGraph will actually execute, so this cannot
+    drift from what the resumed run then reports. A finished run has no next
+    node and gets None.
+    """
+    pending = store.graph.get_state(store.config(thread_id)).next
+    stages = [render.STAGE_LABELS[node][0] for node in pending
+              if node in render.STAGE_LABELS]
+    return min(stages) if stages else None
+
+
+@app.get("/api/runs")
+async def read_runs(request: Request) -> dict:
+    """The runs this visitor started, newest first.
+
+    THE POINT OF THIS ENDPOINT. A run outlives the tab it was started from - it
+    keeps going, finishes, and saves a brief the visitor has already paid for -
+    but the page kept the id in a variable and nothing else, so closing the tab
+    lost the only reference to it. The ids were never actually lost: they are in
+    the signed cookie, which is how ``owns`` has always worked. This hands them
+    back, so nobody has to be told to write down a hex string.
+
+    No brief. A visitor with several runs would otherwise be sent every word of
+    every one of them to draw a list, and the brief for the one they pick is a
+    request away.
+
+    Ids the store no longer knows are DROPPED rather than reported. On the free
+    plan the checkpoint file goes with the container, so a cookie routinely
+    outlives the runs it names, and "your run is gone" is not something a
+    visitor can act on.
+    """
+    cookie = request.cookies.get(session.COOKIE_NAME)
+    runs = []
+    thread_ids = session.read(cookie)
+    if thread_ids:
+        with checkpoints.open_store() as store:
+            for thread_id in reversed(thread_ids):
+                saved = store.run(thread_id)
+                if saved is None:
+                    continue
+                runs.append(
+                    {
+                        "thread_id": thread_id,
+                        "status": saved.status,
+                        "sectors": saved.sectors,
+                        "updated_at": saved.updated_at,
+                        "running": thread_id in _EXECUTING,
+                        # What the page may OFFER, which is not the same as what
+                        # the graph could technically continue: a run already
+                        # executing is resumable in the store's terms and must
+                        # not be resumed by anybody.
+                        "can_resume": saved.can_resume and thread_id not in _EXECUTING,
+                        "question": (
+                            render.describe_question(saved.question)
+                            if saved.question
+                            else None
+                        ),
+                        # Which of the five stages a resume would START at, so
+                        # the page can show the ones already done as done.
+                        # Without it a resumed run renders four stages stuck on
+                        # "waiting" that are in fact finished and paid for, and
+                        # never report again because the graph does not repeat
+                        # them.
+                        "resumes_at": _resumes_at(store, thread_id),
+                    }
+                )
+    return {"runs": runs}
+
+
 @app.get("/api/runs/{thread_id}")
 async def read_run(thread_id: str, request: Request):
     """What happened to one run, and what it is waiting on.
@@ -435,7 +527,8 @@ async def read_run(thread_id: str, request: Request):
         body = {
             "thread_id": thread_id,
             "status": saved.status,
-            "can_resume": saved.can_resume,
+            "running": thread_id in _EXECUTING,
+            "can_resume": saved.can_resume and thread_id not in _EXECUTING,
             "sectors": saved.sectors,
             "updated_at": saved.updated_at,
             "question": (
@@ -476,6 +569,20 @@ async def answer_run(thread_id: str, payload: dict, request: Request):
 
         if saved is None:
             return JSONResponse(status_code=404, content=_NO_SUCH_RUN)
+
+        if thread_id in _EXECUTING:
+            # Not resumable BECAUSE it is already running, which the checkpoint
+            # database cannot say: a run mid-stage and a run that died mid-stage
+            # are the same shape in it. Resuming would drive a second execution
+            # of one thread into one SQLite file and bill the visitor twice.
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "error": "this run is still going",
+                    "status": "running",
+                    "thread_id": thread_id,
+                },
+            )
 
         if not saved.can_resume:
             # Not an error the caller can fix by retrying, and worth telling
