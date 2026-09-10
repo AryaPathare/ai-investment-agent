@@ -1413,5 +1413,18 @@ frontend/scripts/build_paper_preview.py</code></pre>
 <p>Checked in a real browser at 1440 and 360: beside the prose, then stacked under it, no horizontal overflow either way. 1070 passed to <strong>1077</strong>.</p>
 <h3 id="found-while-working-not-fixed">Found while working, not fixed</h3>
 <p><code>test_every_start_command_names_an_importable_app</code> no longer tests anything. It scans <code>render.yaml</code> and <code>Procfile</code> for a <code>module:attribute</code> reference and skips any whose module does not start with <code>web</code> - and session 22 renamed that package to <code>frontend</code>. The filter now matches nothing, the loop body never runs, and the test passes without an assertion. <strong>It is the trap that move kept producing: a rule that still looks right after the thing it guarded moved.</strong> Left alone because it is not what this session was asked to work on.</p>
+<h3 id="135-the-test-that-was-disabled-by-the-rename-it-existed-to-catch">135. The test that was disabled by the rename it existed to catch</h3>
+<p>Entry 134 found it and left it; he asked for it fixed.</p>
+<p><code>test_every_start_command_names_an_importable_app</code> reads <code>render.yaml</code> and <code>Procfile</code>, finds every <code>module:attribute</code> pair, and imports the module to prove the deployed start command resolves. Between the two it skipped anything whose module did not begin with <code>web</code>.</p>
+<p><strong>Session 22 renamed that package to <code>frontend</code>.</strong> The filter stopped matching, the loop body stopped executing, and the test went on passing - reporting success for a check it was no longer performing. It is the exact failure it was written to catch, one level up: not a start command left pointing at a moved module, but a GUARD left pointing at one.</p>
+<p>Two changes, and the second matters more than the first:</p>
+<pre><code>targets = re.findall(r"uvicorn\s+([\w.]+):(\w+)", _read(path))
+assert targets, f"{path.name} starts no uvicorn app this test can check"</code></pre>
+<p>The pattern now anchors on <code>uvicorn</code> - the thing being started, which does not get renamed when a package does. And <strong>the match count is asserted before the loop</strong>, so a version of this that finds nothing fails instead of quietly agreeing. A guard that cannot tell "nothing is wrong" from "I checked nothing" is not a guard, and this one could not.</p>
+<p><strong>Verified by breaking it on purpose, twice</strong>, because a test that has already passed while asserting nothing does not get believed on its own word:</p>
+<pre><code>render.yaml says web.app:app        ModuleNotFoundError - the rename case
+render.yaml says gunicorn ...       assert [] - the vacuous case</code></pre>
+<p>Both fail; <code>render.yaml</code> restored from git afterwards. 1077 passed, unchanged - this fixes what an existing test does rather than adding one.</p>
+<p><strong>Worth stating plainly, because this project keeps meeting it:</strong> the whole <code>web/</code> to <code>frontend/</code> move was audited at the time, and entry 123 lists three traps it produced. This is the fourth, found two sessions later, and it is the same shape as the other three - a rule that still looked right after the thing it guarded moved. The others were caught because something broke. This one could not break, because a test that asserts nothing has nothing to break.</p>
 </body>
 </html>

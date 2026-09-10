@@ -5511,3 +5511,45 @@ to `frontend`. The filter now matches nothing, the loop body never runs, and the
 test passes without an assertion. **It is the trap that move kept producing: a
 rule that still looks right after the thing it guarded moved.** Left alone
 because it is not what this session was asked to work on.
+
+### 135. The test that was disabled by the rename it existed to catch
+
+Entry 134 found it and left it; he asked for it fixed.
+
+`test_every_start_command_names_an_importable_app` reads `render.yaml` and
+`Procfile`, finds every `module:attribute` pair, and imports the module to prove
+the deployed start command resolves. Between the two it skipped anything whose
+module did not begin with `web`.
+
+**Session 22 renamed that package to `frontend`.** The filter stopped matching,
+the loop body stopped executing, and the test went on passing - reporting
+success for a check it was no longer performing. It is the exact failure it was
+written to catch, one level up: not a start command left pointing at a moved
+module, but a GUARD left pointing at one.
+
+Two changes, and the second matters more than the first:
+
+    targets = re.findall(r"uvicorn\s+([\w.]+):(\w+)", _read(path))
+    assert targets, f"{path.name} starts no uvicorn app this test can check"
+
+The pattern now anchors on `uvicorn` - the thing being started, which does not
+get renamed when a package does. And **the match count is asserted before the
+loop**, so a version of this that finds nothing fails instead of quietly
+agreeing. A guard that cannot tell "nothing is wrong" from "I checked nothing"
+is not a guard, and this one could not.
+
+**Verified by breaking it on purpose, twice**, because a test that has already
+passed while asserting nothing does not get believed on its own word:
+
+    render.yaml says web.app:app        ModuleNotFoundError - the rename case
+    render.yaml says gunicorn ...       assert [] - the vacuous case
+
+Both fail; `render.yaml` restored from git afterwards. 1077 passed, unchanged -
+this fixes what an existing test does rather than adding one.
+
+**Worth stating plainly, because this project keeps meeting it:** the whole
+`web/` to `frontend/` move was audited at the time, and entry 123 lists three
+traps it produced. This is the fourth, found two sessions later, and it is the
+same shape as the other three - a rule that still looked right after the thing
+it guarded moved. The others were caught because something broke. This one
+could not break, because a test that asserts nothing has nothing to break.

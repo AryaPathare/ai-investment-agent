@@ -135,13 +135,26 @@ def test_every_start_command_names_an_importable_app(path):
     Cheap to check and the exact failure a rename would cause: the module moves,
     every test still passes because the tests import it by name, and the only
     thing left pointing at the old path is the file nobody runs locally.
+
+    THIS TEST WAS ITSELF DISABLED BY THE RENAME IT EXISTS TO CATCH. It matched
+    every `module:attribute` pair in the file and then skipped any whose module
+    did not start with `web` - so when session 22 renamed that package to
+    `frontend`, the filter matched nothing, the loop body stopped running, and
+    it went on passing without asserting anything. Entry 134 found it.
+
+    Both halves of that are fixed. The pattern anchors on `uvicorn` - the thing
+    being started, rather than a name that moves - and the match count is
+    asserted FIRST, so a future version of this that finds nothing fails
+    instead of quietly agreeing. A guard that cannot tell "nothing is wrong"
+    from "I checked nothing" is not a guard.
     """
     import importlib
 
-    for reference in re.findall(r"([\w.]+):(\w+)\b", _read(path)):
-        module_name, attribute = reference
-        if not module_name.startswith("web"):
-            continue
+    targets = re.findall(r"uvicorn\s+([\w.]+):(\w+)", _read(path))
+
+    assert targets, f"{path.name} starts no uvicorn app this test can check"
+
+    for module_name, attribute in targets:
         module = importlib.import_module(module_name)
         assert hasattr(module, attribute), (
             f"{path.name} starts {module_name}:{attribute}, "
