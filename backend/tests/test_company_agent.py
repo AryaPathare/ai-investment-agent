@@ -82,8 +82,18 @@ def pipeline(monkeypatch):
         return MentionExtraction(mentions=state["mentions"]), mapping
 
     monkeypatch.setattr(company_agent, "extract_mentions", fake_extract)
-    monkeypatch.setattr(company_agent, "resolve_company",
-                        lambda name, use_cache=True: state["resolve"].get(name))
+
+    def fake_resolve(name, use_cache=True):
+        # An Exception in the mapping means the PROVIDER refused this lookup,
+        # which is a different thing from returning None ("nothing matched").
+        # The two used to be indistinguishable here because only one of them
+        # could be expressed - see the pair of tests below.
+        value = state["resolve"].get(name)
+        if isinstance(value, Exception):
+            raise value
+        return value
+
+    monkeypatch.setattr(company_agent, "resolve_company", fake_resolve)
 
     def fake_fetch(company, use_cache=True):
         value = state["fundamentals"].get(company.ticker, healthy())
@@ -169,6 +179,84 @@ def test_a_provider_failure_drops_only_that_company(pipeline, research):
     findings = analyse_companies(research)
     assert [c.ticker for c in findings.candidates] == ["GOOD"]
     assert findings.drop_summary == {"no_fundamentals": 1}
+
+
+def test_a_refused_lookup_drops_only_that_company_too(pipeline, research):
+    """The same failure one step earlier, which used to end the whole run.
+
+    ``resolve_company`` raises exactly what ``fetch_fundamentals`` raises, and
+    the call above this one has always dropped the company and carried on. This
+    one was not wrapped at all, so a rate limit on a single name destroyed a run
+    that had already paid for Agents 1 and 2 - which is how it reached a visitor
+    (entry 142).
+    """
+    pipeline["mentions"] = [mention("Good Co"), mention("Refused Co")]
+    pipeline["resolve"] = {
+        "Good Co": resolved("GOOD"),
+        "Refused Co": CompanyDataError("Too Many Requests. Rate limited."),
+    }
+    pipeline["verdicts"] = grade_all()
+
+    findings = analyse_companies(research)
+
+    assert [c.ticker for c in findings.candidates] == ["GOOD"]
+    assert findings.drop_summary == {"lookup_refused": 1}, (
+        "an outage was filed under the label meaning 'this name is not a company'"
+    )
+
+    refused = [d for d in findings.dropped if d.name == "Refused Co"]
+    assert "Rate limited" in refused[0].detail, (
+        "the reader is not told which provider refused, or that one did"
+    )
+
+
+def test_every_lookup_being_refused_reads_as_an_outage_not_a_verdict(
+    pipeline, research
+):
+    """The failure mode the fix above could have introduced.
+
+    A rate limit does not stop at one name: it refuses every lookup that
+    follows. Dropping each one quietly would turn a broken instrument into
+    "no company qualified" - which this system defends as a real and honest
+    result, and which would then be indistinguishable from an outage. That is
+    entry 88's lesson, and the reason the note is explicit.
+    """
+    pipeline["mentions"] = [mention("One Co"), mention("Two Co")]
+    pipeline["resolve"] = {
+        "One Co": CompanyDataError("Too Many Requests. Rate limited."),
+        "Two Co": CompanyDataError("Too Many Requests. Rate limited."),
+    }
+
+    findings = analyse_companies(research)
+
+    assert findings.candidates == []
+    assert findings.companies_examined == 2, "the companies were still counted"
+    assert "outage" in findings.notes, (
+        "an outage was reported in the words of an honest empty answer"
+    )
+    assert "refused every request" in findings.notes
+
+
+def test_some_refused_lookups_are_said_out_loud_on_a_run_that_succeeds(
+    pipeline, research
+):
+    """Not only when everything fails.
+
+    A run that returns two candidates from a short list because a provider was
+    refusing looks identical to one that had a short list to begin with. A
+    reader comparing runs needs the difference.
+    """
+    pipeline["mentions"] = [mention("Good Co"), mention("Refused Co")]
+    pipeline["resolve"] = {
+        "Good Co": resolved("GOOD"),
+        "Refused Co": CompanyDataError("Too Many Requests. Rate limited."),
+    }
+    pipeline["verdicts"] = grade_all()
+
+    findings = analyse_companies(research)
+
+    assert findings.candidates, "the run still produced a candidate"
+    assert "1 of 2 companies could not be looked up" in findings.notes
 
 
 def test_incidental_companies_are_dropped(pipeline, research):

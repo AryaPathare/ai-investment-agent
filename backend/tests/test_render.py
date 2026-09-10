@@ -75,14 +75,20 @@ def test_a_failed_run_says_so_and_carries_its_reason(clean_user):
     assert "ConnectionError" in described["error"]
     assert described["decision"] is None
     # The hint travels with the error rather than being written into a front
-    # end, because "this may be the daily ceiling" is something the reader is
-    # told, not a layout choice.
-    assert "daily ceiling" in described["error_hint"]
+    # end, because "a service refused this" is something the reader is told,
+    # not a layout choice.
+    assert "rate limit" in described["error_hint"]
 
-    # But it carries NO command. This is the hint a browser gets, and the shared
-    # daily ceiling is what usually ends a run on the deployed site, so it is
-    # the sentence most visitors will ever read. Telling them to open a shell
-    # they do not have is the one thing it must not do.
+    # And it must NOT say WHICH limit. This assertion used to require the words
+    # "daily ceiling" - pinning a claim that turned out to be false in front of
+    # a visitor (entry 142): the run died on a keyless Yahoo lookup being rate
+    # limited while the daily budget was fine. The hint sits under an error that
+    # already names the service, so it must not overrule it.
+    assert "daily ceiling has been reached" not in described["error_hint"]
+
+    # But it carries NO command. This is the hint a browser gets, and it is the
+    # sentence most visitors will ever read. Telling them to open a shell they
+    # do not have is the one thing it must not do.
     assert "check_setup" not in described["error_hint"]
     assert "python -m" not in described["error_hint"]
 

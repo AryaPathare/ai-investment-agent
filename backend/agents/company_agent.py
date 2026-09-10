@@ -458,9 +458,38 @@ def analyse_companies(
     # --- 3. resolve and fetch (Python) --------------------------------------
     theme_map = _themes_by_article(research)
     resolved: dict[str, dict] = {}
+    refused: list[str] = []
+    """Companies the provider would not look up at all.
+
+    Kept apart from the other drops because they are not findings. Everything
+    else in ``dropped`` is something this agent decided; these are companies it
+    never got to see.
+    """
 
     for name, name_mentions in ordered:
-        company = resolve_company(name, use_cache=use_cache)
+        try:
+            company = resolve_company(name, use_cache=use_cache)
+        except CompanyDataError as exc:
+            # The provider refused, which is NOT "this name is not a company",
+            # and must never be reported as though it were.
+            #
+            # This used to escape and end the whole run - a rate limit on one
+            # lookup destroying a run that had already paid for Agents 1 and 2.
+            # It reached a visitor that way (entry 142). Twenty lines below,
+            # the very next provider call has always dropped the company and
+            # carried on; this one was simply missed, and the drop machinery it
+            # needed already existed - _drop_reason_for_unresolved has caught
+            # this same error and called it "search failed" all along.
+            refused.append(name)
+            dropped.append(
+                DroppedCompany(
+                    name=name,
+                    reason="lookup_refused",
+                    detail=f"could not be looked up: {exc}",
+                )
+            )
+            continue
+
         if company is None:
             reason, detail = _drop_reason_for_unresolved(name, use_cache)
             dropped.append(DroppedCompany(name=name, reason=reason, detail=detail))
@@ -492,13 +521,37 @@ def analyse_companies(
             "mentions": list(name_mentions),
         }
 
+    everything_refused = bool(ordered) and len(refused) == len(ordered)
+
+    if refused and not everything_refused:
+        # Said out loud even when the run goes on to succeed: a reader comparing
+        # two runs needs to know one of them was working from a short list
+        # because a provider was refusing, not because fewer companies were
+        # named. Skipped when EVERY lookup was refused, because the headline
+        # below already says that and saying it twice is its own defect.
+        notes.append(
+            f"{len(refused)} of {len(ordered)} companies could not be looked up "
+            "because the market-data provider refused the request. They are "
+            "recorded as dropped, but nothing was judged about them."
+        )
+
     if not resolved:
+        # A provider outage and an honest empty answer must not read the same.
+        # Recommending nothing is a real result this system defends; "every
+        # lookup was refused" is a broken instrument, and entry 88's lesson is
+        # that the two look identical from outside unless one says so.
+        headline = (
+            "No company could be looked up at all: the market-data provider "
+            "refused every request. This is an outage rather than a judgement "
+            "about what was found."
+            if everything_refused
+            else "No mentioned company resolved to an investable security."
+        )
         return CompanyFindings(
             mentions_extracted=len(mentions),
             companies_examined=len(ordered),
             dropped=dropped,
-            notes="No mentioned company resolved to an investable security. "
-            + " ".join(notes),
+            notes=" ".join([headline, *notes]),
         )
 
     # --- 4. build company-theme pairs for exposure judgement ----------------

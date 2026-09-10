@@ -5990,3 +5990,85 @@ One number in `index.html` and one run of the build script. Page one is still
 A4, so the preview came back 660x934 and the `<img>` dimensions did not move.
 Suite unchanged at **1089** - replacing a document produces no test, the same
 honest outcome F5 had.
+
+### 142. Two visitors, a limit nobody was counting, and a message that named the wrong one
+
+He ran the site on his computer and his phone to test the queue with two real
+visitors - the last thing unverified in production. **It did not test the
+queue.** Depth never reached 2:
+
+    11:18:38  queue_depth=1  runs_used=1     computer starts
+    11:19:07  queue_depth=0  runs_used=1     it leaves the line after ~29s
+    11:19:25  queue_depth=1  runs_used=2     phone starts, 18s later
+    11:22:57  queue_depth=0  runs_used=2     phone ends, a normal 3.5 minutes
+
+The first run died in 29 seconds, so by the time he reached his phone the line
+was empty. The concurrency gap is still open.
+
+**But it found something no local test could**, because every test in the suite
+stubs these clients:
+
+    Company analysis failed: CompanyDataError: Company search failed for
+    'ASML': Too Many Requests. Rate limited. Try after a while.
+
+### A fourth ceiling, and it is the one with no key
+
+That is **yfinance** - `yf.Search` in `clients/companies.py` - which is Yahoo
+rate-limiting the server's IP. Not Groq, not TheNewsAPI, not FMP. The provider
+with no API key, the one `companies.py` describes as costing "nothing against a
+quota", and the one his paper had described days earlier as "an unofficial
+client against undocumented endpoints, with no published quota and no guarantee
+it answers tomorrow." **`quota.py` models news and tokens and says they land
+within one run of each other. A third limit exists and is modelled nowhere.**
+
+His question was why the run that started FIRST failed while the second
+succeeded. Because this is not a budget that depletes in order - it is a burst
+limit on one IP, shared by both runs. The computer's run reached the company
+stage first, fired the burst, and took the refusal; the phone's run arrived a
+couple of minutes later into a recovered window, and the 24-hour company cache
+the first run had just paid to fill. **Going first was the disadvantage.**
+
+### The defect: the same error, twenty lines apart, handled two ways
+
+    line 463   company = resolve_company(name, ...)          UNGUARDED
+    line 482   try: fundamentals = fetch_fundamentals(...)   dropped, run continues
+
+A provider refusing during FUNDAMENTALS dropped one company and carried on. The
+identical refusal during RESOLUTION ended the whole run - after Agents 1 and 2
+had been paid for. The giveaway that this was an oversight rather than a
+decision: `_drop_reason_for_unresolved` has always caught `CompanyDataError` and
+called it "search failed", so the machinery the guard needed already existed. It
+just never got the chance, because the exception escaped first.
+
+### Fixing it nearly made things worse
+
+The first version dropped each refused company and carried on - and a rate limit
+does not stop at one name. Every lookup would be refused, and the run would end
+with `drop_summary {"no_ticker_found": 25}` and "no company resolved to an
+investable security". **That is an outage wearing the words of an honest empty
+answer**, which this system defends as a real result. Entry 88's lesson exactly:
+the two are indistinguishable from outside unless one of them says so. Turning a
+loud failure into a quiet misrepresentation would have been worse than the bug.
+
+So: a new `DropReason`, **`lookup_refused`**, separate from `no_ticker_found` -
+which `companies.py:238` defines as "the label for a name that is not a
+company", a claim about the name and not about the provider. Every other value
+in that Literal is a finding; this one means nothing was found out. And when
+EVERY lookup is refused the notes say so in the words of an outage rather than a
+verdict.
+
+### The sentence that told a visitor the opposite of the truth
+
+`RATE_LIMIT_HINT` read "If this mentions a rate limit or a quota, the daily
+ceiling has been reached; try again later." The daily ceiling had NOT been
+reached - the estimate correctly said five runs remained, and the run died on a
+keyless lookup. There are four services behind a run and at least three can
+refuse; this sentence cannot know which did, and the error above it already
+says. It now points at that error instead of overruling it.
+
+**A test was pinning the false claim.** `assert "daily ceiling" in
+described["error_hint"]` - a guard holding the wrong sentence in place. It now
+asserts the opposite: that the hint does NOT name which ceiling.
+
+Verified by removing the guard again, where all three new tests fail with the
+production error escaping. 1089 passed to **1092**.

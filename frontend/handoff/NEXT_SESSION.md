@@ -18,8 +18,8 @@ somebody about to stop working who cannot describe what happens next.
 - Repo: <https://github.com/patharearya/ai-investment-agent> (public, MIT)
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
-- Suite: **1089 passed, 1 skipped** — 1090 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **141**, 27 sessions
+- Suite: **1092 passed, 1 skipped** — 1093 collected, and the distinction matters
+- `docs/PROJECT_LOG.md` is current through entry **142**, 27 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -122,10 +122,22 @@ Suite: 1062 passed to **1065**.
 ## THE AGENDA — what the website still owes
 
 **THE LIST IS EMPTY.** Session 27 fixed the queue defect (entry 139), built
-resume-in-the-browser (entry 140) and took in a corrected paper (entry 141),
-all from his ask rather than from a list, and opened nothing. **The only thing
-left is two visitors in PRODUCTION** - one real run's quota and a second
-person - and it is not code.
+resume-in-the-browser (entry 140), took in a corrected paper (141) and fixed
+what two real visitors turned up (142) - all from his ask rather than a list.
+
+**TWO VISITORS AT ONCE IS STILL UNVERIFIED.** He tried it on 2026-09-10 and it
+did not test the queue: his first run died after 29 seconds, so the line was
+empty by the time he started the second. `queue_depth` never reached 2. **To
+retry it, the second device's form must be filled in ADVANCE and started within
+about ten seconds of the first** - a run is only 2-4 minutes and a failure is
+much shorter than that.
+
+**A FOURTH CEILING EXISTS AND NOTHING COUNTS IT (entry 142).** yfinance is
+Yahoo, keyless, and rate-limits by IP. `quota.py` models news and tokens only
+and says the two land within one run of each other; that is true and it is not
+the whole picture. A burst of company lookups can be refused while the daily
+budget is untouched, and it is not per-run or first-come - the run that goes
+FIRST trips the limit and warms the cache for the one behind it.
 
 F13 and F14 arrived and were closed the same session;
 they are recorded at the bottom of this file rather than here, because a list

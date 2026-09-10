@@ -47,6 +47,7 @@ the origin is necessary to interpret or debug a figure.
 
 DropReason = Literal[
     "no_ticker_found",
+    "lookup_refused",
     "not_publicly_traded",
     "not_an_operating_company",
     "no_fundamentals",
@@ -54,6 +55,15 @@ DropReason = Literal[
     "failed_screen",
     "duplicate",
 ]
+"""Why a mentioned company did not become a candidate.
+
+Every value here except one is a FINDING - something this agent looked at and
+decided. ``lookup_refused`` is the exception: it means the market-data provider
+would not answer, so nothing was decided and nothing was learned about that
+company. It is separate from ``no_ticker_found`` deliberately, because that
+label means "this name is not a company" and reporting an outage in those words
+turns a broken instrument into a verdict (entry 142).
+"""
 
 
 class CompanyMention(BaseModel):
