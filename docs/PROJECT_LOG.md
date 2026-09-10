@@ -5939,3 +5939,54 @@ a bug.
 1081 passed to **1089**, of which five are about the listing and three about
 the page. Nothing here spends quota. Two visitors in production and the paper's
 cover are what remain, and neither is code.
+
+### 141. The paper's cover stops crediting the wrong account
+
+The cover cited `github.com/AryaPathare/ai-investment-agent`. The repository
+moved to `patharearya` on 2026-09-08 and every commit was already credited
+there, so the paper was the last thing still naming the school account. It was
+flagged in session 25 and only he could fix it; he has, and the new PDF is in.
+
+**The rest of the cover was checked and deliberately left alone.** The earlier
+note had also flagged "v1.0.0/95 entries" as stale and that was wrong:
+
+    git show v1.0.0:docs/PROJECT_LOG.md | grep -c "^### [0-9]"   ->  95
+    git rev-parse --short v1.0.0^{commit}                        ->  48f9c08
+
+`v1.0.0` is an ANNOTATED tag, so `git rev-parse v1.0.0` returns the tag object
+(`4c4f2eb`) and not the commit - which is what made the cover's `48f9c08` look
+wrong for a moment. It is the commit a reader checks out, and it is right. The
+log genuinely had 95 entries at that tag, and the cover already says clone gets
+`main` while `git checkout v1.0.0` gets what the paper describes. **Only the
+account name was wrong, and the old URL 301-redirects anyway**, so nothing was
+broken - it was crediting the wrong person.
+
+### A section on what it runs on, and the number that is measured
+
+He added a table of the four external services: Groq (`openai/gpt-oss-20b`, all
+five agents, 200,000 tokens a day), TheNewsAPI (research and the bear-case
+searches, 100 requests a day), Financial Modeling Prep (US fundamentals, 250 a
+day, US exchanges only) and yfinance (resolution and everywhere else, no key,
+no published quota). The facts came out of `.env.example`, `config.py` and the
+two clients rather than memory, and the section scopes its limits "at v1.0.0"
+the way the rest of the paper does.
+
+The 200,000 figure is worth its provenance: Groq does not report the daily
+budget in response headers, so it is not quoted from a documentation page. It
+comes from the provider's own refusal - `Limit 200000, Used 199921, Requested
+3430` - which is the same 429 that `quota.py` records as the reason probing for
+headroom is a test that cannot fail.
+
+### Both guards fired, which is the only reason to trust them
+
+The paper grew from 15 pages to 16, so the two checks entry 134 added had
+something to catch, and each was made to fail on purpose before being satisfied:
+
+    the card says 15 pages; the PDF has 16
+    paper.pdf has changed since paper-p1.png was rendered -
+      run: python -m frontend.scripts.build_paper_preview
+
+One number in `index.html` and one run of the build script. Page one is still
+A4, so the preview came back 660x934 and the `<img>` dimensions did not move.
+Suite unchanged at **1089** - replacing a document produces no test, the same
+honest outcome F5 had.

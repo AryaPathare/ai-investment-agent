@@ -19,7 +19,7 @@ somebody about to stop working who cannot describe what happens next.
 - Live: <https://ai-investment-agent-gdjr.onrender.com> (Render free plan, ONE worker)
 - CI: green on ubuntu-latest and windows-latest, Python 3.14, no secrets
 - Suite: **1089 passed, 1 skipped** — 1090 collected, and the distinction matters
-- `docs/PROJECT_LOG.md` is current through entry **140**, 27 sessions
+- `docs/PROJECT_LOG.md` is current through entry **141**, 27 sessions
 
 **The repository was restructured in session 22 into `backend/` and
 `frontend/`.** Entry 123 records the old-to-new mapping. Every command changed:
@@ -121,11 +121,11 @@ Suite: 1062 passed to **1065**.
 
 ## THE AGENDA — what the website still owes
 
-**THE LIST IS EMPTY.** Session 27 fixed the queue defect (entry 139) and built
-resume-in-the-browser (entry 140), both from his ask rather than from a list,
-and opened nothing. **What is left is not code:** two visitors in PRODUCTION,
-which needs one real run's quota and a second person, and the paper's cover,
-which only he can change.
+**THE LIST IS EMPTY.** Session 27 fixed the queue defect (entry 139), built
+resume-in-the-browser (entry 140) and took in a corrected paper (entry 141),
+all from his ask rather than from a list, and opened nothing. **The only thing
+left is two visitors in PRODUCTION** - one real run's quota and a second
+person - and it is not code.
 
 F13 and F14 arrived and were closed the same session;
 they are recorded at the bottom of this file rather than here, because a list
