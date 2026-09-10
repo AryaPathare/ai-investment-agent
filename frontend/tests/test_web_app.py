@@ -573,8 +573,13 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
 
     async def _go():
         gen = _stream("web-live", {"user_input": user})
-        await _read(gen, 2)  # started, then a stage
-        await asyncio.to_thread(entered.wait, 10)  # provably inside a node now
+        frames = await _read(gen, 2)  # started, then a stage
+        seen = [f["event"] for f in frames]
+
+        t0 = time.monotonic()
+        reached = await asyncio.to_thread(entered.wait, 10)  # inside a node now
+        waited = time.monotonic() - t0
+        depth = runqueue.queue.depth
 
         cookie = session.write(["web-live"])
         transport = httpx.ASGITransport(app=app)
@@ -601,16 +606,27 @@ def test_a_run_that_is_still_going_is_not_offered_for_picking_up(
         # The TEXT, not the parsed body: without the guard this endpoint answers
         # with an event stream rather than JSON, and a decode error is a much
         # worse description of that than the status code is.
-        return listing, refused.status_code, refused.text
+        why = {"events": seen, "node_reached": reached,
+               "waited_s": round(waited, 3), "queue_depth": depth}
+        return listing, refused.status_code, refused.text, why
 
-    listing, status, body = asyncio.run(_go())
+    listing, status, body, why = asyncio.run(_go())
     run = listing["runs"][0]
 
-    assert run["running"] is True
-    assert run["status"] == "stopped", "the store cannot tell busy from dead; that is the point"
-    assert run["can_resume"] is False, "a run already executing was offered for picking up"
+    # Every assertion below carries the run and how the test got there. A bare
+    # "'finished' != 'stopped'" sent two sessions guessing at CI from a laptop
+    # that could not reproduce it; the diagnosis has to travel with the failure.
+    ctx = f"  run={run}  how={why}"
 
-    assert status == 409, f"a run that was still executing was resumed, not refused ({status})"
+    assert run["running"] is True, "the run was not executing when it was looked at" + ctx
+    assert run["status"] == "stopped", (
+        "the store cannot tell busy from dead; that is the point" + ctx
+    )
+    assert run["can_resume"] is False, (
+        "a run already executing was offered for picking up" + ctx
+    )
+
+    assert status == 409, f"a run still executing was resumed, not refused ({status})" + ctx
     assert json.loads(body)["status"] == "running"
 
 
